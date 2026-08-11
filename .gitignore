@@ -1,0 +1,17 @@
+﻿node_modules/
+dist/
+.env
+.env.local
+.env.*.local
+prisma/*.db
+prisma/*.db-*
+*.log
+*.bak
+.DS_Store
+patch-*.cjs
+add-bootstrap.cjs
+remove-rwa.cjs
+backend-php-archive/
+ts-errors*.txt
+APP_PATCH.md
+README_PATCH.md

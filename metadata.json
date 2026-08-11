@@ -1,0 +1,6 @@
+{
+  "name": "AssetChain - RWA Tokenization Platform",
+  "description": "Full-stack Real World Asset (RWA) tokenization and trading platform with Express backend and Vite frontend.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

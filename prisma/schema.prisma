@@ -1,0 +1,148 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  name         String
+  passwordHash String
+  role         String  @default("USER")
+  isActive     Boolean @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  account      Account?
+  holdings     Holding[]
+  purchaseLots PurchaseLot[]
+  trades       Trade[]
+  activities   Activity[]
+}
+
+model Account {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  usdtBalanceMicros BigInt   @default(0)
+  tomanBalance      BigInt   @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Asset {
+  id               String        @id
+  enName           String
+  faName           String
+  category         String
+  priceMicros      BigInt
+  change           Float         @default(0)
+  flag             String
+  locationEn       String
+  locationFa       String
+  progress         Float         @default(0)
+  descriptionEn    String?
+  descriptionFa    String?
+  backingEn        String?
+  backingFa        String?
+  custodianEn      String?
+  custodianFa      String?
+  riskLevel        String?
+  payoutIntervalEn String?
+  payoutIntervalFa String?
+  tsetmcUrl        String?
+  bourseSymbol     String?
+  tsetmcInsCode       String?
+  lastPriceRial       BigInt?
+  closingPriceRial    BigInt?
+  yesterdayPriceRial  BigInt?
+  dayLowRial          BigInt?
+  dayHighRial         BigInt?
+  tradeVolume         BigInt?
+  tradeValueRial      BigInt?
+  marketUpdatedAt     DateTime?
+  holdings         Holding[]
+  purchaseLots     PurchaseLot[]
+  trades           Trade[]
+}
+
+model Holding {
+  id             String   @id @default(cuid())
+  userId         String
+  assetId        String
+  shares         Int
+  avgPriceMicros BigInt
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  asset          Asset    @relation(fields: [assetId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, assetId])
+  @@index([userId])
+}
+
+model PurchaseLot {
+  id               String   @id @default(cuid())
+  userId           String
+  assetId          String
+  remainingShares  Int
+  buyPriceMicros   BigInt
+  createdAt        DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  asset            Asset    @relation(fields: [assetId], references: [id], onDelete: Restrict)
+
+  @@index([userId, assetId, createdAt])
+}
+
+model Trade {
+  id             String   @id @default(cuid())
+  idempotencyKey String   @unique
+  userId         String
+  assetId        String
+  type           String
+  shares         Int
+  priceMicros    BigInt
+  grossMicros    BigInt
+  feeMicros      BigInt
+  netMicros      BigInt
+  createdAt      DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  asset          Asset    @relation(fields: [assetId], references: [id], onDelete: Restrict)
+
+  @@index([userId, createdAt])
+}
+
+model Activity {
+  id            String   @id @default(cuid())
+  userId        String
+  type          String
+  descriptionEn String
+  descriptionFa String
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+
+model AdminAuditLog {
+  id           String   @id @default(cuid())
+  adminUserId  String
+  action       String
+  entityType   String
+  entityId     String?
+  targetUserId String?
+  description  String
+  beforeJson   String?
+  afterJson    String?
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+
+  @@index([adminUserId, createdAt])
+  @@index([targetUserId, createdAt])
+  @@index([entityType, entityId])
+}

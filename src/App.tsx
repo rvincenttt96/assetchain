@@ -1,0 +1,3868 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Coins,
+  Wallet,
+  History,
+  MessageSquare,
+  LogOut,
+  LogIn,
+  Globe,
+  Sun,
+  Moon,
+  TrendingUp,
+  MapPin,
+  CheckCircle,
+  Clock,
+  ArrowUpRight,
+  ArrowDownRight,
+  Percent,
+  Copy,
+  Menu,
+  X,
+  Info,
+  Check,
+  User,
+  ShieldCheck,
+  Share2,
+  DollarSign,
+  Search,
+  LayoutDashboard,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  ExternalLink
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Asset, PortfolioItem, PurchaseLot, Transaction, Theme, Language, LimitOrder, UserActivity, PriceAlert } from './types';
+import { TRANSLATIONS } from './data';
+import LandingPage from './components/LandingPage';
+import YieldChart from './components/YieldChart';
+import {
+  ApiError,
+  executeBuyOrder,
+  executeSellOrder,
+  fetchAssetsFromBackend,
+  getUserProfile,
+  loginUser,
+  logoutUser,
+  registerUser,
+  type BackendProfile
+} from './lib/api';
+
+export default function App() {
+  // Theme & Language State
+  const [theme, setTheme] = useState<Theme>('dark');
+  const [lang, setLang] = useState<Language>('en');
+
+  // Authentication State
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState({
+    username: '',
+    email: '',
+    usdtBalance: 0
+  });
+
+  // Navigation State
+  const [currentTab, setCurrentTab] = useState<'home' | 'market' | 'portfolio' | 'wallet' | 'history' | 'support' | 'about' | 'contact'>('home');
+  const [marketFilter, setMarketFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // Modals & Panels State
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [authMode, setAuthMode] = useState<'signIn' | 'signUp'>('signIn');
+  const [authUsername, setAuthUsername] = useState<string>('demo@assetchain.local');
+  const [authName, setAuthName] = useState<string>('');
+  const [authPassword, setAuthPassword] = useState<string>('DemoPass123!');
+  const [authError, setAuthError] = useState<string>('');
+  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(false);
+
+  const [isBuyModalOpen, setIsBuyModalOpen] = useState<boolean>(false);
+  const [isSellModalOpen, setIsSellModalOpen] = useState<boolean>(false);
+  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+
+  // Asset Info Modal State
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState<boolean>(false);
+  const [infoAsset, setInfoAsset] = useState<Asset | null>(null);
+
+  const handleOpenAssetInfo = (asset: Asset) => {
+    setInfoAsset(asset);
+    setIsInfoModalOpen(true);
+  };
+
+  // Trade Inputs
+  const [buyAmount, setBuyAmount] = useState<string>('');
+  const [sellShares, setSellShares] = useState<string>('');
+
+  // Notifications / Alert Feedbacks
+  const [alertMessage, setAlertMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+  // App Wallet Staking/Deposit State
+  const [walletTab, setWalletTab] = useState<'deposit' | 'withdraw'>('deposit');
+  const [depositNetwork, setDepositNetwork] = useState<'trc20' | 'erc20' | 'bep20'>('trc20');
+  const [depositTxid, setDepositTxid] = useState<string>('');
+  const [withdrawAddress, setWithdrawAddress] = useState<string>('');
+  const [withdrawAmount, setWithdrawAmount] = useState<string>('');
+  const [txidError, setTxidError] = useState<string>('');
+  const [withdrawAddrError, setWithdrawAddrError] = useState<string>('');
+
+  // Support State
+  const [supportText, setSupportText] = useState<string>('');
+
+  // User Portfolio Data (stored in state so it adapts when buying/selling)
+  const [myPortfolio, setMyPortfolio] = useState<PortfolioItem[]>([]);
+
+  // Detailed Purchase Lots for each asset to show exact buy time, price, and volume
+  const [purchaseLots, setPurchaseLots] = useState<PurchaseLot[]>([]);
+
+  const [portfolioViewMode, setPortfolioViewMode] = useState<'aggregated' | 'detailed'>('aggregated');
+
+  // Transaction History Data
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+
+  // Limit Orders State (Buy & Sell Orders)
+  const [limitOrders, setLimitOrders] = useState<LimitOrder[]>([]);
+
+  // Live Assets Pricing state
+  const [assets, setAssets] = useState<Asset[]>([]);
+
+  // Price Alerts State
+  const [priceAlerts, setPriceAlerts] = useState<PriceAlert[]>([]);
+
+  // Modal active tab & states for alerts & limits inside buy modal
+  const [buyModalTab, setBuyModalTab] = useState<'instant' | 'limit' | 'alert'>('instant');
+  const [buyLimitPrice, setBuyLimitPrice] = useState<string>('');
+  const [buyLimitShares, setBuyLimitShares] = useState<string>('');
+  const [buyAlertPrice, setBuyAlertPrice] = useState<string>('');
+  const [buyAlertCondition, setBuyAlertCondition] = useState<'above' | 'below'>('above');
+
+  // User Activities State
+  const [activities, setActivities] = useState<UserActivity[]>([]);
+
+  // Form states for creating a new Limit Order inside portfolio
+  const [newOrderAssetId, setNewOrderAssetId] = useState<string>('KGOL');
+  const [newOrderType, setNewOrderType] = useState<'buy' | 'sell'>('buy');
+  const [newOrderPrice, setNewOrderPrice] = useState<string>('');
+  const [newOrderAmount, setNewOrderAmount] = useState<string>(''); // USDT for Buy, Shares for Sell
+  const [portfolioSubTab, setPortfolioSubTab] = useState<'orders' | 'activity'>('orders');
+  const [showPortfolioChart, setShowPortfolioChart] = useState<boolean>(true);
+
+  // Helper to record user activities dynamically
+  const recordActivity = (type: string, descriptionEn: string, descriptionFa: string) => {
+    const newAct: UserActivity = {
+      id: `ACT-${Math.floor(100 + Math.random() * 900)}`,
+      type,
+      descriptionEn,
+      descriptionFa,
+      date: new Date().toISOString().replace('T', ' ').substring(0, 16)
+    };
+    setActivities(prev => [newAct, ...prev]);
+  };
+
+  // UI state for Mobile Hamburger Menu
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
+  const [copiedCode, setCopiedCode] = useState<boolean>(false);
+
+  // Dynamic APY / TVL / Units Stats
+  const [stats, setStats] = useState({
+    tvl: 124580250,
+    soldUnits: 12480,
+  });
+
+  const t = TRANSLATIONS[lang];
+
+  const applyBackendProfile = (profile: BackendProfile) => {
+    setCurrentUser({
+      username: profile.name,
+      email: profile.email,
+      usdtBalance: profile.usdtBalance
+    });
+    setMyPortfolio(profile.portfolio);
+    setPurchaseLots(profile.purchaseLots);
+    setTransactions(profile.transactions);
+    setActivities(profile.activities);
+    setIsLoggedIn(true);
+  };
+
+  // Auto Dismiss alerts
+  useEffect(() => {
+    if (alertMessage) {
+      const timer = setTimeout(() => {
+        setAlertMessage(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [alertMessage]);
+
+  // Apply layout theme body classes
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+  }, [theme]);
+
+  // Load assets and restore the authenticated session
+  useEffect(() => {
+    let cancelled = false;
+
+    const bootstrap = async () => {
+      try {
+        const backendAssets = await fetchAssetsFromBackend();
+
+        if (!cancelled) {
+          setAssets(backendAssets);
+        }
+      } catch (error) {
+        console.error('Could not load backend assets:', error);
+      }
+
+      try {
+        const profile = await getUserProfile();
+
+        if (!cancelled) {
+          applyBackendProfile(profile);
+        }
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 401) {
+          return;
+        }
+
+        console.error('Could not restore session:', error);
+      }
+    };
+
+    void bootstrap();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Real-time pricing fluctuations & automated limit/OTC execution checking
+  useEffect(() => {
+    if (import.meta.env.VITE_DEMO_PRICE_SIMULATION !== 'true') {
+      return;
+    }
+    const interval = setInterval(() => {
+      setAssets(prevAssets => {
+        const nextAssets = prevAssets.map(asset => {
+          // Small realistic price change (-0.3% to +0.3%)
+          const pct = (Math.random() * 0.6 - 0.3) / 100;
+          const newPrice = Math.max(0.0001, parseFloat((asset.price * (1 + pct)).toFixed(4)));
+        const changePct = asset.change;
+
+          return {
+            ...asset,
+            price: newPrice,
+            change: changePct
+          };
+        });
+
+        // â”€â”€â”€ Automated Order Execution â”€â”€â”€
+        if (isLoggedIn) {
+          limitOrders.forEach(order => {
+            if (order.status !== 'pending') return;
+            const liveAsset = nextAssets.find(a => a.id === order.assetId);
+            if (!liveAsset) return;
+
+            let triggerExecution = false;
+            if (order.type === 'buy' && liveAsset.price <= order.price) {
+              triggerExecution = true;
+            } else if (order.type === 'sell' && liveAsset.price >= order.price) {
+              triggerExecution = true;
+            }
+
+            if (triggerExecution) {
+              // Execute this limit order automatically in the next tick
+              setTimeout(() => {
+                handleExecuteLimitOrder(order.id);
+              }, 10);
+            }
+          });
+
+          // â”€â”€â”€ Real-time Price Alerts â”€â”€â”€
+          priceAlerts.forEach(alert => {
+            if (alert.isTriggered) return;
+            const liveAsset = nextAssets.find(a => a.id === alert.assetId);
+            if (!liveAsset) return;
+
+            let triggerAlertNotify = false;
+            if (alert.condition === 'above' && liveAsset.price >= alert.targetPrice) {
+              triggerAlertNotify = true;
+            } else if (alert.condition === 'below' && liveAsset.price <= alert.targetPrice) {
+              triggerAlertNotify = true;
+            }
+
+            if (triggerAlertNotify) {
+              // Trigger the notification alert and mark alert as triggered
+              setTimeout(() => {
+                const nameStr = lang === 'fa' ? liveAsset.faName : liveAsset.enName;
+                triggerAlert('success', lang === 'fa'
+                  ? `ðŸ”” Ù‡Ø´Ø¯Ø§Ø±: Ù‚ÛŒÙ…Øª Ø¯Ø§Ø±Ø§ÛŒÛŒ ${nameStr} Ø¨Ù‡ Ù‡Ø¯Ù ${alert.targetPrice} ØªØªØ± Ø±Ø³ÛŒØ¯! (Ù‚ÛŒÙ…Øª ÙØ¹Ù„ÛŒ: ${liveAsset.price} ØªØªØ±)`
+                  : `ðŸ”” Alert: ${liveAsset.enName} has reached target of ${alert.targetPrice} USDT! (Current: ${liveAsset.price} USDT)`
+                );
+                setPriceAlerts(prev => prev.map(a => a.id === alert.id ? { ...a, isTriggered: true } : a));
+                recordActivity('alert_trigger',
+                  `Price alert triggered for #${alert.assetId} at ${alert.targetPrice} USDT`,
+                  `ÙØ¹Ø§Ù„ Ø´Ø¯Ù† Ù‡Ø´Ø¯Ø§Ø± Ù‚ÛŒÙ…Øª Ø¨Ø±Ø§ÛŒ #${alert.assetId} Ø±ÙˆÛŒ Ù‚ÛŒÙ…Øª ${alert.targetPrice} ØªØªØ±`
+                );
+              }, 10);
+            }
+          });
+        }
+
+        return nextAssets;
+      });
+    }, 4000); // every 4 seconds for lively simulation
+
+    return () => clearInterval(interval);
+  }, [limitOrders, priceAlerts, isLoggedIn, lang]);
+
+  // Helper for triggering alert notifications
+  const triggerAlert = (type: 'success' | 'error', text: string) => {
+    setAlertMessage({ type, text });
+  };
+
+  // Auth Functions
+  const handleAuthSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setAuthError("");
+  setIsAuthLoading(true);
+
+  try {
+    const email = authUsername.trim().toLowerCase();
+
+    const profile =
+      authMode === "signIn"
+        ? await loginUser(email, authPassword)
+        : await registerUser(authName.trim(), email, authPassword);
+
+    applyBackendProfile(profile);
+    setCurrentTab("portfolio");
+    setIsAuthModalOpen(false);
+    triggerAlert("success", `Welcome, ${profile.name}`);
+  } catch (error) {
+    setAuthError(
+      error instanceof ApiError
+        ? error.message
+        : "Could not connect to the server."
+    );
+  } finally {
+    setIsAuthLoading(false);
+  }
+};
+
+
+  const handleLogout = async () => {
+  try {
+    await logoutUser();
+    setIsLoggedIn(false);
+    setCurrentUser({ username: '', email: '', usdtBalance: 0 });
+    setMyPortfolio([]);
+    setPurchaseLots([]);
+    setTransactions([]);
+    setActivities([]);
+    setIsDropdownOpen(false);
+    setCurrentTab('market');
+    triggerAlert('success', lang === 'fa' ? 'Ø¨Ø§ Ù…ÙˆÙÙ‚ÛŒØª Ø§Ø² Ø­Ø³Ø§Ø¨ Ø®Ø§Ø±Ø¬ Ø´Ø¯ÛŒØ¯.' : 'Logged out successfully.');
+  } catch (error) {
+    triggerAlert(
+      'error',
+      error instanceof ApiError ? error.message : 'Could not log out.'
+    );
+  }
+};
+
+  // Buy Order Exec
+  const handleBuySubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  if (!selectedAsset) return;
+    if (selectedAsset.price <= 0) {
+      alert(
+        lang === "fa"
+          ? "\u0645\u0639\u0627\u0645\u0644\u0647 \u0641\u0639\u0644\u0627\u064b \u063a\u06cc\u0631\u0641\u0639\u0627\u0644 \u0627\u0633\u062a \u062a\u0627 \u0646\u0631\u062e \u0645\u0639\u062a\u0628\u0631 IRR/USDT \u062f\u0631 \u0628\u06a9\u200c\u0627\u0646\u062f \u062a\u0646\u0638\u06cc\u0645 \u0634\u0648\u062f."
+          : "Trading is temporarily unavailable until a valid IRR/USDT conversion price is configured."
+      );
+      return;
+    }
+
+  if (!isLoggedIn) {
+    triggerAlert(
+      'error',
+      lang === 'fa' ? 'Ø§Ø¨ØªØ¯Ø§ ÙˆØ§Ø±Ø¯ Ø­Ø³Ø§Ø¨ Ø´ÙˆÛŒØ¯.' : 'Please sign in first!'
+    );
+    return;
+  }
+
+  const investAmount = Number.parseFloat(buyAmount);
+
+  if (!Number.isFinite(investAmount) || investAmount <= 0) {
+    triggerAlert('error', t.enterAmount);
+    return;
+  }
+
+  const purchasedShares = Math.floor(investAmount / selectedAsset.price);
+
+  if (purchasedShares < 1) {
+    triggerAlert(
+      'error',
+      lang === 'fa'
+        ? 'Ù…Ø¨Ù„Øº Ø³Ø±Ù…Ø§ÛŒÙ‡â€ŒÚ¯Ø°Ø§Ø±ÛŒ Ø¨Ø±Ø§ÛŒ Ø®Ø±ÛŒØ¯ ÛŒÚ© Ø³Ù‡Ù… Ú©Ø§ÙÛŒ Ù†ÛŒØ³Øª.'
+        : 'The investment amount is too low to buy one share.'
+    );
+    return;
+  }
+
+  try {
+    const profile = await executeBuyOrder(selectedAsset.id, purchasedShares);
+    applyBackendProfile(profile);
+    setIsBuyModalOpen(false);
+    setBuyAmount('');
+    triggerAlert('success', t.orderExecuted);
+  } catch (error) {
+    triggerAlert(
+      'error',
+      error instanceof ApiError
+        ? error.message
+        : 'Could not execute the buy order.'
+    );
+  }
+};
+
+
+  // Unified modal submission for buying instantly, placing limit/OTC orders, or setting price alerts
+  const handleModalSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  if (!isLoggedIn) {
+    triggerAlert(
+      'error',
+      lang === 'fa' ? 'Ø§Ø¨ØªØ¯Ø§ ÙˆØ§Ø±Ø¯ Ø­Ø³Ø§Ø¨ Ú©Ø§Ø±Ø¨Ø±ÛŒ Ø´ÙˆÛŒØ¯.' : 'Please sign in first!'
+    );
+    return;
+  }
+
+  if (!selectedAsset) return;
+
+  if (buyModalTab !== 'instant') {
+    triggerAlert(
+      'error',
+      lang === 'fa'
+        ? 'Ø³ÙØ§Ø±Ø´ Ù…Ø­Ø¯ÙˆØ¯ Ùˆ OTC Ø¯Ø± Ù†Ø³Ø®Ù‡ ÙØ¹Ù„ÛŒ ØºÛŒØ±ÙØ¹Ø§Ù„ Ø§Ø³Øª.'
+        : 'Limit and OTC orders are disabled in this version.'
+    );
+    return;
+  }
+
+  await handleBuySubmit(e);
+};
+
+  const handleSellSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  if (!selectedAsset) return;
+    if (selectedAsset.price <= 0) {
+      alert(
+        lang === "fa"
+          ? "\u0645\u0639\u0627\u0645\u0644\u0647 \u0641\u0639\u0644\u0627\u064b \u063a\u06cc\u0631\u0641\u0639\u0627\u0644 \u0627\u0633\u062a \u062a\u0627 \u0646\u0631\u062e \u0645\u0639\u062a\u0628\u0631 IRR/USDT \u062f\u0631 \u0628\u06a9\u200c\u0627\u0646\u062f \u062a\u0646\u0638\u06cc\u0645 \u0634\u0648\u062f."
+          : "Trading is temporarily unavailable until a valid IRR/USDT conversion price is configured."
+      );
+      return;
+    }
+
+  if (!isLoggedIn) {
+    triggerAlert(
+      'error',
+      lang === 'fa' ? 'Ø§Ø¨ØªØ¯Ø§ ÙˆØ§Ø±Ø¯ Ø­Ø³Ø§Ø¨ Ø´ÙˆÛŒØ¯.' : 'Please sign in first!'
+    );
+    return;
+  }
+
+  const sharesToSell = Number.parseInt(sellShares, 10);
+  const ownedItem = myPortfolio.find(item => item.assetId === selectedAsset.id);
+  const ownedShares = ownedItem?.shares ?? 0;
+
+  if (!Number.isFinite(sharesToSell) || sharesToSell <= 0) {
+    triggerAlert('error', t.enterAmount);
+    return;
+  }
+
+  if (sharesToSell > ownedShares) {
+    triggerAlert('error', t.insufficientShares);
+    return;
+  }
+
+  try {
+    const profile = await executeSellOrder(selectedAsset.id, sharesToSell);
+    applyBackendProfile(profile);
+    setIsSellModalOpen(false);
+    setSellShares('');
+    triggerAlert('success', t.orderExecuted);
+  } catch (error) {
+    triggerAlert(
+      'error',
+      error instanceof ApiError
+        ? error.message
+        : 'Could not execute the sell order.'
+   );
+  }
+};
+
+
+  // Validation for TxID Hash pattern based on network
+  const validateTxid = (txid: string, network: 'trc20' | 'erc20' | 'bep20') => {
+    const clean = txid.trim();
+    if (!clean) {
+      return {
+        valid: false,
+        msg: lang === 'fa' ? 'Ù„Ø·ÙØ§Ù‹ Ú©Ø¯ Ù‡Ø´ ØªØ±Ø§Ú©Ù†Ø´ (TxID) Ø±Ø§ ÙˆØ§Ø±Ø¯ Ú©Ù†ÛŒØ¯!' : 'Please enter the transaction hash (TxID)!'
+      };
+    }
+
+    if (network === 'trc20') {
+      // TRC20 (TRON) TxID is 64 hexadecimal characters (optionally 0x prefix accepted)
+      const trc20Regex = /^(0x)?[0-9a-fA-F]{64}$/;
+      if (!trc20Regex.test(clean)) {
+        return {
+          valid: false,
+          msg: lang === 'fa'
+            ? 'ÙØ±Ù…Øª Ù‡Ø´ ØªØ±Ø§Ú©Ù†Ø´ Ø±ÙˆÛŒ Ø´Ø¨Ú©Ù‡ TRC20 (ØªØ±ÙˆÙ†) Ù†Ø§Ù…Ø¹ØªØ¨Ø± Ø§Ø³Øª. Ú©Ø¯ Ù‡Ø´ Ø¨Ø§ÛŒØ¯ Û¶Û´ Ú©Ø§Ø±Ø§Ú©ØªØ± Ù‡Ú¯Ø²Ø§Ø¯Ø³ÛŒÙ¾Ù…Ø§Ù„ Ø¨Ø§Ø´Ø¯.'
+            : 'Invalid TRC20 transaction hash. TRON TxID must be a 64-character hexadecimal string.'
+        };
+      }
+    } else if (network === 'erc20') {
+      // ERC20 (Ethereum) TxID starts with 0x followed by 64 hex characters (or 64 hex characters)
+      const erc20Regex = /^(0x)?[0-9a-fA-F]{64}$/;
+      if (!erc20Regex.test(clean)) {
+        return {
+          valid: false,
+          msg: lang === 'fa'
+            ? 'ÙØ±Ù…Øª Ù‡Ø´ ØªØ±Ø§Ú©Ù†Ø´ Ø±ÙˆÛŒ Ø´Ø¨Ú©Ù‡ ERC20 (Ø§ØªØ±ÛŒÙˆÙ…) Ù†Ø§Ù…Ø¹ØªØ¨Ø± Ø§Ø³Øª. Ú©Ø¯ Ù‡Ø´ Ø¨Ø§ÛŒØ¯ Ø¨Ø§ 0x Ø´Ø±ÙˆØ¹ Ø´Ø¯Ù‡ Ùˆ Û¶Û´ Ú©Ø§Ø±Ø§Ú©ØªØ± Ù‡Ú¯Ø²Ø§Ø¯Ø³ÛŒÙ¾Ù…Ø§Ù„ Ø¯Ø§Ø´ØªÙ‡ Ø¨Ø§Ø´Ø¯.'
+            : 'Invalid ERC20 transaction hash. Ethereum TxID must start with 0x followed by 64 hex characters.'
+        };
+      }
+    } else if (network === 'bep20') {
+      // BEP20 (BSC) TxID starts with 0x followed by 64 hex characters (or 64 hex characters)
+      const bep20Regex = /^(0x)?[0-9a-fA-F]{64}$/;
+      if (!bep20Regex.test(clean)) {
+        return {
+          valid: false,
+          msg: lang === 'fa'
+            ? 'ÙØ±Ù…Øª Ù‡Ø´ ØªØ±Ø§Ú©Ù†Ø´ Ø±ÙˆÛŒ Ø´Ø¨Ú©Ù‡ BEP20 (Ø¨Ø§ÛŒÙ†Ù†Ø³ Ø§Ø³Ù…Ø§Ø±Øª Ú†ÛŒÙ†) Ù†Ø§Ù…Ø¹ØªØ¨Ø± Ø§Ø³Øª. Ú©Ø¯ Ù‡Ø´ Ø¨Ø§ÛŒØ¯ Ø¨Ø§ 0x Ø´Ø±ÙˆØ¹ Ø´Ø¯Ù‡ Ùˆ Û¶Û´ Ú©Ø§Ø±Ø§Ú©ØªØ± Ù‡Ú¯Ø²Ø§Ø¯Ø³ÛŒÙ¾Ù…Ø§Ù„ Ø¯Ø§Ø´ØªÙ‡ Ø¨Ø§Ø´Ø¯.'
+            : 'Invalid BEP20 transaction hash. BSC TxID must start with 0x followed by 64 hex characters.'
+        };
+      }
+    }
+
+    return { valid: true, msg: '' };
+  };
+
+  // Validation for Destination Wallet Address based on network
+  const validateWithdrawAddress = (address: string, network: 'trc20' | 'erc20' | 'bep20') => {
+    const clean = address.trim();
+    if (!clean) {
+      return {
+        valid: false,
+        msg: lang === 'fa' ? 'Ù„Ø·ÙØ§Ù‹ Ø¢Ø¯Ø±Ø³ Ú©ÛŒÙ Ù¾ÙˆÙ„ Ù…Ù‚ØµØ¯ Ø±Ø§ ÙˆØ§Ø±Ø¯ Ú©Ù†ÛŒØ¯!' : 'Please enter destination wallet address!'
+      };
+    }
+
+    if (network === 'trc20') {
+      // TRON address starts with 'T' and is 34 characters (base58)
+      const tronRegex = /^T[a-zA-HJ-NP-Z1-9]{33}$/;
+      if (!tronRegex.test(clean)) {
+        return {
+          valid: false,
+          msg: lang === 'fa'
+            ? 'Ø¢Ø¯Ø±Ø³ Ù…Ù‚ØµØ¯ Ø¨Ø§ Ø§Ù„Ú¯ÙˆÛŒ Ø´Ø¨Ú©Ù‡ TRC20 Ù…Ø·Ø§Ø¨Ù‚Øª Ù†Ø¯Ø§Ø±Ø¯. Ø¢Ø¯Ø±Ø³ ØªØ±ÙˆÙ† Ø¨Ø§ÛŒØ¯ Ø¨Ø§ Ø­Ø±Ù T Ø´Ø±ÙˆØ¹ Ø´Ø¯Ù‡ Ùˆ Û³Û´ Ú©Ø§Ø±Ø§Ú©ØªØ± Ø¨Ø§Ø´Ø¯.'
+            : 'Invalid TRC20 address. TRON wallet addresses must start with "T" and be 34 characters long.'
+        };
+      }
+    } else if (network === 'erc20' || network === 'bep20') {
+      // EVM address starts with 0x followed by 40 hex characters
+      const evmRegex = /^0x[0-9a-fA-F]{40}$/;
+      if (!evmRegex.test(clean)) {
+        const netLabel = network === 'erc20' ? 'ERC20 (Ø§ØªØ±ÛŒÙˆÙ…)' : 'BEP20 (Ø¨Ø§ÛŒÙ†Ù†Ø³ Ø§Ø³Ù…Ø§Ø±Øª Ú†ÛŒÙ†)';
+        const netLabelEn = network === 'erc20' ? 'ERC20' : 'BEP20';
+        return {
+          valid: false,
+          msg: lang === 'fa'
+            ? `Ø¢Ø¯Ø±Ø³ Ù…Ù‚ØµØ¯ Ø¨Ø§ Ø§Ù„Ú¯ÙˆÛŒ Ø´Ø¨Ú©Ù‡ ${netLabel} Ù…Ø·Ø§Ø¨Ù‚Øª Ù†Ø¯Ø§Ø±Ø¯. Ø¢Ø¯Ø±Ø³ Ø¨Ø§ÛŒØ¯ Ø¨Ø§ 0x Ø´Ø±ÙˆØ¹ Ø´Ø¯Ù‡ Ùˆ Û´Û² Ú©Ø§Ø±Ø§Ú©ØªØ± Ø¨Ø§Ø´Ø¯.`
+            : `Invalid ${netLabelEn} address. EVM wallet addresses must start with "0x" and be 42 characters long.`
+        };
+      }
+    }
+
+    return { valid: true, msg: '' };
+  };
+
+  // Submit Deposit Hash
+  const handleDepositSubmit = (e: React.FormEvent) => {
+  e.preventDefault();
+  setTxidError('');
+  triggerAlert(
+    'error',
+    lang === 'fa'
+      ? 'ÙˆØ§Ø±ÛŒØ² Ø±Ù…Ø²Ø§Ø±Ø² Ø¯Ø± Ù†Ø³Ø®Ù‡ ÙØ¹Ù„ÛŒ ØºÛŒØ±ÙØ¹Ø§Ù„ Ø§Ø³Øª.'
+      : 'Crypto deposits are disabled in this version.'
+  );
+};
+
+const handleWithdrawSubmit = (e: React.FormEvent) => {
+  e.preventDefault();
+  setWithdrawAddrError('');
+  triggerAlert(
+    'error',
+    lang === 'fa'
+      ? 'Ø¨Ø±Ø¯Ø§Ø´Øª Ø±Ù…Ø²Ø§Ø±Ø² Ø¯Ø± Ù†Ø³Ø®Ù‡ ÙØ¹Ù„ÛŒ ØºÛŒØ±ÙØ¹Ø§Ù„ Ø§Ø³Øª.'
+      : 'Crypto withdrawals are disabled in this version.'
+  );
+};
+
+
+  // Submit Support Ticket
+  const handleSupportSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!supportText.trim()) return;
+
+    const ticketNumber = Math.floor(1000 + Math.random() * 9000);
+    const feedback = t.ticketSuccess.replace('{num}', `#TKT-${ticketNumber}`);
+    triggerAlert('success', feedback);
+    setSupportText('');
+    recordActivity('ticket', `Submitted a support ticket (#TKT-${ticketNumber})`, `Ø«Ø¨Øª ØªÛŒÚ©Øª Ù¾Ø´ØªÛŒØ¨Ø§Ù†ÛŒ Ø¬Ø¯ÛŒØ¯ (#TKT-${ticketNumber})`);
+  };
+
+  // Create Limit Order
+  const handleCreateLimitOrder = (e: React.FormEvent) => {
+  e.preventDefault();
+  triggerAlert('error', 'Limit orders are disabled in this version.');
+};
+
+const handleCancelLimitOrder = (_orderId: string) => {
+  triggerAlert('error', 'Browser-side limit order cancellation is disabled.');
+};
+
+const handleExecuteLimitOrder = (_orderId: string) => {
+  triggerAlert('error', 'Browser-side limit order execution is disabled.');
+};
+
+
+  // Copy Referral Code
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText('REF-ASSET-7729');
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 2000);
+  };
+
+  // Calculations for active modals
+  const activeOwnedItem = selectedAsset ? myPortfolio.find(p => p.assetId === selectedAsset.id) : null;
+  const activeMaxShares = activeOwnedItem ? activeOwnedItem.shares : 0;
+
+  // Live total balance calculation: Free USDT + Value of all owned shares
+  const totalSharesValue = myPortfolio.reduce((acc, curr) => {
+    const asset = assets.find(a => a.id === curr.assetId);
+    return acc + (asset ? asset.price * curr.shares : 0);
+  }, 0);
+  const totalBalanceCalculated = currentUser.usdtBalance + totalSharesValue;
+
+  // Live PnL calculation based on current prices and original average prices
+  const totalPnLCalculated = myPortfolio.reduce((acc, curr) => {
+    const asset = assets.find(a => a.id === curr.assetId);
+    return acc + (asset ? (asset.price - curr.avgPrice) * curr.shares : 0);
+  }, 0);
+  const totalPnLPctCalculated = totalPnLCalculated !== 0 ? (totalPnLCalculated / (totalBalanceCalculated - totalPnLCalculated)) * 100 : 0;
+
+  // Filter & Search logic for marketplace
+  const filteredAssets = assets.filter(asset => {
+    const matchesCategory = marketFilter === 'all' || asset.category === marketFilter;
+    const searchString = searchQuery.trim().toLowerCase();
+    const matchesSearch = !searchString ||
+      asset.id.toLowerCase().includes(searchString) ||
+      asset.enName.toLowerCase().includes(searchString) ||
+      asset.faName.includes(searchString);
+    return matchesCategory && matchesSearch;
+  });
+
+  return (
+    <div className={`min-h-screen flex flex-col justify-between transition-colors duration-300 ${
+      theme === 'dark' ? 'bg-[#020617] text-slate-100' : 'bg-slate-50 text-slate-900'
+    }`} dir={lang === 'fa' ? 'rtl' : 'ltr'}>
+
+      {/* Alert Banner / Notification Feed */}
+      {alertMessage && (
+        <div className={`fixed bottom-6 right-6 left-6 md:left-auto md:w-96 z-50 p-4 rounded-xl shadow-2xl flex items-center gap-3 animate-bounce border ${
+          alertMessage.type === 'success'
+            ? 'bg-emerald-950/90 text-emerald-200 border-emerald-500/50'
+            : 'bg-rose-950/90 text-rose-200 border-rose-500/50'
+        } backdrop-blur-md`}>
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+            alertMessage.type === 'success' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
+          }`}>
+            {alertMessage.type === 'success' ? <CheckCircle size={20} /> : <Info size={20} />}
+          </div>
+          <div className="flex-1 text-sm font-medium">
+            {alertMessage.text}
+          </div>
+          <button onClick={() => setAlertMessage(null)} className="text-slate-400 hover:text-white">
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
+      {/* Header / Navbar */}
+      <nav className={`sticky top-0 z-40 px-4 md:px-8 h-16 flex items-center justify-between border-b transition-colors duration-300 ${
+        theme === 'dark' ? 'border-slate-800/80 bg-slate-950/80' : 'border-slate-200 bg-white/90'
+      } backdrop-blur-md`}>
+        <div className="flex items-center gap-4 md:gap-8">
+          {/* Mobile Menu Toggle (on the far left for mobile screens) */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className={`p-2 rounded-xl border lg:hidden cursor-pointer z-50 ${
+              theme === 'dark' ? 'border-slate-800 bg-slate-900 text-slate-200' : 'border-slate-200 bg-slate-100 text-slate-700'
+            }`}
+          >
+            {isMobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+          </button>
+
+          {/* Logo */}
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setCurrentTab(isLoggedIn ? 'portfolio' : 'home')}>
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/30">
+              <Coins size={18} />
+            </div>
+            <span className={`text-xl font-extrabold tracking-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+              {t.appName}
+            </span>
+          </div>
+
+          {/* Desktop Nav Tabs */}
+          <div className="hidden lg:flex items-center gap-6 text-sm font-semibold">
+            {!isLoggedIn && (
+              <button
+                onClick={() => setCurrentTab('home')}
+                className={`pb-1 border-b-2 transition-all cursor-pointer ${
+                  currentTab === 'home'
+                    ? 'border-blue-500 text-blue-500 font-extrabold'
+                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                {t.home}
+              </button>
+            )}
+            <button
+              onClick={() => setCurrentTab('market')}
+              className={`pb-1 border-b-2 transition-all cursor-pointer ${
+                currentTab === 'market'
+                  ? 'border-blue-500 text-blue-500 font-extrabold'
+                  : 'border-transparent text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              {t.assetsMarket}
+            </button>
+
+            {isLoggedIn && (
+              <>
+                <button
+                  onClick={() => setCurrentTab('portfolio')}
+                  className={`pb-1 border-b-2 transition-all cursor-pointer ${
+                    currentTab === 'portfolio'
+                      ? 'border-blue-500 text-blue-500 font-extrabold'
+                      : 'border-transparent text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {t.portfolio}
+                </button>
+                <button
+                  onClick={() => setCurrentTab('wallet')}
+                  className={`pb-1 border-b-2 transition-all cursor-pointer ${
+                    currentTab === 'wallet'
+                      ? 'border-blue-500 text-blue-500 font-extrabold'
+                      : 'border-transparent text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {t.wallet}
+                </button>
+                <button
+                  onClick={() => setCurrentTab('history')}
+                  className={`pb-1 border-b-2 transition-all cursor-pointer ${
+                    currentTab === 'history'
+                      ? 'border-blue-500 text-blue-500 font-extrabold'
+                      : 'border-transparent text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {t.history}
+                </button>
+              </>
+            )}
+
+            <button
+              onClick={() => setCurrentTab('about')}
+              className={`pb-1 border-b-2 transition-all cursor-pointer ${
+                currentTab === 'about'
+                  ? 'border-blue-500 text-blue-500 font-extrabold'
+                  : 'border-transparent text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              {t.aboutUs}
+            </button>
+            <button
+              onClick={() => setCurrentTab('contact')}
+              className={`pb-1 border-b-2 transition-all cursor-pointer ${
+                currentTab === 'contact'
+                  ? 'border-blue-500 text-blue-500 font-extrabold'
+                  : 'border-transparent text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              {t.contactUs}
+            </button>
+          </div>
+        </div>
+
+        {/* Right Controls */}
+        <div className="flex items-center gap-2 md:gap-3" dir="ltr">
+
+          {/* Theme Switch (Hidden on mobile, accessible in drawer) */}
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className={`hidden lg:flex h-10 w-10 items-center justify-center rounded-xl border hover:opacity-80 transition-all cursor-pointer ${
+              theme === 'dark' ? 'border-slate-800 bg-slate-900 text-slate-200' : 'border-slate-200 bg-slate-100 text-slate-700'
+            }`}
+            title={theme === 'dark' ? t.lightMode : t.darkMode}
+          >
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+
+          {/* Language Switch (Hidden on mobile, accessible in drawer) */}
+          <button
+            onClick={() => setLang(lang === 'fa' ? 'en' : 'fa')}
+            className={`hidden lg:flex h-10 px-4 text-xs font-black rounded-xl border hover:opacity-80 transition-all items-center justify-center gap-1.5 cursor-pointer ${
+              theme === 'dark' ? 'border-slate-800 bg-slate-900 text-slate-200' : 'border-slate-200 bg-slate-100 text-slate-700'
+            }`}
+          >
+            <Globe size={13} />
+            <span>{lang === 'fa' ? 'EN' : 'FA'}</span>
+          </button>
+
+          {/* User Section / Login / Wallet Trigger */}
+          {isLoggedIn ? (
+            <div className="relative">
+              <button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className={`h-10 flex items-center justify-center gap-2 px-4 text-xs font-black rounded-xl border hover:opacity-90 transition-all cursor-pointer ${
+                  theme === 'dark' ? 'bg-slate-900 border-slate-800 text-slate-100' : 'bg-slate-100 border-slate-200 text-slate-800'
+                }`}
+              >
+                <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs">
+                  <User size={12} />
+                </div>
+                <span className="max-w-[80px] truncate">{currentUser.username}</span>
+                <span className="text-[10px] opacity-60">â–¾</span>
+              </button>
+
+              {/* User Dropdown */}
+              {isDropdownOpen && (
+                <div className={`absolute right-0 mt-2 w-56 rounded-2xl border shadow-2xl z-50 overflow-hidden ${
+                  theme === 'dark' ? 'bg-slate-900 border-slate-800 text-slate-200' : 'bg-white border-slate-200 text-slate-800'
+                }`}>
+                  <div className={`p-4 border-b ${theme === 'dark' ? 'border-slate-800' : 'border-slate-100'}`}>
+                    <p className="text-xs opacity-60 truncate">{currentUser.email}</p>
+                    <p className="text-sm font-bold mt-1 text-blue-500">
+                      {currentUser.usdtBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
+                    </p>
+                  </div>
+                  <div className="p-2 space-y-1">
+                    <button
+                      onClick={() => { setCurrentTab('portfolio'); setIsDropdownOpen(false); }}
+                      className={`w-full text-start px-3 py-2.5 text-xs font-semibold rounded-xl transition-all hover:bg-blue-600/10 hover:text-blue-500 ${
+                        currentTab === 'portfolio' ? 'bg-blue-600/10 text-blue-500' : ''
+                      }`}
+                    >
+                      {t.myPortfolio}
+                    </button>
+                    <button
+                      onClick={() => { setCurrentTab('wallet'); setIsDropdownOpen(false); }}
+                      className={`w-full text-start px-3 py-2.5 text-xs font-semibold rounded-xl transition-all hover:bg-blue-600/10 hover:text-blue-500 ${
+                        currentTab === 'wallet' ? 'bg-blue-600/10 text-blue-500' : ''
+                      }`}
+                    >
+                      {t.depositUsdt} / {t.withdrawUsdt}
+                    </button>
+                    <button
+                      onClick={() => { setCurrentTab('history'); setIsDropdownOpen(false); }}
+                      className={`w-full text-start px-3 py-2.5 text-xs font-semibold rounded-xl transition-all hover:bg-blue-600/10 hover:text-blue-500 ${
+                        currentTab === 'history' ? 'bg-blue-600/10 text-blue-500' : ''
+                      }`}
+                    >
+                      {t.transactionHistory}
+                    </button>
+                    <button
+                      onClick={() => { setCurrentTab('support'); setIsDropdownOpen(false); }}
+                      className={`w-full text-start px-3 py-2.5 text-xs font-semibold rounded-xl transition-all hover:bg-blue-600/10 hover:text-blue-500 ${
+                        currentTab === 'support' ? 'bg-blue-600/10 text-blue-500' : ''
+                      }`}
+                    >
+                      {t.supportCenter}
+                    </button>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-start px-3 py-2.5 text-xs font-bold text-rose-500 rounded-xl hover:bg-rose-500/10 transition-all"
+                    >
+                      {t.signOut}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="hidden sm:flex items-center gap-2">
+              <button
+                onClick={() => { setAuthMode('signIn'); setIsAuthModalOpen(true); }}
+                className={`h-10 px-5 rounded-xl text-xs font-black transition-all border flex items-center justify-center cursor-pointer ${
+                  theme === 'dark'
+                    ? 'border-slate-800 bg-slate-900/60 text-slate-300 hover:bg-slate-800'
+                    : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                {t.signIn}
+              </button>
+              <button
+                onClick={() => { setAuthMode('signUp'); setIsAuthModalOpen(true); }}
+                className="h-10 px-5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black transition-all shadow-lg shadow-blue-500/10 flex items-center justify-center cursor-pointer"
+              >
+                {t.signUp}
+              </button>
+            </div>
+          )}
+        </div>
+      </nav>
+
+      {/* Mobile Drawer */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <>
+            {/* Backdrop Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 lg:hidden"
+            />
+
+            {/* Sliding Drawer Panel */}
+            <motion.div
+              initial={{ x: lang === 'fa' ? '100%' : '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: lang === 'fa' ? '100%' : '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+              className={`fixed top-0 bottom-0 ${
+                lang === 'fa' ? 'right-0' : 'left-0'
+              } w-full max-w-[320px] z-50 lg:hidden shadow-2xl flex flex-col justify-between transition-colors duration-300 ${
+                theme === 'dark'
+                  ? 'bg-slate-950 border-slate-900 text-slate-100'
+                  : 'bg-white border-slate-200 text-slate-800'
+              }`}
+              dir={lang === 'fa' ? 'rtl' : 'ltr'}
+            >
+              <div className="flex flex-col flex-1 overflow-y-auto">
+                {/* Header inside drawer */}
+                <div className={`p-5 flex items-center justify-between border-b ${
+                  theme === 'dark' ? 'border-slate-900/60' : 'border-slate-100'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg">
+                      <Coins size={16} />
+                    </div>
+                    <span className="font-extrabold text-base tracking-tight">{t.appName}</span>
+                  </div>
+                  <button
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`p-2 rounded-xl border cursor-pointer ${
+                      theme === 'dark' ? 'border-slate-800 bg-slate-900' : 'border-slate-200 bg-slate-100'
+                    }`}
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+
+                {/* Profile / Auth section in drawer */}
+                <div className={`p-5 ${
+                  theme === 'dark' ? 'bg-slate-900/40 border-b border-slate-900/60' : 'bg-slate-50 border-b border-slate-100'
+                }`}>
+                  {isLoggedIn ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold shadow-md shadow-blue-500/20">
+                          <User size={18} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-bold text-sm truncate">{currentUser.username}</h4>
+                          <p className="text-[10px] text-slate-400 truncate mt-0.5">{currentUser.email}</p>
+                        </div>
+                      </div>
+
+                      <div className={`p-3 rounded-2xl border ${
+                        theme === 'dark' ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-200'
+                      }`}>
+                        <span className="text-[10px] text-slate-400 block font-semibold">{t.wallet}</span>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-sm font-extrabold text-blue-500">
+                            {currentUser.usdtBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
+                          </span>
+                          <button
+                            onClick={() => { setCurrentTab('wallet'); setIsMobileMenuOpen(false); }}
+                            className="text-[10px] bg-blue-600 hover:bg-blue-500 text-white font-extrabold px-2 py-1 rounded-lg transition-all"
+                          >
+                            {lang === 'fa' ? 'ÙˆØ§Ø±ÛŒØ²' : 'Deposit'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-xs text-slate-400 font-bold leading-relaxed">
+                        {lang === 'fa' ? 'Ø¨Ù‡ Ù¾Ù„ØªÙØ±Ù… AssetChain Ø®ÙˆØ´ Ø¢Ù…Ø¯ÛŒØ¯! Ø¨Ø±Ø§ÛŒ Ø´Ø±ÙˆØ¹ Ù…Ø¹Ø§Ù…Ù„Ù‡ Ùˆ Ø¯Ø³ØªØ±Ø³ÛŒ Ø¨Ù‡ Ú©ÛŒÙ Ù¾ÙˆÙ„ Ø®ÙˆØ¯ ÙˆØ§Ø±Ø¯ Ø´ÙˆÛŒØ¯.' : 'Welcome to AssetChain! Log in to access your account and selected Iranian shares.'}
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => { setAuthMode('signIn'); setIsAuthModalOpen(true); setIsMobileMenuOpen(false); }}
+                          className={`py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                            theme === 'dark'
+                              ? 'border-slate-800 bg-slate-900 text-slate-200'
+                              : 'border-slate-200 bg-white text-slate-700'
+                          }`}
+                        >
+                          {t.signIn}
+                        </button>
+                        <button
+                          onClick={() => { setAuthMode('signUp'); setIsAuthModalOpen(true); setIsMobileMenuOpen(false); }}
+                          className="py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/10 cursor-pointer"
+                        >
+                          {t.signUp}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Main Navigation Links */}
+                <div className="p-4 space-y-1">
+                  {[
+                    ...(!isLoggedIn ? [{ tab: 'home', label: t.home, icon: <Coins size={16} /> }] : []),
+                    { tab: 'market', label: t.assetsMarket, icon: <TrendingUp size={16} /> },
+                    ...(isLoggedIn ? [
+                      { tab: 'portfolio', label: t.portfolio, icon: <ShieldCheck size={16} /> },
+                      { tab: 'wallet', label: t.wallet, icon: <Wallet size={16} /> },
+                      { tab: 'history', label: t.history, icon: <History size={16} /> },
+                    ] : []),
+                    { tab: 'about', label: t.aboutUs, icon: <Info size={16} /> },
+                    { tab: 'contact', label: t.contactUs, icon: <MessageSquare size={16} /> },
+                  ].map(item => {
+                    const isActive = currentTab === item.tab;
+                    return (
+                      <button
+                        key={item.tab}
+                        onClick={() => { setCurrentTab(item.tab as any); setIsMobileMenuOpen(false); }}
+                        className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl text-xs font-bold transition-all border cursor-pointer ${
+                          isActive
+                            ? 'bg-blue-600/10 border-blue-500/30 text-blue-500'
+                            : theme === 'dark'
+                              ? 'bg-transparent border-transparent text-slate-300 hover:bg-slate-900'
+                              : 'bg-transparent border-transparent text-slate-600 hover:bg-slate-100'
+                        }`}
+                      >
+                        <span className={isActive ? 'text-blue-500' : 'text-slate-400'}>{item.icon}</span>
+                        <span>{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Bottom bar inside drawer */}
+              <div className={`p-4 border-t space-y-4 ${
+                theme === 'dark' ? 'border-slate-900 bg-slate-950' : 'border-slate-100 bg-slate-50'
+              }`}>
+                {/* Language / Theme Row */}
+                <div className="grid grid-cols-2 gap-2">
+                  {/* Theme Switcher inside drawer */}
+                  <button
+                    onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                    className={`flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                      theme === 'dark' ? 'border-slate-800 bg-slate-900 text-slate-200' : 'border-slate-200 bg-white text-slate-700'
+                    }`}
+                  >
+                    {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+                    <span>{theme === 'dark' ? t.lightMode : t.darkMode}</span>
+                  </button>
+
+                  {/* Language Switcher inside drawer */}
+                  <button
+                    onClick={() => setLang(lang === 'fa' ? 'en' : 'fa')}
+                    className={`flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                      theme === 'dark' ? 'border-slate-800 bg-slate-900 text-slate-200' : 'border-slate-200 bg-white text-slate-700'
+                    }`}
+                  >
+                    <Globe size={13} />
+                    <span>{lang === 'fa' ? 'English' : 'ÙØ§Ø±Ø³ÛŒ'}</span>
+                  </button>
+                </div>
+
+                {isLoggedIn && (
+                  <button
+                    onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-rose-500/15 bg-rose-500/10 text-rose-500 font-bold text-xs hover:bg-rose-500/20 transition-all cursor-pointer"
+                  >
+                    <LogOut size={14} />
+                    <span>{t.signOut}</span>
+                  </button>
+                )}
+
+                <div className="flex justify-between items-center px-1 text-[10px] font-bold text-slate-400">
+                  <span>{t.statusConnected}</span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                    <span className="text-[10px] text-emerald-500">{lang === 'fa' ? 'Ø¨Ø±Ø®Ø·' : 'Live'}</span>
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* YieldChart and Top Stats Banner Conditional Swap */}
+      {currentTab !== 'home' && currentTab === 'market' && (
+        <div className="w-full">
+          {/* 1. Marketplace Header & Search with glassmorphism and ambient glow in full-width at the very top of the page */}
+          <div className="max-w-7xl mx-auto px-4 md:px-8 pt-6">
+            <div
+              className={`flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-3xl border transition-all duration-300 relative overflow-hidden backdrop-blur-md shadow-sm ${
+                theme === 'dark'
+                  ? 'bg-slate-900/40 border-slate-800/80 hover:border-slate-700/80'
+                  : 'bg-white border-slate-200 hover:border-slate-300'
+              }`}
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl pointer-events-none"></div>
+              <div className="relative z-10">
+                <h1 className="text-xl font-extrabold tracking-tight">{t.topInvestment}</h1>
+                <p className="text-slate-400 text-xs mt-1">{t.tagline}</p>
+              </div>
+
+              {/* Premium, Interactive Search Bar */}
+              <div className="relative w-full md:w-80 group z-10" dir={lang === 'fa' ? 'rtl' : 'ltr'}>
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl opacity-0 group-focus-within:opacity-20 blur-md transition-all duration-300 pointer-events-none"></div>
+                <div className={`relative flex items-center h-11 rounded-xl border px-3 transition-all duration-300 ${
+                  theme === 'dark'
+                    ? 'bg-slate-950/80 border-slate-800 group-focus-within:border-blue-500'
+                    : 'bg-white border-slate-200 group-focus-within:border-blue-500 shadow-sm'
+                }`}>
+                  <Search className="text-slate-400 transition-colors group-focus-within:text-blue-500 flex-shrink-0" size={18} />
+                  <input
+                    type="text"
+                    placeholder={lang === 'fa' ? 'Ø¬Ø³ØªØ¬ÙˆÛŒ Ù‡ÙˆØ´Ù…Ù†Ø¯ Ø¯Ø§Ø±Ø§ÛŒÛŒ...' : 'Smart search assets...'}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className={`w-full bg-transparent border-none outline-none py-2 px-3 text-sm focus:ring-0 focus:outline-none placeholder-slate-400/80 ${
+                      theme === 'dark' ? 'text-white' : 'text-slate-900'
+                    }`}
+                  />
+                  {searchQuery ? (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="p-1 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-all cursor-pointer"
+                    >
+                      <X size={16} />
+                    </button>
+                  ) : (
+                    <div className={`hidden sm:flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono border ${
+                      theme === 'dark' ? 'bg-slate-900 border-slate-800 text-slate-400' : 'bg-slate-100 border-slate-200 text-slate-500'
+                    }`}>
+                      <span>Ctrl</span>
+                      <span>+</span>
+                      <span>K</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 2. YieldChart Price Graph directly below the search header */}
+          <div className="max-w-7xl mx-auto px-4 md:px-8 pt-6">
+            <YieldChart theme={theme} lang={lang} assets={assets} />
+          </div>
+
+          {/* 3. Top Stats Banner directly below the YieldChart */}
+          <div className={`px-4 md:px-8 py-6 border-b border-t transition-colors duration-300 mt-6 ${
+            theme === 'dark' ? 'bg-slate-950/40 border-slate-900' : 'bg-slate-100 border-slate-200'
+          }`}>
+            <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className={`p-5 rounded-2xl border shadow-sm transition-all hover:scale-[1.01] ${
+                theme === 'dark' ? 'bg-slate-900/60 border-slate-800/80' : 'bg-white border-slate-200'
+              }`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-slate-400 text-xs font-semibold">{t.statTvl}</span>
+                  <TrendingUp size={16} className="text-emerald-500" />
+                </div>
+                <p className={`text-2xl md:text-3xl font-extrabold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                  ${stats.tvl.toLocaleString()}
+                </p>
+                <span className="text-emerald-500 text-xs font-bold mt-1 inline-block">
+                  +14.2% {lang === 'fa' ? 'Ù†Ø³Ø¨Øª Ø¨Ù‡ Ù…Ø§Ù‡ Ù‚Ø¨Ù„' : 'vs last month'}
+                </span>
+              </div>
+
+              <div className={`p-5 rounded-2xl border shadow-sm transition-all hover:scale-[1.01] ${
+                theme === 'dark' ? 'bg-slate-900/60 border-slate-800/80' : 'bg-white border-slate-200'
+              }`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-slate-400 text-xs font-semibold">{t.statApy}</span>
+                  <Percent size={16} className="text-blue-500" />
+                </div>
+                <p className={`text-2xl md:text-3xl font-extrabold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                  16.45%
+                </p>
+                <span className="text-blue-500 text-xs font-bold mt-1 inline-block italic">
+                  {lang === 'fa' ? 'ØªØ¶Ù…ÛŒÙ† Ø´Ø¯Ù‡ Ø¨Ø§ Ø¯Ø§Ø±Ø§ÛŒÛŒâ€ŒÙ‡Ø§ÛŒ ÙÛŒØ²ÛŒÚ©ÛŒ ÙˆØ§Ù‚Ø¹ÛŒ' : 'Backed by real physical reserves'}
+                </span>
+              </div>
+
+              <div className={`p-5 rounded-2xl border shadow-sm transition-all hover:scale-[1.01] ${
+                theme === 'dark' ? 'bg-slate-900/60 border-slate-800/80' : 'bg-white border-slate-200'
+              }`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-slate-400 text-xs font-semibold">{t.statSold}</span>
+                  <ShieldCheck size={16} className="text-purple-500" />
+                </div>
+                <p className={`text-2xl md:text-3xl font-extrabold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                  {stats.soldUnits.toLocaleString()} <span className="text-sm font-normal text-slate-500">{lang === 'fa' ? 'ØªÙˆÚ©Ù†' : 'Tokens'}</span>
+                </p>
+                <span className="text-purple-500 text-xs font-bold mt-1 inline-block">
+                  {lang === 'fa' ? 'Ø¯Ø± Û±Ûµ Ø·Ø¨Ù‚Ù‡ Ø¯Ø§Ø±Ø§ÛŒÛŒ Ù…Ø¹ØªØ¨Ø±' : 'Across 15 certified asset classes'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Standard Top Stats Banner for other tabs (not home, market, portfolio, wallet, or history) */}
+      {currentTab !== 'home' && currentTab !== 'market' && currentTab !== 'portfolio' && currentTab !== 'wallet' && currentTab !== 'history' && currentTab !== 'about' && currentTab !== 'contact' && (
+        <div className={`px-4 md:px-8 py-6 border-b transition-colors duration-300 ${
+          theme === 'dark' ? 'bg-slate-950/40 border-slate-900' : 'bg-slate-100 border-slate-200'
+        }`}>
+          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className={`p-5 rounded-2xl border shadow-sm transition-all hover:scale-[1.01] ${
+              theme === 'dark' ? 'bg-slate-900/60 border-slate-800/80' : 'bg-white border-slate-200'
+            }`}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-slate-400 text-xs font-semibold">{t.statTvl}</span>
+                <TrendingUp size={16} className="text-emerald-500" />
+              </div>
+              <p className={`text-2xl md:text-3xl font-extrabold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                ${stats.tvl.toLocaleString()}
+              </p>
+              <span className="text-emerald-500 text-xs font-bold mt-1 inline-block">
+                +14.2% {lang === 'fa' ? 'Ù†Ø³Ø¨Øª Ø¨Ù‡ Ù…Ø§Ù‡ Ù‚Ø¨Ù„' : 'vs last month'}
+              </span>
+            </div>
+
+            <div className={`p-5 rounded-2xl border shadow-sm transition-all hover:scale-[1.01] ${
+              theme === 'dark' ? 'bg-slate-900/60 border-slate-800/80' : 'bg-white border-slate-200'
+            }`}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-slate-400 text-xs font-semibold">{t.statApy}</span>
+                <Percent size={16} className="text-blue-500" />
+              </div>
+              <p className={`text-2xl md:text-3xl font-extrabold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                16.45%
+              </p>
+              <span className="text-blue-500 text-xs font-bold mt-1 inline-block italic">
+                {lang === 'fa' ? 'ØªØ¶Ù…ÛŒÙ† Ø´Ø¯Ù‡ Ø¨Ø§ Ø¯Ø§Ø±Ø§ÛŒÛŒâ€ŒÙ‡Ø§ÛŒ ÙÛŒØ²ÛŒÚ©ÛŒ ÙˆØ§Ù‚Ø¹ÛŒ' : 'Backed by real physical reserves'}
+              </span>
+            </div>
+
+            <div className={`p-5 rounded-2xl border shadow-sm transition-all hover:scale-[1.01] ${
+              theme === 'dark' ? 'bg-slate-900/60 border-slate-800/80' : 'bg-white border-slate-200'
+            }`}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-slate-400 text-xs font-semibold">{t.statSold}</span>
+                <ShieldCheck size={16} className="text-purple-500" />
+              </div>
+              <p className={`text-2xl md:text-3xl font-extrabold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                {stats.soldUnits.toLocaleString()} <span className="text-sm font-normal text-slate-500">{lang === 'fa' ? 'ØªÙˆÚ©Ù†' : 'Tokens'}</span>
+              </p>
+              <span className="text-purple-500 text-xs font-bold mt-1 inline-block">
+                {lang === 'fa' ? 'Ø¯Ø± Û±Ûµ Ø·Ø¨Ù‚Ù‡ Ø¯Ø§Ø±Ø§ÛŒÛŒ Ù…Ø¹ØªØ¨Ø±' : 'Across 15 certified asset classes'}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content Area - Split into Grid on Large Screens to feel premium */}
+      <div className={`${currentTab === 'home' ? 'w-full' : 'max-w-7xl mx-auto px-4 md:px-8'} py-8 w-full flex-1`}>
+        {currentTab === 'home' ? (
+          <LandingPage
+            theme={theme}
+            lang={lang}
+            t={t}
+            stats={stats}
+            isLoggedIn={isLoggedIn}
+            onLoginClick={() => { setAuthMode('signIn'); setIsAuthModalOpen(true); }}
+            myPortfolio={myPortfolio}
+            assets={assets}
+            onOpenInfo={handleOpenAssetInfo}
+            onExplore={(category?: string) => {
+              setCurrentTab('market');
+              if (category) {
+                setMarketFilter(category);
+              }
+            }}
+            onSupport={() => {
+              if (!isLoggedIn) {
+                setIsAuthModalOpen(true);
+              } else {
+                setCurrentTab('support');
+              }
+            }}
+          />
+        ) : (
+          <div className="space-y-8">
+            {/* YieldChart has been hoisted above the stats banner, so we don't render it here anymore */}
+
+            {/* Primary Views - Full Width Layout */}
+            <div className="w-full space-y-8">
+
+              {/* View 1: Marketplace / Asset Listings */}
+              {currentTab === 'market' && (
+                <section className="space-y-6">
+
+                {/* Filter Tags */}
+                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+                  {['all', 'metals', 'auto', 'petro', 'bank', 'real_estate', 'commodities', 'global'].map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => setMarketFilter(cat)}
+                      className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                        marketFilter === cat
+                          ? 'bg-blue-600 text-white shadow-md'
+                          : theme === 'dark'
+                            ? 'bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800'
+                            : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      {cat === 'all' && t.allMarkets}
+                      {cat === 'metals' && t.categoryMetals}
+                      {cat === 'auto' && t.categoryAuto}
+                      {cat === 'petro' && t.categoryPetro}
+                      {cat === 'bank' && t.categoryBank}
+                      {cat === 'real_estate' && t.categoryRealEstate}
+                      {cat === 'commodities' && t.categoryCommodities}
+                      {cat === 'global' && t.categoryGlobal}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Asset Grid */}
+                {filteredAssets.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {filteredAssets.map(asset => (
+                      <div
+                        key={asset.id}
+                        className={`group rounded-3xl overflow-hidden border shadow-sm flex flex-col justify-between transition-all duration-300 hover:scale-[1.02] ${
+                          theme === 'dark'
+                            ? 'bg-slate-900/60 border-slate-800 hover:border-slate-700 hover:shadow-blue-900/10'
+                            : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-slate-300/40'
+                        }`}
+                      >
+                        {/* Card Cover with Gradient/Flag */}
+                        <div className={`p-5 relative overflow-hidden h-36 flex flex-col justify-between ${
+                          theme === 'dark' ? 'bg-slate-950/40' : 'bg-slate-100/60'
+                        }`}>
+                          {/* Ambient glow decoration */}
+                          <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-blue-500/10 blur-xl"></div>
+
+                          <div className="flex items-center justify-between z-10">
+                            {/* Location Badge */}
+                            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${
+                              theme === 'dark' ? 'bg-slate-800 text-slate-300' : 'bg-white text-slate-600 border'
+                            }`}>
+                              <img
+                                src={`https://flagcdn.com/16x12/${asset.flag}.png`}
+                                alt={asset.flag}
+                                className="rounded-[2px] shadow-sm"
+                                referrerPolicy="no-referrer"
+                              />
+                              <span>{lang === 'fa' ? asset.locationFa : asset.locationEn}</span>
+                            </div>
+
+                            {/* ID badge */}
+                            <span className="text-xs font-mono font-bold text-slate-400">
+                              #{asset.id}
+                            </span>
+                          </div>
+
+                          <div className="z-10">
+                            <h3 className={`text-lg font-bold tracking-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                              {lang === 'fa' ? asset.faName : asset.enName}
+                            </h3>
+                            <p className="text-[10px] text-slate-400 mt-0.5">
+                              {lang === 'fa' ? 'Ù¾Ø´ØªÙˆØ§Ù†Ù‡ ØªÙˆØ²ÛŒØ¹â€ŒØ´Ø¯Ù‡ Ø¨Ø§ ØªØ¶Ù…ÛŒÙ† ÙÛŒØ²ÛŒÚ©ÛŒ' : 'TSETMC-linked Iranian share'}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Card Info Body */}
+                        <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">{t.tokenPrice}</p>
+                              <p className={`text-xl font-extrabold mt-0.5 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                                {asset.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} <span className="text-xs font-semibold text-blue-500">USDT</span>
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold text-end">{t.expectedYield}</p>
+                              <p className={`text-lg font-extrabold mt-0.5 text-end flex items-center justify-end gap-1 ${
+                                asset.change >= 0 ? 'text-emerald-500' : 'text-rose-500'
+                              }`}>
+                                {asset.change >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                                <span>{asset.change >= 0 ? '+' : ''}{asset.change}%</span>
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Progress Line */}
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-xs font-medium">
+                              <span className="text-slate-400">{t.saleProgress}</span>
+                              <span className={theme === 'dark' ? 'text-white' : 'text-slate-900'}>{asset.progress}%</span>
+                            </div>
+                            <div className={`h-1.5 rounded-full overflow-hidden ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                              <div
+                                className={`h-full rounded-full bg-blue-500 transition-all duration-1000`}
+                                style={{ width: `${asset.progress}%` }}
+                              ></div>
+                            </div>
+                          </div>
+
+                          {/* TSETMC Bourse Badge/Link if applicable */}
+                          {asset.tsetmcUrl && (
+                            <a
+                              href={asset.tsetmcUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="py-1.5 px-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/25 rounded-xl text-[11px] font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                            >
+                              <Globe size={13} className="text-emerald-400" />
+                              <span>{lang === 'fa' ? `Ø§Ø·Ù„Ø§Ø¹Ø§Øª Ø¨ÙˆØ±Ø³ TSETMC (${asset.bourseSymbol || asset.faName})` : `TSETMC Stock (${asset.bourseSymbol || asset.id})`}</span>
+                              <ExternalLink size={12} />
+                            </a>
+                          )}
+
+                          {/* Order Trigger & Info Action */}
+                          <div className="pt-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <button
+                              onClick={() => handleOpenAssetInfo(asset)}
+                              className={`py-3 px-3 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 border ${
+                                theme === 'dark'
+                                  ? 'bg-slate-800/80 hover:bg-slate-700/80 border-slate-700/80 text-slate-200'
+                                  : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
+                              }`}
+                            >
+                              <Info size={14} className="text-blue-400 shrink-0" />
+                              <span>{t.assetDetailsBtn}</span>
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                if (!isLoggedIn) {
+                                  setIsAuthModalOpen(true);
+                                } else {
+                                  setSelectedAsset(asset);
+                                  setBuyAmount('');
+                                  setIsBuyModalOpen(true);
+                                }
+                              }}
+                              className="py-3 px-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer text-center"
+                            >
+                              {t.buyNow}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className={`p-12 text-center rounded-2xl border ${
+                    theme === 'dark' ? 'bg-slate-900/40 border-slate-800' : 'bg-slate-100 border-slate-200'
+                  }`}>
+                    <p className="text-slate-400 text-sm">{lang === 'fa' ? 'Ù‡ÛŒÚ† Ø¯Ø§Ø±Ø§ÛŒÛŒ Ù¾ÛŒØ¯Ø§ Ù†Ø´Ø¯.' : 'No assets found matching your criteria.'}</p>
+                  </div>
+                )}
+              </section>
+            )}
+
+            {/* View 2: My Portfolio Details */}
+            {currentTab === 'portfolio' && (
+              <section className="space-y-8">
+                {/* Dashboard Title & Quick Description */}
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div>
+                    <h1 className="text-2xl font-extrabold tracking-tight flex items-center gap-2">
+                      <LayoutDashboard size={24} className="text-blue-500" />
+                      {t.myPortfolio}
+                    </h1>
+                    <p className="text-slate-400 text-xs mt-1">
+                      {lang === 'fa'
+                        ? 'Ù†Ù…Ø§ÛŒ ÛŒÚ©Ù¾Ø§Ø±Ú†Ù‡ Ø¯Ø§Ø±Ø§ÛŒÛŒâ€ŒÙ‡Ø§ØŒ Ù…Ø¯ÛŒØ±ÛŒØª Ø³ÙØ§Ø±Ø´Ø§Øª Ù…Ø­Ø¯ÙˆØ¯ØŒ Ø³ÙˆØ¯ Ùˆ Ø²ÛŒØ§Ù† Ú©Ù„ Ùˆ Ú¯Ø²Ø§Ø±Ø´ Ø±ÛŒØ² ØªØ±Ø§Ú©Ù†Ø´â€ŒÙ‡Ø§'
+                        : 'Unified dashboard of your holdings, limit orders, net metrics, and account activities'}
+                    </p>
+                  </div>
+
+                  {/* Chart visibility toggler */}
+                  <button
+                    onClick={() => setShowPortfolioChart(!showPortfolioChart)}
+                    className={`px-4 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 ${
+                      theme === 'dark'
+                        ? 'bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800'
+                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    {showPortfolioChart ? <EyeOff size={14} /> : <Eye size={14} />}
+                    {showPortfolioChart
+                      ? (lang === 'fa' ? 'Ù¾Ù†Ù‡Ø§Ù†â€ŒØ³Ø§Ø²ÛŒ Ù†Ù…ÙˆØ¯Ø§Ø± Ø¹Ù…Ù„Ú©Ø±Ø¯' : 'Hide Performance Chart')
+                      : (lang === 'fa' ? 'Ù†Ù…Ø§ÛŒØ´ Ù†Ù…ÙˆØ¯Ø§Ø± Ø¹Ù…Ù„Ú©Ø±Ø¯' : 'Show Performance Chart')}
+                  </button>
+                </div>
+
+                {/* â”€â”€â”€ BENTO-STYLE KPI WIDGETS â”€â”€â”€ */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* KPI 1: Net Worth / Portfolio Value */}
+                  <div className={`p-6 rounded-3xl border shadow-md flex flex-col justify-between relative overflow-hidden ${
+                    theme === 'dark' ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200'
+                  }`}>
+                    <div className="absolute -right-6 -bottom-6 w-16 h-16 rounded-full bg-blue-500/5 blur-xl"></div>
+                    <div>
+                      <div className="flex justify-between items-center text-slate-400 text-xs font-semibold">
+                        <span>{t.totalBalance}</span>
+                        <Coins size={14} className="text-blue-500" />
+                      </div>
+                      <h2 className={`text-2xl font-extrabold mt-2 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                        {totalBalanceCalculated.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-semibold text-blue-500">USDT</span>
+                      </h2>
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-slate-800/10 flex justify-between text-[10px] text-slate-500">
+                      <span>{lang === 'fa' ? 'Ø§Ø¹ØªØ¨Ø§Ø± Ù†Ù‚Ø¯ÛŒ:' : 'Free USDT:'} <strong className="text-slate-400 font-bold">{currentUser.usdtBalance.toLocaleString()} USDT</strong></span>
+                      <span>{lang === 'fa' ? 'Ø¯Ø§Ø±Ø§ÛŒÛŒâ€ŒÙ‡Ø§ÛŒ Ø¯ÛŒØ¬ÛŒØªØ§Ù„:' : 'Assets Val:'} <strong className="text-slate-400 font-bold">{totalSharesValue.toLocaleString()} USDT</strong></span>
+                    </div>
+                  </div>
+
+                  {/* KPI 2: Absolute & Percent Net P&L */}
+                  <div className={`p-6 rounded-3xl border shadow-md flex flex-col justify-between relative overflow-hidden ${
+                    theme === 'dark' ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200'
+                  }`}>
+                    <div className="absolute -right-6 -bottom-6 w-16 h-16 rounded-full bg-emerald-500/5 blur-xl"></div>
+                    <div>
+                      <div className="flex justify-between items-center text-slate-400 text-xs font-semibold">
+                        <span>{t.totalPnl}</span>
+                        <TrendingUp size={14} className={totalPnLCalculated >= 0 ? 'text-emerald-500' : 'text-rose-500'} />
+                      </div>
+                      <h2 className={`text-2xl font-extrabold mt-2 flex items-center gap-1 ${
+                        totalPnLCalculated >= 0 ? 'text-emerald-500' : 'text-rose-500'
+                      }`}>
+                        {totalPnLCalculated >= 0 ? '+' : ''}
+                        {totalPnLCalculated.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        <span className="text-xs font-semibold">USDT</span>
+                      </h2>
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-slate-800/10 flex justify-between items-center text-[10px]">
+                      <span className="text-slate-500">{lang === 'fa' ? 'Ú©Ù„ Ø³ÙˆØ¯ Ù†Ø§Ø®Ø§Ù„Øµ:' : 'Net ROI (Month):'}</span>
+                      <span className={`font-extrabold px-1.5 py-0.5 rounded-md ${
+                        totalPnLCalculated >= 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'
+                      }`}>
+                        {totalPnLCalculated >= 0 ? '+' : ''}{totalPnLPctCalculated.toFixed(2)}%
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* KPI 3: Locked/Pending Capital & Positions */}
+                  <div className={`p-6 rounded-3xl border shadow-md flex flex-col justify-between relative overflow-hidden ${
+                    theme === 'dark' ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200'
+                  }`}>
+                    <div className="absolute -right-6 -bottom-6 w-16 h-16 rounded-full bg-purple-500/5 blur-xl"></div>
+                    <div>
+                      <div className="flex justify-between items-center text-slate-400 text-xs font-semibold">
+                        <span>{lang === 'fa' ? 'Ø³ÙØ§Ø±Ø´Ø§Øª Ù…Ø¹Ù„Ù‚ Ùˆ Ø§Ø¹ØªØ¨Ø§Ø±Ø§Øª Ù…Ø³Ø¯ÙˆØ¯' : 'Pending Orders & Holds'}</span>
+                        <Clock size={14} className="text-purple-500" />
+                      </div>
+                      <h2 className={`text-2xl font-extrabold mt-2 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                        {limitOrders.filter(o => o.status === 'pending').length} <span className="text-xs font-semibold text-purple-500">{lang === 'fa' ? 'Ø³ÙØ§Ø±Ø´ ÙØ¹Ø§Ù„' : 'Active Orders'}</span>
+                      </h2>
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-slate-800/10 flex justify-between text-[10px] text-slate-500">
+                      <span>
+                        {lang === 'fa' ? 'ØªØªØ± Ù…Ø³Ø¯ÙˆØ¯ Ø´Ø¯Ù‡:' : 'Locked USDT:'}
+                        <strong className="text-slate-400 font-bold ml-1">
+                          {limitOrders.filter(o => o.status === 'pending' && o.type === 'buy').reduce((acc, curr) => acc + (curr.price * curr.amount), 0).toLocaleString()} USDT
+                        </strong>
+                      </span>
+                      <span>
+                        {lang === 'fa' ? 'Ø¯Ø§Ø±Ø§ÛŒÛŒâ€ŒÙ‡Ø§ÛŒ Ù…Ø³Ø¯ÙˆØ¯:' : 'Locked Shares:'}
+                        <strong className="text-slate-400 font-bold ml-1">
+                          {limitOrders.filter(o => o.status === 'pending' && o.type === 'sell').reduce((acc, curr) => acc + curr.amount, 0).toLocaleString()} Shrs
+                        </strong>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Collapsible Performance Yield Chart */}
+                <AnimatePresence>
+                  {showPortfolioChart && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="overflow-hidden w-full"
+                    >
+                      <YieldChart
+                        theme={theme}
+                        lang={lang}
+                        isPortfolioMode={true}
+                        isLoggedIn={isLoggedIn}
+                        onLoginClick={() => { setAuthMode('signIn'); setIsAuthModalOpen(true); }}
+                        myPortfolio={myPortfolio}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* â”€â”€â”€ NEW STACKED FULL-WIDTH LAYOUT â”€â”€â”€ */}
+                <div className="space-y-8">
+
+                  {/* Panel 1: Your Active Digital Holdings (Full Width) */}
+                  <div className={`p-6 rounded-3xl border shadow-lg space-y-6 ${
+                    theme === 'dark' ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200'
+                  }`}>
+                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pb-2 border-b border-slate-800/10">
+                      <div>
+                        <h2 className="text-lg font-extrabold tracking-tight flex items-center gap-2">
+                          <CheckCircle size={18} className="text-blue-500" />
+                          {lang === 'fa' ? 'Ø³Ø¨Ø¯ Ø¯Ø§Ø±Ø§ÛŒÛŒâ€ŒÙ‡Ø§ÛŒ ØªØ­Øª Ù…Ø§Ù„Ú©ÛŒØª Ø´Ù…Ø§' : 'Your Share Holdings'}
+                        </h2>
+                        <p className="text-slate-400 text-[11px] mt-1">
+                          {lang === 'fa' ? 'Ø±ØµØ¯ Ø§Ø±Ø²Ø´ Ù„Ø­Ø¸Ù‡â€ŒØ§ÛŒØŒ Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† Ø®Ø±ÛŒØ¯ Ùˆ Ø³ÙˆØ¯/Ø²ÛŒØ§Ù† Ù‡Ø± Ù…ÙˆÙ‚Ø¹ÛŒØª Ù…Ø¹Ø§Ù…Ù„Ø§ØªÛŒ' : 'Monitor holdings, average costs, and P&L for your selected Iranian shares'}
+                        </p>
+                      </div>
+
+                      {/* View Switch: Aggregated vs Detailed */}
+                      <div className={`flex p-1 rounded-xl shrink-0 ${
+                        theme === 'dark' ? 'bg-slate-950' : 'bg-slate-100'
+                      }`}>
+                        <button
+                          onClick={() => setPortfolioViewMode('aggregated')}
+                          className={`px-3 py-1.5 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
+                            portfolioViewMode === 'aggregated'
+                              ? (theme === 'dark' ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-blue-600 shadow-sm')
+                              : 'text-slate-400 hover:text-slate-300'
+                          }`}
+                        >
+                          {lang === 'fa' ? 'Ù†Ù…Ø§ÛŒ Ú©Ù„ÛŒ Ø¯Ø§Ø±Ø§ÛŒÛŒâ€ŒÙ‡Ø§' : 'Aggregated View'}
+                        </button>
+                        <button
+                          onClick={() => setPortfolioViewMode('detailed')}
+                          className={`px-3 py-1.5 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
+                            portfolioViewMode === 'detailed'
+                              ? (theme === 'dark' ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-blue-600 shadow-sm')
+                              : 'text-slate-400 hover:text-slate-300'
+                          }`}
+                        >
+                          {lang === 'fa' ? 'Ø±ÛŒØ² Ù…Ø¹Ø§Ù…Ù„Ø§Øª Ùˆ Ø®Ø±ÛŒØ¯Ù‡Ø§' : 'Detailed Purchases'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {portfolioViewMode === 'aggregated' ? (
+                      myPortfolio.length > 0 ? (
+                        <div className={`rounded-2xl border overflow-hidden ${
+                          theme === 'dark' ? 'border-slate-800 bg-slate-950/20' : 'border-slate-200 bg-white'
+                        }`}>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-start border-collapse">
+                              <thead>
+                                <tr className={`border-b text-[10px] font-bold uppercase tracking-wider ${
+                                  theme === 'dark' ? 'border-slate-800 text-slate-400 bg-slate-900/20' : 'border-slate-100 text-slate-500 bg-slate-50'
+                                }`}>
+                                  <th className="py-3 px-4 text-start">{lang === 'fa' ? 'Ø¯Ø§Ø±Ø§ÛŒÛŒ / Ù†Ù…Ø§Ø¯' : 'Asset / Symbol'}</th>
+                                  <th className="py-3 px-4 text-center">{lang === 'fa' ? 'Ù…ÙˆØ¬ÙˆØ¯ÛŒ (Ø³Ù‡Ù…)' : 'Qty Owned'}</th>
+                                  <th className="py-3 px-4 text-end">{lang === 'fa' ? 'Ù‚ÛŒÙ…Øª Ø®Ø±ÛŒØ¯ / Ù‚ÛŒÙ…Øª ÙØ¹Ù„ÛŒ' : 'Avg Buy / Live Price'}</th>
+                                  <th className="py-3 px-4 text-end">{lang === 'fa' ? 'Ø§Ø±Ø²Ø´ Ø¨Ø§Ø²Ø§Ø± (USDT)' : 'Market Value'}</th>
+                                  <th className="py-3 px-4 text-end">{lang === 'fa' ? 'Ø³ÙˆØ¯ / Ø²ÛŒØ§Ù† (P&L)' : 'Unrealized P&L'}</th>
+                                  <th className="py-3 px-4 text-center">{lang === 'fa' ? 'Ø¹Ù…Ù„ÛŒØ§Øª Ø³Ø±ÛŒØ¹' : 'Quick Actions'}</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-800/10 text-xs font-semibold">
+                                {myPortfolio.map(item => {
+                                  const asset = assets.find(a => a.id === item.assetId);
+                                  if (!asset) return null;
+
+                                  const currentVal = item.shares * asset.price;
+                                  const costVal = item.shares * item.avgPrice;
+                                  const itemPnL = currentVal - costVal;
+                                  const itemPnLPct = costVal !== 0 ? (itemPnL / costVal) * 100 : 0;
+
+                                  return (
+                                    <tr key={item.assetId} className="hover:bg-slate-500/5 transition-all">
+                                      <td className="py-3.5 px-4">
+                                        <div className="flex items-center gap-2.5">
+                                          <img
+                                            src={`https://flagcdn.com/20x15/${asset.flag}.png`}
+                                            alt={asset.flag}
+                                            className="rounded shadow-xs shrink-0"
+                                            referrerPolicy="no-referrer"
+                                          />
+                                          <div>
+                                            <div className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-950'}`}>
+                                              {lang === 'fa' ? asset.faName : asset.enName}
+                                            </div>
+                                            <div className="text-[9px] font-mono font-bold text-slate-500 mt-0.5">#{asset.id}</div>
+                                          </div>
+                                        </div>
+                                      </td>
+                                      <td className="py-3.5 px-4 text-center font-mono">
+                                        <div className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
+                                          {item.shares.toLocaleString()}
+                                        </div>
+                                        <div className="text-[9px] text-slate-500 font-bold">{lang === 'fa' ? 'Ø³Ù‡Ù…' : 'Shares'}</div>
+                                      </td>
+                                      <td className="py-3.5 px-4 text-end font-mono">
+                                        <div className={theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}>{item.avgPrice.toLocaleString()} USDT</div>
+                                        <div className="text-[9px] text-blue-500 font-bold mt-0.5">{asset.price.toLocaleString()} USDT</div>
+                                      </td>
+                                      <td className="py-3.5 px-4 text-end font-mono">
+                                        <div className={`font-extrabold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                                          {currentVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </div>
+                                        <span className="text-[8px] font-semibold text-slate-500">USDT</span>
+                                      </td>
+                                      <td className="py-3.5 px-4 text-end font-mono">
+                                        <div className={`font-extrabold flex items-center justify-end gap-0.5 ${itemPnL >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                          {itemPnL >= 0 ? '+' : ''}{itemPnL.toFixed(2)}
+                                        </div>
+                                        <div className={`text-[9.5px] font-bold ${itemPnL >= 0 ? 'text-emerald-500/85' : 'text-rose-500/85'}`}>
+                                          {itemPnL >= 0 ? '+' : ''}{itemPnLPct.toFixed(1)}%
+                                        </div>
+                                      </td>
+                                      <td className="py-3.5 px-4">
+                                        <div className="flex gap-1.5 justify-center">
+                                          <button
+                                            onClick={() => handleOpenAssetInfo(asset)}
+                                            title={lang === 'fa' ? 'Ø§Ø·Ù„Ø§Ø¹Ø§Øª Ùˆ Ù…Ø´Ø®ØµØ§Øª Ø¯Ø§Ø±Ø§ÛŒÛŒ' : 'Asset Specifications'}
+                                            className="px-2 py-1 bg-slate-500/15 hover:bg-slate-500 hover:text-white text-slate-300 text-[10px] rounded-lg font-bold transition-all cursor-pointer flex items-center justify-center gap-1 border border-slate-500/20"
+                                          >
+                                            <Info size={11} />
+                                            <span>{lang === 'fa' ? 'Ø§Ø·Ù„Ø§Ø¹Ø§Øª' : 'Info'}</span>
+                                          </button>
+                                          <button
+                                            onClick={() => {
+                                              setSelectedAsset(asset);
+                                              setBuyAmount('');
+                                              setIsBuyModalOpen(true);
+                                            }}
+                                            className="px-2 py-1 bg-blue-600/10 hover:bg-blue-600 hover:text-white text-blue-500 text-[10px] rounded-lg font-bold transition-all cursor-pointer"
+                                          >
+                                            {t.buy}
+                                          </button>
+                                          <button
+                                            onClick={() => {
+                                              setSelectedAsset(asset);
+                                              setSellShares('');
+                                              setIsSellModalOpen(true);
+                                            }}
+                                            className="px-2 py-1 bg-amber-600/10 hover:bg-amber-600 hover:text-white text-amber-500 text-[10px] rounded-lg font-bold transition-all cursor-pointer"
+                                          >
+                                            {t.sell}
+                                          </button>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className={`p-10 text-center rounded-2xl border ${
+                          theme === 'dark' ? 'bg-slate-900/40 border-slate-800' : 'bg-slate-50 border-slate-200'
+                        }`}>
+                          <p className="text-slate-400 text-xs font-semibold">
+                            {lang === 'fa' ? 'Ù‡ÛŒÚ† Ø¯Ø§Ø±Ø§ÛŒÛŒ Ø¯Ø± Ø³Ø¨Ø¯ Ø´Ù…Ø§ Ø«Ø¨Øª Ù†Ø´Ø¯Ù‡ Ø§Ø³Øª.' : 'Your portfolio currently has no digital holdings.'}
+                          </p>
+                          <button
+                            onClick={() => setCurrentTab('market')}
+                            className="mt-4 px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-xl cursor-pointer transition-all"
+                          >
+                            {lang === 'fa' ? 'Ù…Ø´Ø§Ù‡Ø¯Ù‡ Ø¨Ø§Ø²Ø§Ø± Ùˆ Ø§ÙˆÙ„ÛŒÙ† Ø®Ø±ÛŒØ¯' : 'Browse Asset Marketplace'}
+                          </button>
+                        </div>
+                      )
+                    ) : (
+                      purchaseLots.length > 0 ? (
+                        <div className={`rounded-2xl border overflow-hidden ${
+                          theme === 'dark' ? 'border-slate-800 bg-slate-950/20' : 'border-slate-200 bg-white'
+                        }`}>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-start border-collapse">
+                              <thead>
+                                <tr className={`border-b text-[10px] font-bold uppercase tracking-wider ${
+                                  theme === 'dark' ? 'border-slate-800 text-slate-400 bg-slate-900/20' : 'border-slate-100 text-slate-500 bg-slate-50'
+                                }`}>
+                                  <th className="py-3 px-4 text-start">{lang === 'fa' ? 'Ø¯Ø§Ø±Ø§ÛŒÛŒ / Ø²Ù…Ø§Ù† Ø®Ø±ÛŒØ¯' : 'Asset / Purchase Time'}</th>
+                                  <th className="py-3 px-4 text-center">{lang === 'fa' ? 'Ø­Ø¬Ù… Ø®Ø±ÛŒØ¯' : 'Buy Volume'}</th>
+                                  <th className="py-3 px-4 text-end">{lang === 'fa' ? 'Ù‚ÛŒÙ…Øª Ø®Ø±ÛŒØ¯' : 'Buy Price'}</th>
+                                  <th className="py-3 px-4 text-end">{lang === 'fa' ? 'Ú©Ù„ Ø³Ø±Ù…Ø§ÛŒÙ‡ (USDT)' : 'Total Invested'}</th>
+                                  <th className="py-3 px-4 text-end">{lang === 'fa' ? 'Ø§Ø±Ø²Ø´ ÙØ¹Ù„ÛŒ / Ù‚ÛŒÙ…Øª ÙØ¹Ù„ÛŒ' : 'Current Value / Live'}</th>
+                                  <th className="py-3 px-4 text-end">{lang === 'fa' ? 'Ø¨Ø§Ø²Ø¯Ù‡ÛŒ ØºÛŒØ±Ù…Ø­Ù‚Ù‚ Ø´Ø¯Ù‡' : 'Unrealized Return'}</th>
+                                  <th className="py-3 px-4 text-center">{lang === 'fa' ? 'Ø¹Ù…Ù„ÛŒØ§Øª' : 'Actions'}</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-800/10 text-xs font-semibold">
+                                {purchaseLots.map(lot => {
+                                  const asset = assets.find(a => a.id === lot.assetId);
+                                  if (!asset) return null;
+
+                                  const purchaseCost = lot.shares * lot.price;
+                                  const currentVal = lot.shares * asset.price;
+                                  const lotPnL = currentVal - purchaseCost;
+                                  const lotPnLPct = purchaseCost !== 0 ? (lotPnL / purchaseCost) * 100 : 0;
+
+                                  return (
+                                    <tr key={lot.id} className="hover:bg-slate-500/5 transition-all">
+                                      <td className="py-3.5 px-4">
+                                        <div className="flex items-center gap-2.5">
+                                          <img
+                                            src={`https://flagcdn.com/20x15/${asset.flag}.png`}
+                                            alt={asset.flag}
+                                            className="rounded shadow-xs shrink-0"
+                                            referrerPolicy="no-referrer"
+                                          />
+                                          <div>
+                                            <div className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-950'}`}>
+                                              {lang === 'fa' ? asset.faName : asset.enName}
+                                            </div>
+                                            <div className="text-[9px] text-slate-500 font-bold mt-0.5">{lot.date}</div>
+                                          </div>
+                                        </div>
+                                      </td>
+                                      <td className="py-3.5 px-4 text-center font-mono">
+                                        <div className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
+                                          {lot.shares.toLocaleString()}
+                                        </div>
+                                        <div className="text-[9px] text-slate-500 font-bold">{lang === 'fa' ? 'Ø³Ù‡Ù…' : 'Shares'}</div>
+                                      </td>
+                                      <td className="py-3.5 px-4 text-end font-mono">
+                                        <div className={theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}>
+                                          {lot.price.toLocaleString(undefined, { minimumFractionDigits: lot.price < 1 ? 4 : 2, maximumFractionDigits: lot.price < 1 ? 4 : 2 })} USDT
+                                        </div>
+                                      </td>
+                                      <td className="py-3.5 px-4 text-end font-mono">
+                                        <div className={`font-bold ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
+                                          {purchaseCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </div>
+                                        <span className="text-[8px] font-semibold text-slate-500">USDT</span>
+                                      </td>
+                                      <td className="py-3.5 px-4 text-end font-mono">
+                                        <div className={`font-extrabold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                                          {currentVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </div>
+                                        <div className="text-[9px] text-blue-500 font-bold mt-0.5">{asset.price.toLocaleString()} USDT</div>
+                                      </td>
+                                      <td className="py-3.5 px-4 text-end font-mono">
+                                        <div className={`font-extrabold flex items-center justify-end gap-0.5 ${lotPnL >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                          {lotPnL >= 0 ? '+' : ''}{lotPnL.toFixed(2)}
+                                        </div>
+                                        <div className={`text-[9.5px] font-bold ${lotPnL >= 0 ? 'text-emerald-500/85' : 'text-rose-500/85'}`}>
+                                          {lotPnL >= 0 ? '+' : ''}{lotPnLPct.toFixed(1)}%
+                                        </div>
+                                      </td>
+                                      <td className="py-3.5 px-4">
+                                        <div className="flex gap-1.5 justify-center">
+                                          <button
+                                            onClick={() => {
+                                              setSelectedAsset(asset);
+                                              setSellShares(lot.shares.toString());
+                                              setIsSellModalOpen(true);
+                                            }}
+                                            className="px-2 py-1 bg-amber-600/10 hover:bg-amber-600 hover:text-white text-amber-500 text-[10px] rounded-lg font-bold transition-all cursor-pointer"
+                                          >
+                                            {lang === 'fa' ? 'ÙØ±ÙˆØ´ Ø§ÛŒÙ† Ø®Ø±ÛŒØ¯' : 'Sell Lot'}
+                                          </button>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className={`p-10 text-center rounded-2xl border ${
+                          theme === 'dark' ? 'bg-slate-900/40 border-slate-800' : 'bg-slate-50 border-slate-200'
+                        }`}>
+                          <p className="text-slate-400 text-xs font-semibold">
+                            {lang === 'fa' ? 'Ù‡ÛŒÚ† ØªØ±Ø§Ú©Ù†Ø´ Ø®Ø±ÛŒØ¯ÛŒ Ø«Ø¨Øª Ù†Ø´Ø¯Ù‡ Ø§Ø³Øª.' : 'No purchase lots found.'}
+                          </p>
+                        </div>
+                      )
+                    )}
+                  </div>
+
+                  {/* Panel 2: Limit Trading Desk (Full Width, under Panel 1) */}
+                  <div className={`p-6 rounded-3xl border shadow-lg space-y-5 ${
+                    theme === 'dark' ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200'
+                  }`}>
+                    <div>
+                      <h2 className="text-base font-extrabold tracking-tight flex items-center gap-2">
+                        <Coins size={18} className="text-blue-500" />
+                        {lang === 'fa' ? 'Ù…ÛŒØ² Ø³ÙØ§Ø±Ø´Ø§Øª Ù…Ø­Ø¯ÙˆØ¯' : 'Limit Trading Desk'}
+                      </h2>
+                      <p className="text-slate-400 text-[10px] mt-0.5">
+                        {lang === 'fa' ? 'Ø«Ø¨Øª Ø³ÙØ§Ø±Ø´ Ø®Ø±ÛŒØ¯ ÛŒØ§ ÙØ±ÙˆØ´ Ø¨Ø§ ØªØ§Ø±Ú¯Øª Ù‚ÛŒÙ…ØªÛŒ Ø¯Ù„Ø®ÙˆØ§Ù‡ Ø´Ù…Ø§' : 'Set custom target triggers to execute trades automatically'}
+                      </p>
+                    </div>
+
+                    <form onSubmit={handleCreateLimitOrder} className="space-y-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {/* Select Asset */}
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] text-slate-400 font-bold uppercase block">
+                            {lang === 'fa' ? 'Ø§Ù†ØªØ®Ø§Ø¨ Ø¯Ø§Ø±Ø§ÛŒÛŒ' : 'Select Share'}
+                          </label>
+                          <select
+                            value={newOrderAssetId}
+                            onChange={(e) => setNewOrderAssetId(e.target.value)}
+                            className={`w-full p-2.5 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500 border ${
+                              theme === 'dark' ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-300 text-slate-800'
+                            }`}
+                          >
+                            {assets.map(asset => (
+                              <option key={asset.id} value={asset.id}>
+                                {lang === 'fa' ? asset.faName : asset.enName} ({asset.id})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Direction Type Switcher */}
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] text-slate-400 font-bold uppercase block">
+                            {lang === 'fa' ? 'Ø¬Ù‡Øª Ø³ÙØ§Ø±Ø´ Ù…Ø¹Ø§Ù…Ù„Ù‡' : 'Order Direction'}
+                          </label>
+                          <div className={`flex p-1 rounded-xl ${
+                            theme === 'dark' ? 'bg-slate-955 border border-slate-850' : 'bg-slate-100'
+                          }`}>
+                            <button
+                              type="button"
+                              onClick={() => setNewOrderType('buy')}
+                              className={`flex-1 py-2 text-xs font-extrabold rounded-lg transition-all cursor-pointer ${
+                                newOrderType === 'buy'
+                                  ? 'bg-emerald-600 text-white shadow-md'
+                                  : 'text-slate-400 hover:text-slate-600'
+                              }`}
+                            >
+                              {lang === 'fa' ? 'Ø®Ø±ÛŒØ¯ Ø¨Ø§ ØªØ§Ø±Ú¯Øª' : 'Buy Limit'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setNewOrderType('sell')}
+                              className={`flex-1 py-2 text-xs font-extrabold rounded-lg transition-all cursor-pointer ${
+                                newOrderType === 'sell'
+                                  ? 'bg-amber-600 text-white shadow-md'
+                                  : 'text-slate-400 hover:text-slate-600'
+                              }`}
+                            >
+                              {lang === 'fa' ? 'ÙØ±ÙˆØ´ Ø¨Ø§ ØªØ§Ø±Ú¯Øª' : 'Sell Limit'}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Price Input */}
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between items-center text-[10px]">
+                            <label className="text-slate-400 font-bold uppercase">
+                              {lang === 'fa' ? 'Ù‚ÛŒÙ…Øª Ù‡Ø¯Ù (USDT)' : 'Target Price (USDT)'}
+                            </label>
+                            <span className="text-blue-500 font-bold">
+                              {lang === 'fa' ? 'Ù‚ÛŒÙ…Øª ÙØ¹Ù„ÛŒ: ' : 'Live: '}
+                              {assets.find(a => a.id === newOrderAssetId)?.price} USDT
+                            </span>
+                          </div>
+                          <input
+                            type="number"
+                            step="0.0001"
+                            placeholder="0.00"
+                            value={newOrderPrice}
+                            onChange={(e) => setNewOrderPrice(e.target.value)}
+                            className={`w-full p-2.5 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500 border ${
+                              theme === 'dark' ? 'bg-slate-955 border-slate-800 text-white' : 'bg-white border-slate-300 text-slate-800'
+                            }`}
+                            required
+                          />
+                        </div>
+
+                        {/* Quantity (Shares) */}
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between items-center text-[10px]">
+                            <label className="text-slate-400 font-bold uppercase">
+                              {lang === 'fa' ? 'ØªØ¹Ø¯Ø§Ø¯ Ø³Ù‡Ù… Ù…Ø¹Ø§Ù…Ù„Ù‡' : 'Quantity (Shares)'}
+                            </label>
+                            {newOrderType === 'sell' && (
+                              <span className="text-amber-500 font-bold">
+                                {lang === 'fa' ? 'Ù…ÙˆØ¬ÙˆØ¯ÛŒ Ø´Ù…Ø§: ' : 'Your shares: '}
+                                {myPortfolio.find(p => p.assetId === newOrderAssetId)?.shares || 0} Shrs
+                              </span>
+                            )}
+                          </div>
+                          <input
+                            type="number"
+                            step="1"
+                            placeholder="0"
+                            value={newOrderAmount}
+                            onChange={(e) => setNewOrderAmount(e.target.value)}
+                            className={`w-full p-2.5 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500 border ${
+                              theme === 'dark' ? 'bg-slate-955 border-slate-800 text-white' : 'bg-white border-slate-300 text-slate-800'
+                            }`}
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      {/* Live calculation and Submit button aligned at bottom */}
+                      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4 border-t border-slate-800/10">
+                        {parseFloat(newOrderPrice) > 0 && parseFloat(newOrderAmount) > 0 ? (
+                          <div className="p-3 rounded-2xl bg-blue-500/5 border border-blue-500/10 text-[11px] min-w-[200px] text-center sm:text-start flex items-center justify-between gap-4">
+                            <span className="text-slate-400 font-bold">{lang === 'fa' ? 'Ø§Ø±Ø²Ø´ ØªØ®Ù…ÛŒÙ†ÛŒ Ø³ÙØ§Ø±Ø´:' : 'Estimated Total:'}</span>
+                            <strong className="text-blue-500 font-extrabold text-sm font-mono">
+                              {(parseFloat(newOrderPrice) * parseFloat(newOrderAmount)).toLocaleString(undefined, { minimumFractionDigits: 2 })} USDT
+                            </strong>
+                          </div>
+                        ) : (
+                          <div className="hidden sm:block" />
+                        )}
+
+                        <button
+                          type="submit"
+                          className={`w-full sm:w-auto px-10 py-3 rounded-2xl text-xs font-extrabold cursor-pointer transition-all duration-200 text-center text-white ${
+                            newOrderType === 'buy'
+                              ? 'bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-900/10'
+                              : 'bg-amber-600 hover:bg-amber-500 shadow-lg shadow-amber-900/10'
+                          }`}
+                        >
+                          {newOrderType === 'buy'
+                            ? (lang === 'fa' ? 'Ø«Ø¨Øª Ø³ÙØ§Ø±Ø´ Ø®Ø±ÛŒØ¯ Ù‡Ø¯Ù' : 'Submit Buy Limit')
+                            : (lang === 'fa' ? 'Ø«Ø¨Øª Ø³ÙØ§Ø±Ø´ ÙØ±ÙˆØ´ Ù‡Ø¯Ù' : 'Submit Sell Limit')}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+
+                  {/* Panel 3: Pending Orders / Timeline logs (Full Width) */}
+                  <div className={`p-6 rounded-3xl border shadow-lg space-y-6 ${
+                    theme === 'dark' ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200'
+                  }`}>
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-slate-800/10 gap-4">
+                          <div>
+                            <h2 className="text-lg font-extrabold tracking-tight flex items-center gap-2">
+                              <Clock size={18} className="text-blue-500" />
+                              {lang === 'fa' ? 'Ø³ÙØ§Ø±Ø´Ø§Øª Ù…Ø¹Ù„Ù‚ Ùˆ Ø¯ÙØªØ±Ú†Ù‡ Ú¯Ø²Ø§Ø±Ø´Ø§Øª' : 'Limit Orders & Activity logs'}
+                            </h2>
+                            <p className="text-slate-400 text-[11px] mt-1">
+                              {lang === 'fa' ? 'Ø±ØµØ¯ Ø³ÙØ§Ø±Ø´Ø§Øª ÙØ¹Ø§Ù„ Ø¨Ø§Ø²Ø§Ø± Ùˆ ØªØ§Ø±ÛŒØ®Ú†Ù‡ ØªÙ…Ø§Ù… ØªØ±Ø§Ú©Ù†Ø´â€ŒÙ‡Ø§ Ùˆ ÙØ¹Ø§Ù„ÛŒØªâ€ŒÙ‡Ø§' : 'Review active limit trades or access historical chronological logs'}
+                            </p>
+                          </div>
+
+                          {/* Navigation switches for sub-tabs */}
+                          <div className={`flex p-1 rounded-xl shrink-0 ${
+                            theme === 'dark' ? 'bg-slate-950' : 'bg-slate-100'
+                          }`}>
+                            <button
+                              onClick={() => setPortfolioSubTab('orders')}
+                              className={`px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                                portfolioSubTab === 'orders'
+                                  ? (theme === 'dark' ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-blue-600 shadow-sm')
+                                  : 'text-slate-400 hover:text-slate-300'
+                              }`}
+                            >
+                              {lang === 'fa' ? 'Ø³ÙØ§Ø±Ø´Ø§Øª Ù…Ø¹Ù„Ù‚' : 'Pending Orders'}
+                            </button>
+                            <button
+                              onClick={() => setPortfolioSubTab('activity')}
+                              className={`px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                                portfolioSubTab === 'activity'
+                                  ? (theme === 'dark' ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-blue-600 shadow-sm')
+                                  : 'text-slate-400 hover:text-slate-300'
+                              }`}
+                            >
+                              {lang === 'fa' ? 'Ø¯ÙØªØ±Ú†Ù‡ ÙØ¹Ø§Ù„ÛŒØªâ€ŒÙ‡Ø§' : 'Activity Timeline'}
+                            </button>
+                          </div>
+                        </div>
+
+                        {portfolioSubTab === 'orders' ? (
+                          <div className="space-y-4">
+                            {limitOrders.length > 0 ? (
+                              <div className={`rounded-2xl border overflow-hidden ${
+                                theme === 'dark' ? 'border-slate-800 bg-slate-950/20' : 'border-slate-200 bg-white'
+                              }`}>
+                                <div className="overflow-x-auto">
+                                  <table className="w-full text-start border-collapse">
+                                    <thead>
+                                      <tr className={`border-b text-[10px] font-bold uppercase tracking-wider ${
+                                        theme === 'dark' ? 'border-slate-800 text-slate-400 bg-slate-900/20' : 'border-slate-100 text-slate-500 bg-slate-50'
+                                      }`}>
+                                        <th className="py-3 px-4 text-start">{lang === 'fa' ? 'Ø³ÙØ§Ø±Ø´ / ØªØ§Ø±ÛŒØ®' : 'Order ID / Date'}</th>
+                                        <th className="py-3 px-4 text-start">{lang === 'fa' ? 'Ø¯Ø§Ø±Ø§ÛŒÛŒ / Ù†ÙˆØ¹' : 'Asset / Direction'}</th>
+                                        <th className="py-3 px-4 text-end">{lang === 'fa' ? 'Ù‚ÛŒÙ…Øª Ù‡Ø¯Ù (USDT)' : 'Target Price'}</th>
+                                        <th className="py-3 px-4 text-end">{lang === 'fa' ? 'ØªØ¹Ø¯Ø§Ø¯ Ø³Ù‡Ù…' : 'Shares Qty'}</th>
+                                        <th className="py-3 px-4 text-end">{lang === 'fa' ? 'Ø§Ø±Ø²Ø´ Ø³ÙØ§Ø±Ø´' : 'Total Cost'}</th>
+                                        <th className="py-3 px-4 text-center">{lang === 'fa' ? 'ÙˆØ¶Ø¹ÛŒØª / Ø¹Ù…Ù„ÛŒØ§Øª Ø´Ø¨ÛŒÙ‡â€ŒØ³Ø§Ø²' : 'Status / Simulation'}</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-800/10 text-xs font-semibold">
+                                      {limitOrders.map(order => {
+                                        const asset = assets.find(a => a.id === order.assetId);
+                                        const orderCost = order.price * order.amount;
+                                        return (
+                                          <tr key={order.id} className="hover:bg-slate-500/5 transition-colors">
+                                            <td className="py-3 px-4">
+                                              <div className="font-mono text-[10.5px] font-bold text-slate-400">
+                                                {order.id}
+                                              </div>
+                                              <div className="text-[9px] text-slate-500 mt-0.5">{order.date}</div>
+                                            </td>
+                                            <td className="py-3 px-4">
+                                              <div className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                                                {asset ? (lang === 'fa' ? asset.faName : asset.enName) : order.assetId}
+                                              </div>
+                                              <div className="mt-1">
+                                                <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-extrabold uppercase ${
+                                                  order.type === 'buy'
+                                                    ? 'bg-emerald-500/10 text-emerald-500'
+                                                    : 'bg-amber-500/10 text-amber-500'
+                                                }`}>
+                                                  {order.type === 'buy' ? (lang === 'fa' ? 'Ø®Ø±ÛŒØ¯ Ù…Ø­Ø¯ÙˆØ¯' : 'Buy Limit') : (lang === 'fa' ? 'ÙØ±ÙˆØ´ Ù…Ø­Ø¯ÙˆØ¯' : 'Sell Limit')}
+                                                </span>
+                                              </div>
+                                            </td>
+                                            <td className="py-3 px-4 text-end font-mono">
+                                              <div className={theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}>{order.price.toLocaleString()} USDT</div>
+                                              <div className="text-[9px] text-slate-500 mt-0.5">{lang === 'fa' ? 'Ù‚ÛŒÙ…Øª Ø¨Ø§Ø²Ø§Ø±: ' : 'Live: '}{asset?.price}</div>
+                                            </td>
+                                            <td className="py-3 px-4 text-end font-mono">
+                                              <div className={theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}>
+                                                {order.amount.toLocaleString()}
+                                              </div>
+                                              <span className="text-[9px] text-slate-500">{lang === 'fa' ? 'Ø³Ù‡Ù…' : 'Shares'}</span>
+                                            </td>
+                                            <td className="py-3 px-4 text-end font-mono">
+                                              <div className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                                                {orderCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                              </div>
+                                              <span className="text-[8px] text-slate-500">USDT</span>
+                                            </td>
+                                            <td className="py-3 px-4">
+                                              <div className="flex flex-col items-center justify-center gap-1.5">
+                                                {order.status === 'pending' ? (
+                                                  <div className="space-y-1.5">
+                                                    <span className="text-[9.5px] bg-slate-500/10 text-slate-400 px-2.5 py-0.5 rounded-full font-bold inline-flex items-center gap-1 justify-center w-full">
+                                                      <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-pulse"></span>
+                                                      {lang === 'fa' ? 'ÙØ¹Ø§Ù„ / Ø¯Ø± Ù†ÙˆØ¨Øª' : 'Pending'}
+                                                    </span>
+                                                    <div className="flex gap-1 justify-center">
+                                                      <button
+                                                        onClick={() => handleExecuteLimitOrder(order.id)}
+                                                        className="px-2 py-0.5 bg-blue-600/20 hover:bg-blue-600 hover:text-white text-blue-400 text-[9.5px] rounded font-bold transition-all cursor-pointer"
+                                                        title={lang === 'fa' ? 'Ø´Ø¨ÛŒÙ‡â€ŒØ³Ø§Ø²ÛŒ Ø§Ø¬Ø±Ø§ÛŒ ÙÙˆØ±ÛŒ Ø³ÙØ§Ø±Ø´ Ø±ÙˆÛŒ Ø§ÛŒÙ† Ù‚ÛŒÙ…Øª' : 'Simulate execution of this limit target'}
+                                                      >
+                                                        {lang === 'fa' ? 'Ø§Ø¬Ø±Ø§ÛŒ Ø³ÙØ§Ø±Ø´' : 'Exec'}
+                                                      </button>
+                                                      <button
+                                                        onClick={() => handleCancelLimitOrder(order.id)}
+                                                        className="px-2 py-0.5 bg-rose-600/20 hover:bg-rose-600 hover:text-white text-rose-400 text-[9.5px] rounded font-bold transition-all cursor-pointer"
+                                                      >
+                                                        {lang === 'fa' ? 'Ù„ØºÙˆ Ø³ÙØ§Ø±Ø´' : 'Cancel'}
+                                                      </button>
+                                                    </div>
+                                                  </div>
+                                                ) : order.status === 'executed' ? (
+                                                  <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2.5 py-0.5 rounded-full font-bold inline-flex items-center gap-1">
+                                                    <CheckCircle size={10} />
+                                                    {lang === 'fa' ? 'Ø§Ù†Ø¬Ø§Ù… Ø´Ø¯Ù‡' : 'Executed'}
+                                                  </span>
+                                                ) : (
+                                                  <span className="text-[10px] bg-rose-500/10 text-rose-400 px-2.5 py-0.5 rounded-full font-bold inline-flex items-center gap-1">
+                                                    <X size={10} className="shrink-0" />
+                                                    {lang === 'fa' ? 'Ù„ØºÙˆ Ø´Ø¯Ù‡' : 'Cancelled'}
+                                                  </span>
+                                                )}
+                                              </div>
+                                            </td>
+                                          </tr>
+                                        );
+                                      })}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className={`p-8 text-center rounded-2xl border ${
+                                theme === 'dark' ? 'bg-slate-900/20 border-slate-800' : 'bg-slate-50 border-slate-200'
+                              }`}>
+                                <p className="text-slate-400 text-xs font-semibold">{lang === 'fa' ? 'Ù‡ÛŒÚ† Ø³ÙØ§Ø±Ø´ Ù…Ø­Ø¯ÙˆØ¯ÛŒ Ø«Ø¨Øª Ù†Ø´Ø¯Ù‡ Ø§Ø³Øª.' : 'No active limit orders found.'}</p>
+                              </div>
+                            )}
+
+                            {/* Price Alerts Section */}
+                            <div className="pt-6 border-t border-slate-800/20">
+                              <div className="flex justify-between items-center mb-4">
+                                <h4 className={`text-xs font-black uppercase tracking-wider ${
+                                  theme === 'dark' ? 'text-white' : 'text-slate-900'
+                                }`}>
+                                  {lang === 'fa' ? 'ðŸ”” Ù‡Ø´Ø¯Ø§Ø±Ù‡Ø§ÛŒ ÙØ¹Ø§Ù„ Ù‚ÛŒÙ…Øª' : 'ðŸ”” Active Price Alerts'}
+                                </h4>
+                                <span className="text-[10px] bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded-md font-extrabold">
+                                  {priceAlerts.length} {lang === 'fa' ? 'Ù‡Ø´Ø¯Ø§Ø± ØªÙ†Ø¸ÛŒÙ… Ø´Ø¯Ù‡' : 'Alerts Set'}
+                                </span>
+                              </div>
+
+                              {priceAlerts.length > 0 ? (
+                                <div className={`rounded-2xl border overflow-hidden ${
+                                  theme === 'dark' ? 'border-slate-800 bg-slate-950/20' : 'border-slate-200 bg-white'
+                                }`}>
+                                  <div className="overflow-x-auto">
+                                    <table className="w-full text-start border-collapse">
+                                      <thead>
+                                        <tr className={`border-b text-[10px] font-bold uppercase tracking-wider ${
+                                          theme === 'dark' ? 'border-slate-800 text-slate-400 bg-slate-900/20' : 'border-slate-100 text-slate-500 bg-slate-50'
+                                        }`}>
+                                          <th className="py-3 px-4 text-start">{lang === 'fa' ? 'Ø´Ù†Ø§Ø³Ù‡ Ù‡Ø´Ø¯Ø§Ø± / ØªØ§Ø±ÛŒØ®' : 'Alert ID / Date'}</th>
+                                          <th className="py-3 px-4 text-start">{lang === 'fa' ? 'Ø¯Ø§Ø±Ø§ÛŒÛŒ' : 'Asset'}</th>
+                                          <th className="py-3 px-4 text-end">{lang === 'fa' ? 'Ø´Ø±Ø§ÛŒØ· ÙØ¹Ø§Ù„â€ŒØ³Ø§Ø²ÛŒ' : 'Trigger Condition'}</th>
+                                          <th className="py-3 px-4 text-end">{lang === 'fa' ? 'Ù‚ÛŒÙ…Øª Ù‡Ø¯Ù (USDT)' : 'Target Price'}</th>
+                                          <th className="py-3 px-4 text-center">{lang === 'fa' ? 'ÙˆØ¶Ø¹ÛŒØª / Ø¹Ù…Ù„ÛŒØ§Øª' : 'Status / Actions'}</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="divide-y divide-slate-800/10 text-xs font-semibold">
+                                        {priceAlerts.map(alert => {
+                                          const asset = assets.find(a => a.id === alert.assetId);
+                                          return (
+                                            <tr key={alert.id} className="hover:bg-slate-500/5 transition-colors">
+                                              <td className="py-3 px-4">
+                                                <div className="font-mono text-[10.5px] font-bold text-slate-400">
+                                                  {alert.id}
+                                                </div>
+                                                <div className="text-[9px] text-slate-500 mt-0.5">{alert.date}</div>
+                                              </td>
+                                              <td className="py-3 px-4 font-bold">
+                                                {asset ? (lang === 'fa' ? asset.faName : asset.enName) : alert.assetId}
+                                                <span className="text-[10px] font-mono font-bold text-slate-500 block">#{alert.assetId}</span>
+                                              </td>
+                                              <td className="py-3 px-4 text-end">
+                                                <span className={`text-[9.5px] px-2 py-0.5 rounded font-extrabold uppercase ${
+                                                  alert.condition === 'above'
+                                                    ? 'bg-blue-500/10 text-blue-400'
+                                                    : 'bg-amber-500/10 text-amber-500'
+                                                }`}>
+                                                  {alert.condition === 'above'
+                                                    ? (lang === 'fa' ? 'Ø¨Ø§Ù„Ø§ÛŒ Ù‡Ø¯Ù (>=)' : 'Goes Above (>=)')
+                                                    : (lang === 'fa' ? 'Goes Below (<=)' : 'Goes Below (<=)')}
+                                                </span>
+                                              </td>
+                                              <td className="py-3 px-4 text-end font-mono">
+                                                <div className={theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}>{alert.targetPrice.toLocaleString()} USDT</div>
+                                                <div className="text-[9px] text-slate-500 mt-0.5">{lang === 'fa' ? 'Ù‚ÛŒÙ…Øª Ø¨Ø§Ø²Ø§Ø±: ' : 'Live: '}{asset?.price}</div>
+                                              </td>
+                                              <td className="py-3 px-4">
+                                                <div className="flex flex-col items-center justify-center gap-1.5">
+                                                  {alert.isTriggered ? (
+                                                    <span className="text-[9.5px] bg-emerald-500/10 text-emerald-400 px-2.5 py-0.5 rounded-full font-bold inline-flex items-center gap-1">
+                                                      <CheckCircle size={10} />
+                                                      {lang === 'fa' ? 'Ø§Ø±Ø³Ø§Ù„ Ø´Ø¯Ù‡' : 'Triggered'}
+                                                    </span>
+                                                  ) : (
+                                                    <div className="flex flex-col items-center gap-1">
+                                                      <span className="text-[9.5px] bg-slate-500/10 text-slate-400 px-2.5 py-0.5 rounded-full font-bold inline-flex items-center gap-1">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+                                                        {lang === 'fa' ? 'ÙØ¹Ø§Ù„ / Ø¯Ø± Ø§Ù†ØªØ¸Ø§Ø±' : 'Watching'}
+                                                      </span>
+                                                      <button
+                                                        onClick={() => {
+                                                          setPriceAlerts(prev => prev.filter(a => a.id !== alert.id));
+                                                          triggerAlert('success', lang === 'fa' ? 'Ù‡Ø´Ø¯Ø§Ø± Ù‚ÛŒÙ…Øª Ù„ØºÙˆ Ø´Ø¯.' : 'Price alert removed.');
+                                                          recordActivity('alert_cancel', `Cancelled price alert ${alert.id}`, `Ù„ØºÙˆ Ù‡Ø´Ø¯Ø§Ø± Ù‚ÛŒÙ…Øª ${alert.id}`);
+                                                        }}
+                                                        className="px-2 py-0.5 bg-rose-600/20 hover:bg-rose-600 hover:text-white text-rose-400 text-[9.5px] rounded font-bold transition-all cursor-pointer"
+                                                      >
+                                                        {lang === 'fa' ? 'Ø­Ø°Ù' : 'Remove'}
+                                                      </button>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              </td>
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className={`p-8 text-center rounded-2xl border ${
+                                  theme === 'dark' ? 'bg-slate-900/20 border-slate-800' : 'bg-slate-50 border-slate-200'
+                                }`}>
+                                  <p className="text-slate-400 text-xs font-semibold">{lang === 'fa' ? 'Ù‡ÛŒÚ† Ù‡Ø´Ø¯Ø§Ø± Ù‚ÛŒÙ…ØªÛŒ ØªÙ†Ø¸ÛŒÙ… Ù†Ø´Ø¯Ù‡ Ø§Ø³Øª.' : 'No active price alerts found.'}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          /* Timeline of Account Activity Logs */
+                          <div className="space-y-6 max-w-xl mx-auto py-2">
+                            <div className={`relative border-l-2 ml-3 pl-6 space-y-6 ${theme === 'dark' ? 'border-slate-800' : 'border-slate-200'}`}>
+                              {activities.map((act) => {
+                                let actIcon = <Clock size={13} className="text-slate-400" />;
+                                let actBg = 'bg-slate-800 border-slate-700';
+                                if (act.type === 'login' || act.type === 'signup') {
+                                  actIcon = <User size={13} className="text-emerald-400" />;
+                                  actBg = theme === 'dark' ? 'bg-emerald-950/60 border-emerald-500/30' : 'bg-emerald-50 border-emerald-200';
+                                } else if (act.type === 'trade') {
+                                  actIcon = <TrendingUp size={13} className="text-blue-400" />;
+                                  actBg = theme === 'dark' ? 'bg-blue-950/60 border-blue-500/30' : 'bg-blue-50 border-blue-200';
+                                } else if (act.type === 'deposit') {
+                                  actIcon = <ArrowDownRight size={13} className="text-emerald-400" />;
+                                  actBg = theme === 'dark' ? 'bg-emerald-950/60 border-emerald-500/30' : 'bg-emerald-50 border-emerald-200';
+                                } else if (act.type === 'withdraw') {
+                                  actIcon = <ArrowUpRight size={13} className="text-rose-400" />;
+                                  actBg = theme === 'dark' ? 'bg-rose-950/60 border-rose-500/30' : 'bg-rose-50 border-rose-200';
+                                } else if (act.type === 'order_create') {
+                                  actIcon = <Coins size={13} className="text-purple-400" />;
+                                  actBg = theme === 'dark' ? 'bg-purple-950/60 border-purple-500/30' : 'bg-purple-50 border-purple-200';
+                                } else if (act.type === 'order_cancel') {
+                                  actIcon = <X size={13} className="text-slate-400" />;
+                                  actBg = theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-slate-100 border-slate-200';
+                                } else if (act.type === 'ticket') {
+                                  actIcon = <MessageSquare size={13} className="text-cyan-400" />;
+                                  actBg = theme === 'dark' ? 'bg-cyan-950/60 border-cyan-500/30' : 'bg-cyan-50 border-cyan-200';
+                                }
+
+                                return (
+                                  <div key={act.id} className="relative">
+                                    {/* Absolute Dot icon */}
+                                    <span className={`absolute -left-[35px] top-1.5 flex items-center justify-center w-5.5 h-5.5 rounded-full border shadow-sm ${actBg}`}>
+                                      {actIcon}
+                                    </span>
+
+                                    <div className={`p-4 rounded-2xl border transition-all hover:scale-[1.01] ${
+                                      theme === 'dark' ? 'bg-slate-950/40 border-slate-800/80' : 'bg-slate-50 border-slate-200'
+                                    }`}>
+                                      <div className="flex justify-between items-start gap-4">
+                                        <p className={`text-xs font-bold leading-relaxed ${theme === 'dark' ? 'text-slate-200' : 'text-slate-850'}`}>
+                                          {lang === 'fa' ? act.descriptionFa : act.descriptionEn}
+                                        </p>
+                                        <span className="text-[10px] text-slate-500 shrink-0 font-mono mt-0.5">{act.date}</span>
+                                      </div>
+                                      <div className="flex justify-between items-center mt-2.5">
+                                        <span className={`text-[8.5px] font-extrabold px-2 py-0.5 rounded uppercase ${
+                                          theme === 'dark' ? 'bg-slate-900 text-slate-400' : 'bg-slate-200/60 text-slate-600'
+                                        }`}>
+                                          {act.type}
+                                        </span>
+                                        <span className="text-[8.5px] font-mono text-slate-500 font-bold">ID: {act.id}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                </div>
+              </section>
+            )}
+
+            {/* View 3: Deposit / Withdraw Staking */}
+            {currentTab === 'wallet' && (
+              <section className="space-y-6">
+                <div>
+                  <h1 className="text-2xl font-extrabold tracking-tight">{t.wallet}</h1>
+                  <p className="text-slate-400 text-xs mt-1">{lang === 'fa' ? 'Ø´Ø§Ø±Ú˜ Ø­Ø³Ø§Ø¨ ØªØªØ± ÛŒØ§ Ø¨Ø±Ø¯Ø§Ø´Øª Ø³Ø±ÛŒØ¹' : 'Deposit and withdraw USDT securely'}</p>
+                </div>
+
+                <div className={`rounded-3xl border p-6 shadow-sm space-y-6 max-w-xl mx-auto ${
+                  theme === 'dark' ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200'
+                }`}>
+                  {/* Tabs */}
+                  <div className="flex border-b border-slate-800">
+                    <button
+                      onClick={() => setWalletTab('deposit')}
+                      className={`flex-1 py-3 text-sm font-bold text-center border-b-2 transition-all ${
+                        walletTab === 'deposit' ? 'border-blue-500 text-blue-500 font-extrabold' : 'border-transparent text-slate-400'
+                      }`}
+                    >
+                      {t.depositUsdt}
+                    </button>
+                    <button
+                      onClick={() => setWalletTab('withdraw')}
+                      className={`flex-1 py-3 text-sm font-bold text-center border-b-2 transition-all ${
+                        walletTab === 'withdraw' ? 'border-blue-500 text-blue-500 font-extrabold' : 'border-transparent text-slate-400'
+                      }`}
+                    >
+                      {t.withdrawUsdt}
+                    </button>
+                  </div>
+
+                  {/* Info Warning Banner */}
+                  <div className={`p-4 rounded-xl flex gap-3 text-xs leading-relaxed border ${
+                    theme === 'dark' ? 'bg-amber-950/20 border-amber-500/30 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-800'
+                  }`}>
+                    <Info size={16} className="shrink-0 text-amber-500" />
+                    <span>{t.transactionWarning}</span>
+                  </div>
+
+                  {/* Network Selector */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-400 uppercase">{t.selectNetwork}</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {['trc20', 'erc20', 'bep20'].map((net) => (
+                        <button
+                          key={net}
+                          onClick={() => {
+                            setDepositNetwork(net as any);
+                            setTxidError('');
+                            setWithdrawAddrError('');
+                          }}
+                          className={`py-2.5 rounded-xl text-xs font-bold transition-all border ${
+                            depositNetwork === net
+                              ? 'bg-blue-600 text-white border-blue-500'
+                              : theme === 'dark'
+                                ? 'bg-slate-950 border-slate-800 text-slate-300 hover:bg-slate-800'
+                                : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
+                          }`}
+                        >
+                          {net === 'trc20' && 'TRC20'}
+                          {net === 'erc20' && 'ERC20'}
+                          {net === 'bep20' && 'BEP20 (BSC)'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Deposit View */}
+                  {walletTab === 'deposit' && (
+                    <form onSubmit={handleDepositSubmit} className="space-y-4">
+                      {/* Live Deposit Address Box */}
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-400 uppercase">{t.depositAddress}</label>
+                        <div className={`p-4 rounded-xl border text-center break-all font-mono text-sm relative group ${
+                          theme === 'dark' ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'
+                        }`}>
+                          <span>
+                            {depositNetwork === 'trc20' && 'TUtwXkXYZ123abcTRC20dummyAddressDepositActive'}
+                            {depositNetwork === 'erc20' && 'ERC20_DEPOSITS_DISABLED'}
+                            {depositNetwork === 'bep20' && '0x789BEP20SmartChainDepositSecuredEngine'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* TxID hash Input */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <label className="text-xs font-bold text-slate-400 uppercase">{t.txidLabel}</label>
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 shrink-0">
+                            {depositNetwork === 'trc20' && (lang === 'fa' ? 'Ø§Ù„Ú¯Ùˆ TRC20: Û¶Û´ Ú©Ø§Ø±Ø§Ú©ØªØ± Ù‡Ú¯Ø²' : 'TRC20: 64 Hex Chars')}
+                            {depositNetwork === 'erc20' && (lang === 'fa' ? 'Ø§Ù„Ú¯Ùˆ ERC20: Ø´Ø±ÙˆØ¹ Ø¨Ø§ 0x + Û¶Û´ Ú©Ø§Ø±Ø§Ú©ØªØ±' : 'ERC20: 0x + 64 Hex Chars')}
+                            {depositNetwork === 'bep20' && (lang === 'fa' ? 'Ø§Ù„Ú¯Ùˆ BEP20: Ø´Ø±ÙˆØ¹ Ø¨Ø§ 0x + Û¶Û´ Ú©Ø§Ø±Ø§Ú©ØªØ±' : 'BEP20: 0x + 64 Hex Chars')}
+                          </span>
+                        </div>
+
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={depositTxid}
+                            onChange={(e) => {
+                              setDepositTxid(e.target.value);
+                              if (txidError) setTxidError('');
+                            }}
+                            placeholder={
+                              depositNetwork === 'trc20'
+                                ? (lang === 'fa' ? 'Ù…Ø«Ø§Ù„: e4399e5362bf6a9a0891d8e176b97621c8b32034e3e3b0bb3ef52c5a085b3765' : 'e.g., e4399e5362bf6a9a0891d8e176b97621c8b32034e3e3b0bb3ef52c5a085b3765')
+                                : (lang === 'fa' ? 'Ù…Ø«Ø§Ù„: 0x7b233a18a9028882b52ec87247d51ee2d7bf8107dd64cf63b9f3ee2bdfa67a03' : 'e.g., 0x7b233a18a9028882b52ec87247d51ee2d7bf8107dd64cf63b9f3ee2bdfa67a03')
+                            }
+                            className={`w-full p-3 font-mono text-xs rounded-xl border focus:outline-none transition-all ${
+                              txidError
+                                ? 'border-red-500 bg-red-500/5 text-red-200 focus:border-red-500'
+                                : depositTxid.trim() && validateTxid(depositTxid, depositNetwork).valid
+                                  ? 'border-emerald-500/80 focus:border-emerald-500'
+                                  : theme === 'dark' ? 'bg-slate-950 border-slate-800 text-white focus:border-blue-500' : 'bg-white border-slate-200 focus:border-blue-500'
+                            }`}
+                          />
+
+                          {depositTxid.trim().length > 0 && (
+                            <div className={`absolute ${lang === 'fa' ? 'left-3' : 'right-3'} top-3 flex items-center gap-1 text-[10px]`}>
+                              {validateTxid(depositTxid, depositNetwork).valid ? (
+                                <span className="text-emerald-500 font-bold flex items-center gap-1 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                                  <Check size={12} />
+                                  <span>{depositTxid.trim().length} {lang === 'fa' ? 'Ú©Ø§Ø±Ø§Ú©ØªØ±' : 'chars'}</span>
+                                </span>
+                              ) : (
+                                <span className="text-amber-500 font-bold flex items-center gap-1 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                                  <AlertCircle size={12} />
+                                  <span>{depositTxid.trim().length} {lang === 'fa' ? 'Ú©Ø§Ø±Ø§Ú©ØªØ±' : 'chars'}</span>
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {txidError && (
+                          <div className="flex items-start gap-1.5 p-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-[11px] leading-relaxed">
+                            <AlertCircle size={14} className="shrink-0 mt-0.5" />
+                            <span>{txidError}</span>
+                          </div>
+                        )}
+
+                        {/* Network Rule Card */}
+                        <div className={`p-3 rounded-xl border text-[11px] space-y-1 ${
+                          theme === 'dark' ? 'bg-slate-950/60 border-slate-900 text-slate-400' : 'bg-slate-50 border-slate-200/80 text-slate-600'
+                        }`}>
+                          <div className="flex items-center justify-between font-bold text-slate-300">
+                            <span>{lang === 'fa' ? 'ÙØ±Ù…Øª Ù…Ø¬Ø§Ø² Ù‡Ø´ Ø¨Ø±Ø§ÛŒ Ø´Ø¨Ú©Ù‡ Ø§Ù†ØªØ®Ø§Ø¨â€ŒØ´Ø¯Ù‡:' : 'Valid Hash Rule for Selected Network:'}</span>
+                            <span className="text-blue-500 font-mono font-extrabold">{depositNetwork.toUpperCase()}</span>
+                          </div>
+                          <p className="text-[11px] leading-relaxed opacity-90">
+                            {depositNetwork === 'trc20' && (
+                              lang === 'fa'
+                                ? 'Ú©Ø¯ Ù‡Ø´ ØªØ±ÙˆÙ† (TronScan) Ø´Ø§Ù…Ù„ Ø¯Ù‚ÛŒÙ‚Ø§ Û¶Û´ Ú©Ø§Ø±Ø§Ú©ØªØ± Ù‡Ú¯Ø²Ø§Ø¯Ø³ÛŒÙ¾Ù…Ø§Ù„ Ø§Ø³Øª.'
+                                : 'TRON TxID must be exactly 64 hex characters long.'
+                            )}
+                            {depositNetwork === 'erc20' && (
+                              lang === 'fa'
+                                ? 'Ú©Ø¯ Ù‡Ø´ Ø§ØªØ±ÛŒÙˆÙ… (Etherscan) Ø´Ø§Ù…Ù„ Û¶Û¶ Ú©Ø§Ø±Ø§Ú©ØªØ± (Ø¨Ø§ Ù¾ÛŒØ´ÙˆÙ†Ø¯ 0x) Ø§Ø³Øª.'
+                                : 'Ethereum TxID consists of 66 characters starting with 0x prefix.'
+                            )}
+                            {depositNetwork === 'bep20' && (
+                              lang === 'fa'
+                                ? 'Ú©Ø¯ Ù‡Ø´ Ø¨Ø§ÛŒÙ†Ù†Ø³ Ø§Ø³Ù…Ø§Ø±Øª Ú†ÛŒÙ† (BscScan) Ø´Ø§Ù…Ù„ Û¶Û¶ Ú©Ø§Ø±Ø§Ú©ØªØ± (Ø¨Ø§ Ù¾ÛŒØ´ÙˆÙ†Ø¯ 0x) Ø§Ø³Øª.'
+                                : 'BSC TxID consists of 66 characters starting with 0x prefix.'
+                            )}
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="submit"
+                        className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-xl transition-all mt-4 cursor-pointer"
+                      >
+                        {t.submitDeposit}
+                      </button>
+                    </form>
+                  )}
+
+                  {/* Withdraw View */}
+                  {walletTab === 'withdraw' && (
+                    <form onSubmit={handleWithdrawSubmit} className="space-y-4">
+                      {/* Destination address */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <label className="text-xs font-bold text-slate-400 uppercase">{t.destinationAddress}</label>
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 shrink-0">
+                            {depositNetwork === 'trc20' && (lang === 'fa' ? 'Ø§Ù„Ú¯Ùˆ: Ø´Ø±ÙˆØ¹ Ø¨Ø§ T (Û³Û´ Ú©Ø§Ø±Ø§Ú©ØªØ±)' : 'Pattern: Starts with T (34 chars)')}
+                            {(depositNetwork === 'erc20' || depositNetwork === 'bep20') && (lang === 'fa' ? 'Ø§Ù„Ú¯Ùˆ: Ø´Ø±ÙˆØ¹ Ø¨Ø§ 0x (Û´Û² Ú©Ø§Ø±Ø§Ú©ØªØ±)' : 'Pattern: Starts with 0x (42 chars)')}
+                          </span>
+                        </div>
+
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={withdrawAddress}
+                            onChange={(e) => {
+                              setWithdrawAddress(e.target.value);
+                              if (withdrawAddrError) setWithdrawAddrError('');
+                            }}
+                            placeholder={
+                              depositNetwork === 'trc20'
+                                ? (lang === 'fa' ? 'Ù…Ø«Ø§Ù„: TUtwXkXYZ123abcTRC20dummyAddressDepositActive' : 'e.g., TUtwXkXYZ123abcTRC20dummyAddressDepositActive')
+                                : (lang === 'fa' ? 'Ù…Ø«Ø§Ù„: ERC20_DEPOSITS_DISABLED' : 'e.g., ERC20_DEPOSITS_DISABLED')
+                            }
+                            className={`w-full p-3 font-mono text-xs rounded-xl border focus:outline-none transition-all ${
+                              withdrawAddrError
+                                ? 'border-red-500 bg-red-500/5 text-red-200 focus:border-red-500'
+                                : withdrawAddress.trim() && validateWithdrawAddress(withdrawAddress, depositNetwork).valid
+                                  ? 'border-emerald-500/80 focus:border-emerald-500'
+                                  : theme === 'dark' ? 'bg-slate-950 border-slate-800 text-white focus:border-blue-500' : 'bg-white border-slate-200 focus:border-blue-500'
+                            }`}
+                          />
+
+                          {withdrawAddress.trim().length > 0 && (
+                            <div className={`absolute ${lang === 'fa' ? 'left-3' : 'right-3'} top-3 flex items-center gap-1 text-[10px]`}>
+                              {validateWithdrawAddress(withdrawAddress, depositNetwork).valid ? (
+                                <span className="text-emerald-500 font-bold flex items-center gap-1 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                                  <Check size={12} />
+                                  <span>{withdrawAddress.trim().length} {lang === 'fa' ? 'Ú©Ø§Ø±Ø§Ú©ØªØ±' : 'chars'}</span>
+                                </span>
+                              ) : (
+                                <span className="text-amber-500 font-bold flex items-center gap-1 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                                  <AlertCircle size={12} />
+                                  <span>{withdrawAddress.trim().length} {lang === 'fa' ? 'Ú©Ø§Ø±Ø§Ú©ØªØ±' : 'chars'}</span>
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {withdrawAddrError && (
+                          <div className="flex items-start gap-1.5 p-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-[11px] leading-relaxed">
+                            <AlertCircle size={14} className="shrink-0 mt-0.5" />
+                            <span>{withdrawAddrError}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Withdraw amount */}
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-400 uppercase">{t.amountUsdt}</label>
+                        <input
+                          type="number"
+                          value={withdrawAmount}
+                          onChange={(e) => setWithdrawAmount(e.target.value)}
+                          placeholder={t.minAmount}
+                          className={`w-full p-3 rounded-xl border focus:outline-none focus:border-blue-500 text-sm ${
+                            theme === 'dark' ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-200'
+                          }`}
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-xl transition-all mt-4 cursor-pointer"
+                      >
+                        {t.requestWithdraw}
+                      </button>
+                    </form>
+                  )}
+
+                </div>
+              </section>
+            )}
+
+            {/* View 4: Transaction History Table */}
+            {currentTab === 'history' && (
+              <section className="space-y-6">
+                <div>
+                  <h1 className="text-2xl font-extrabold tracking-tight">{t.transactionHistory}</h1>
+                  <p className="text-slate-400 text-xs mt-1">{lang === 'fa' ? 'Ø³ÙˆØ§Ø¨Ù‚ ÙˆØ§Ø±ÛŒØ²ØŒ Ø¨Ø±Ø¯Ø§Ø´Øª Ùˆ Ù…Ø¹Ø§Ù…Ù„Ø§Øª Ú¯Ø°Ø´ØªÙ‡ Ø´Ù…Ø§' : 'History of your deposits, withdrawals, and trades'}</p>
+                </div>
+
+                <div className={`rounded-3xl border overflow-hidden shadow-sm ${
+                  theme === 'dark' ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200'
+                }`}>
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse text-start">
+                      <thead>
+                        <tr className={`border-b text-xs font-bold uppercase text-slate-400 text-start ${
+                          theme === 'dark' ? 'border-slate-800 bg-slate-950/40' : 'border-slate-200 bg-slate-50'
+                        }`}>
+                          <th className="p-4 text-start">{t.thType}</th>
+                          <th className="p-4 text-center">{t.thAmount}</th>
+                          <th className="p-4 text-center">{t.thDate}</th>
+                          <th className="p-4 text-end">{t.thStatus}</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800 text-xs">
+                        {transactions.map(tx => (
+                          <tr
+                            key={tx.id}
+                            className={`transition-colors hover:bg-slate-800/10 ${
+                              theme === 'dark' ? 'hover:bg-slate-800/20' : 'hover:bg-slate-100/50'
+                            }`}
+                          >
+                            <td className="p-4 font-semibold">
+                              <span className="capitalize">{lang === 'fa' ? (t as Record<string, string>)['hist_' + tx.type] ?? tx.type : tx.type}</span>
+                              <span className="text-[10px] text-slate-400 font-mono ms-2">({tx.asset})</span>
+                            </td>
+                            <td className="p-4 text-center font-mono font-bold" dir="ltr">
+                              {tx.amount}
+                            </td>
+                            <td className="p-4 text-center text-slate-400 font-mono">
+                              {tx.date}
+                            </td>
+                            <td className="p-4 text-end">
+                              <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold ${
+                                tx.status === 'completed'
+                                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                  : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                              }`}>
+                                {lang === 'fa' ? (t as Record<string, string>)['stat_' + tx.status] ?? tx.status : tx.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* View 5: Support Tickets */}
+            {currentTab === 'support' && (
+              <section className="space-y-6">
+                <div>
+                  <h1 className="text-2xl font-extrabold tracking-tight">{t.supportCenter}</h1>
+                  <p className="text-slate-400 text-xs mt-1">{lang === 'fa' ? 'Ù¾Ø§Ø³Ø®Ú¯ÙˆÛŒÛŒ ØªÛŒÚ©Øªâ€ŒÙ‡Ø§ÛŒ Ø´Ù…Ø§ Ø¯Ø± Ú©Ù…ØªØ± Ø§Ø² Û·Û² Ø³Ø§Ø¹Øª' : 'Get in touch with support agents'}</p>
+                </div>
+
+                <div className={`rounded-3xl border p-6 shadow-sm max-w-xl mx-auto space-y-4 ${
+                  theme === 'dark' ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200'
+                }`}>
+                  <form onSubmit={handleSupportSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-400 uppercase">{t.describeIssue}</label>
+                      <textarea
+                        rows={5}
+                        value={supportText}
+                        onChange={(e) => setSupportText(e.target.value)}
+                        placeholder={t.howCanHelp}
+                        className={`w-full p-3 rounded-xl border focus:outline-none focus:border-blue-500 text-sm ${
+                          theme === 'dark' ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-200'
+                        }`}
+                        required
+                      ></textarea>
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-xl transition-all"
+                    >
+                      {t.submitTicket}
+                    </button>
+                  </form>
+                </div>
+              </section>
+            )}
+
+
+
+            {/* View 6: About Us */}
+            {currentTab === 'about' && (
+              <section className="space-y-6 animate-fade-in">
+                <div>
+                  <h1 className="text-2xl font-extrabold tracking-tight">
+                    {lang === 'fa' ? 'Ø¯Ø±Ø¨Ø§Ø±Ù‡ AssetChain' : 'About AssetChain'}
+                  </h1>
+                  <p className="text-slate-400 text-xs mt-1">
+                    {lang === 'fa' ? 'Ù†Ø³Ù„ Ø¨Ø¹Ø¯ÛŒ Ù…Ø§Ù„Ú©ÛŒØª Ø¯Ø§Ø±Ø§ÛŒÛŒâ€ŒÙ‡Ø§ÛŒ ÙˆØ§Ù‚Ø¹ÛŒ Ø±ÙˆÛŒ Ø²Ù†Ø¬ÛŒØ±Ù‡' : 'The next generation of real-world asset ownership'}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className={`p-6 rounded-3xl border shadow-sm space-y-3 ${
+                    theme === 'dark' ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200'
+                  }`}>
+                    <div className="w-10 h-10 bg-blue-600/10 text-blue-500 rounded-xl flex items-center justify-center font-bold">
+                      <ShieldCheck size={20} />
+                    </div>
+                    <h3 className={`text-base font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                      {lang === 'fa' ? 'Û±Û°Û°Ùª Ù¾Ø´ØªÙˆØ§Ù†Ù‡ ÙÛŒØ²ÛŒÚ©ÛŒ' : 'TSETMC Market Data'}
+                    </h3>
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                      {lang === 'fa'
+                        ? 'ØªÙ…Ø§Ù…ÛŒ ØªÙˆÚ©Ù†â€ŒÙ‡Ø§ Ø¯Ø§Ø±Ø§ÛŒ Ù¾Ø´ØªÙˆØ§Ù†Ù‡ Ø´Ù…Ø´â€ŒÙ‡Ø§ÛŒ Ø·Ù„Ø§ Ø¨Ø§ Ø¹ÛŒØ§Ø± Ø§Ø³ØªØ§Ù†Ø¯Ø§Ø±Ø¯ Ùˆ Ø§Ø³Ù†Ø§Ø¯ Ø±Ø³Ù…ÛŒ Ø§Ù…Ù„Ø§Ú© Ø«Ø¨Øª Ø´Ø¯Ù‡ Ø¯Ø± Ø³ÙˆØ¦ÛŒØ³ Ùˆ Ø§Ù…Ø§Ø±Ø§Øª Ù‡Ø³ØªÙ†Ø¯.'
+                        : 'Market prices are sourced from TSETMC and each share includes its official instrument link.'}
+                    </p>
+                  </div>
+
+                  <div className={`p-6 rounded-3xl border shadow-sm space-y-3 ${
+                    theme === 'dark' ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200'
+                  }`}>
+                    <div className="w-10 h-10 bg-emerald-600/10 text-emerald-500 rounded-xl flex items-center justify-center font-bold">
+                      <CheckCircle size={20} />
+                    </div>
+                    <h3 className={`text-base font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                      {lang === 'fa' ? 'Ø­Ø³Ø§Ø¨â€ŒØ±Ø³ÛŒ Ùˆ Ø´ÙØ§ÙÛŒØª Ø¢Ù†ÛŒ' : 'Audited Proof of Reserves'}
+                    </h3>
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                      {lang === 'fa'
+                        ? 'Ù…ÙˆØ³Ø³Ù‡ Ø¨ÛŒÙ†â€ŒØ§Ù„Ù…Ù„Ù„ÛŒ SGS Ø¨Ù‡ Ø¹Ù†ÙˆØ§Ù† Ø­Ø³Ø§Ø¨Ø±Ø³ Ù…Ø³ØªÙ‚Ù„ØŒ Ù…ÙˆØ¬ÙˆØ¯ÛŒ ÙÛŒØ²ÛŒÚ©ÛŒ Ø®Ø²Ø§Ù†Ù‡â€ŒÙ‡Ø§ Ø±Ø§ Ø¨Ù‡ ØµÙˆØ±Øª Ø¯ÙˆØ±Ù‡â€ŒØ§ÛŒ ØªØ§ÛŒÛŒØ¯ Ùˆ Ú¯Ø²Ø§Ø±Ø´ Ù…ÛŒâ€ŒÚ©Ù†Ø¯.'
+                        : 'Market information for the selected shares is sourced from TSETMC and processed by the backend.'}
+                    </p>
+                  </div>
+
+                  <div className={`p-6 rounded-3xl border shadow-sm space-y-3 ${
+                    theme === 'dark' ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200'
+                  }`}>
+                    <div className="w-10 h-10 bg-purple-600/10 text-purple-500 rounded-xl flex items-center justify-center font-bold">
+                      <Coins size={20} />
+                    </div>
+                    <h3 className={`text-base font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                      {lang === 'fa' ? 'Ø³Ø±Ù…Ø§ÛŒÙ‡â€ŒÚ¯Ø°Ø§Ø±ÛŒ Ø®Ø±Ø¯ Ø´Ø¯Ù‡' : 'Fractionalized & Inclusive'}
+                    </h3>
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                      {lang === 'fa'
+                        ? 'Ù…Ø§ Ù…ÙˆØ§Ù†Ø¹ Ø³Ø±Ù…Ø§ÛŒÙ‡â€ŒÚ¯Ø°Ø§Ø±ÛŒ Ø±Ø§ Ø­Ø°Ù Ú©Ø±Ø¯Ù‡â€ŒØ§ÛŒÙ… ØªØ§ Ù‡Ø± Ø´Ø®Øµ Ø¨ØªÙˆØ§Ù†Ø¯ Ø¨Ø§ Ø­Ø¯Ø§Ù‚Ù„ Û± ØªØªØ±ØŒ Ù…Ø§Ù„Ú© Ø³Ù‡Ù…â€ŒÙ‡Ø§ÛŒ Ø§Ø±Ø²Ø´Ù…Ù†Ø¯ Ø¯Ø± Ú©Ù„Ø§Ø³â€ŒÙ‡Ø§ÛŒ Ø¯Ø§Ø±Ø§ÛŒÛŒ Ù„ÙˆÚ©Ø³ Ø´ÙˆØ¯.'
+                        : 'Review selected Iranian shares and their TSETMC market information.'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className={`p-6 rounded-3xl border space-y-4 ${
+                  theme === 'dark' ? 'bg-slate-900/40 border-slate-800' : 'bg-slate-100/50 border-slate-200'
+                }`}>
+                  <h3 className={`text-lg font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                    {lang === 'fa' ? 'Ù…Ø§Ù…ÙˆØ±ÛŒØª AssetChain' : 'The AssetChain Mission'}
+                  </h3>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    {lang === 'fa'
+                      ? 'Ù‡Ø¯Ù Ù…Ø§ Ø§ÛŒØ¬Ø§Ø¯ Ø¨Ø³ØªØ±ÛŒ Ø§Ù…Ù† Ùˆ Ø¹Ø§Ø¯Ù„Ø§Ù†Ù‡ Ø¨Ø±Ø§ÛŒ Ø¯Ø³ØªØ±Ø³ÛŒ Ù‡Ù…Ú¯Ø§Ù†ÛŒ Ø¨Ù‡ Ø¯Ø§Ø±Ø§ÛŒÛŒâ€ŒÙ‡Ø§ÛŒ Ø¨Ø§Ø«Ø¨Ø§Øª Ø¬Ù‡Ø§Ù†ÛŒ Ø§Ø³Øª. Ù…Ø§ Ø¨Ø§ Ø§Ø¯ØºØ§Ù… ÙÙ†Ø§ÙˆØ±ÛŒ Ù¾ÛŒØ´Ø±ÙØªÙ‡ Ø¨Ù„Ø§Ú©Ú†ÛŒÙ† Ùˆ Ù‚ÙˆØ§Ù†ÛŒÙ† Ø´ÙØ§Ù Ù…Ø§Ù„ÛŒØŒ Ø¨Ø³ØªØ±ÛŒ Ø§ÛŒØ¬Ø§Ø¯ Ú©Ø±Ø¯Ù‡â€ŒØ§ÛŒÙ… ØªØ§ Ù†Ù‚Ø¯ÛŒÙ†Ú¯ÛŒ Ùˆ Ø§Ù…Ù†ÛŒØª Ø¯Ø± Ø¨Ø§Ù„Ø§ØªØ±ÛŒÙ† Ø³Ø·Ø­ Ù…Ù…Ú©Ù† Ø¯Ø± Ø§Ø®ØªÛŒØ§Ø± Ø³Ø±Ù…Ø§ÛŒÙ‡â€ŒÚ¯Ø°Ø§Ø±Ø§Ù† Ø®Ø±Ø¯ Ù‚Ø±Ø§Ø± Ú¯ÛŒØ±Ø¯.'
+                      : 'Our mission is to democratize high-yield, secure investment classes. By combining state-of-the-art decentralized ledgers with compliant legal trust frameworks, we provide retail and institutional investors alike with unparalleled liquidity and audited physical backing.'}
+                  </p>
+                </div>
+              </section>
+            )}
+
+            {/* View 7: Contact Us */}
+            {currentTab === 'contact' && (
+              <section className="space-y-6">
+                <div>
+                  <h1 className="text-2xl font-extrabold tracking-tight">
+                    {lang === 'fa' ? 'Ø§Ø±ØªØ¨Ø§Ø· Ø¨Ø§ Ù…Ø§' : 'Contact Us'}
+                  </h1>
+                  <p className="text-slate-400 text-xs mt-1">
+                    {lang === 'fa' ? 'Ù¾Ø§Ø³Ø®Ú¯ÙˆÛŒÛŒ Ø³Ø±ÛŒØ¹ Ùˆ Ù¾Ø´ØªÛŒØ¨Ø§Ù†ÛŒ Û²Û´ Ø³Ø§Ø¹ØªÙ‡ Ø¯Ø± ØªÙ…Ø§Ù…ÛŒ Ø±ÙˆØ²Ù‡Ø§ÛŒ Ù‡ÙØªÙ‡' : '24/7 global coverage and secure ticket submission'}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Contact Form */}
+                  <div className={`p-6 rounded-3xl border shadow-sm space-y-4 ${
+                    theme === 'dark' ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200'
+                  }`}>
+                    <h3 className={`text-base font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                      {lang === 'fa' ? 'Ø§Ø±Ø³Ø§Ù„ Ù¾ÛŒØ§Ù… Ù…Ø³ØªÙ‚ÛŒÙ…' : 'Send a message'}
+                    </h3>
+                    <form onSubmit={handleSupportSubmit} className="space-y-4">
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-slate-400">{lang === 'fa' ? 'Ù…ÙˆØ¶ÙˆØ¹ Ù¾ÛŒØ§Ù…' : 'Subject'}</label>
+                        <input
+                          type="text"
+                          placeholder={lang === 'fa' ? 'Ù…Ø«Ø§Ù„: Ø³ÙˆØ§Ù„ Ø¯Ø± Ù…ÙˆØ±Ø¯ ÙˆØ§Ø±ÛŒØ² ØªØªØ±' : 'e.g. Deposit validation question'}
+                          className={`w-full p-3 rounded-xl border focus:outline-none focus:border-blue-500 text-xs ${
+                            theme === 'dark' ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-200'
+                          }`}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-slate-400">{t.describeIssue}</label>
+                        <textarea
+                          rows={4}
+                          value={supportText}
+                          onChange={(e) => setSupportText(e.target.value)}
+                          placeholder={t.howCanHelp}
+                          className={`w-full p-3 rounded-xl border focus:outline-none focus:border-blue-500 text-xs ${
+                            theme === 'dark' ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-200'
+                          }`}
+                          required
+                        ></textarea>
+                      </div>
+
+                      <button
+                        type="submit"
+                        className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer"
+                      >
+                        {lang === 'fa' ? 'Ø«Ø¨Øª Ùˆ Ø§Ø±Ø³Ø§Ù„ Ù¾ÛŒØ§Ù…' : 'Send Message'}
+                      </button>
+                    </form>
+                  </div>
+
+                  {/* Office Info & coordinates */}
+                  <div className="space-y-6">
+                    <div className={`p-6 rounded-3xl border shadow-sm space-y-4 ${
+                      theme === 'dark' ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200'
+                    }`}>
+                      <h3 className={`text-base font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                        {lang === 'fa' ? 'Ø¯ÙØ§ØªØ± Ø¨ÛŒÙ†â€ŒØ§Ù„Ù…Ù„Ù„ÛŒ AssetChain' : 'Global Registered Offices'}
+                      </h3>
+
+                      <div className="space-y-4 text-xs font-medium">
+                        <div className="flex gap-3 items-start">
+                          <MapPin size={16} className="text-blue-500 shrink-0 mt-0.5" />
+                          <div>
+                            <p className={theme === 'dark' ? 'text-slate-200 font-bold' : 'text-slate-800 font-bold'}>
+                              {lang === 'fa' ? 'Ø¯ÙØªØ± Ø¯Ø¨ÛŒ (Ø§Ù…Ø§Ø±Ø§Øª Ù…ØªØ­Ø¯Ù‡ Ø¹Ø±Ø¨ÛŒ)' : 'Dubai Corporate HQ (UAE)'}
+                            </p>
+                            <p className="text-slate-400 mt-0.5">
+                              {lang === 'fa' ? 'Ø¨Ø±Ø¬ Ø®Ù„ÛŒÙÙ‡ØŒ Ø·Ø¨Ù‚Ù‡ Û´Û²ØŒ Ø¯Ø¨ÛŒØŒ Ø§Ù…Ø§Ø±Ø§Øª Ù…ØªØ­Ø¯Ù‡ Ø¹Ø±Ø¨ÛŒ' : 'Burj Khalifa, Floor 42, Downtown Dubai, UAE'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-3 items-start">
+                          <MapPin size={16} className="text-blue-500 shrink-0 mt-0.5" />
+                          <div>
+                            <p className={theme === 'dark' ? 'text-slate-200 font-bold' : 'text-slate-800 font-bold'}>
+                              {lang === 'fa' ? 'Ø¯ÙØªØ± Ø³ÙˆØ¦ÛŒØ³ (Ø®Ø²Ø§Ù†Ù‡â€ŒØ¯Ø§Ø±ÛŒ)' : 'Market Data Operations'}
+                            </p>
+                            <p className="text-slate-400 mt-0.5">
+                              {lang === 'fa' ? 'Ø®ÛŒØ§Ø¨Ø§Ù† Ø¨Ø§Ù‡Ù†ÙˆÙØŒ Ù¾Ù„Ø§Ú© Û±Û¸ØŒ Ø²ÙˆØ±ÛŒØ®ØŒ Ø³ÙˆØ¦ÛŒØ³' : 'TSETMC-linked market information'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-3 items-start">
+                          <Clock size={16} className="text-emerald-500 shrink-0 mt-0.5" />
+                          <div>
+                            <p className={theme === 'dark' ? 'text-slate-200 font-bold' : 'text-slate-800 font-bold'}>
+                              {lang === 'fa' ? 'Ø³Ø§Ø¹Ø§Øª Ú©Ø§Ø±ÛŒ Ù†Ø§Ø¸Ø±Ø§Ù† ÙÛŒØ²ÛŒÚ©ÛŒ' : 'Physical Custody Audit Hours'}
+                            </p>
+                            <p className="text-slate-400 mt-0.5">
+                              {lang === 'fa' ? 'Ø´Ù†Ø¨Ù‡ ØªØ§ Ú†Ù‡Ø§Ø±Ø´Ù†Ø¨Ù‡ - Û°Û¹:Û°Û° Ø§Ù„ÛŒ Û±Û·:Û°Û° Ø¨Ù‡ ÙˆÙ‚Øª Ø§Ø±ÙˆÙ¾Ø§ÛŒ Ù…Ø±Ú©Ø²ÛŒ' : 'Mon - Fri, 09:00 - 17:00 CET'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className={`p-6 rounded-3xl border shadow-sm space-y-2 text-xs font-semibold ${
+                      theme === 'dark' ? 'bg-slate-900/30 border-slate-800/60' : 'bg-slate-100/60 border-slate-200'
+                    }`}>
+                      <p className="text-slate-400">{lang === 'fa' ? 'Ø¢Ø¯Ø±Ø³ Ù¾Ø³Øª Ø§Ù„Ú©ØªØ±ÙˆÙ†ÛŒÚ©ÛŒ:' : 'Corporate Support Email:'}</p>
+                      <p className="text-blue-500 font-bold font-mono">support@assetchain.app</p>
+                      <p className="text-slate-400 mt-2">{lang === 'fa' ? 'Ù¾Ø´ØªÛŒØ¨Ø§Ù†ÛŒ Ø¨Ø±Ø®Ø· ØªÙ„Ú¯Ø±Ø§Ù…:' : 'Direct Telegram Support Channel:'}</p>
+                      <p className="text-blue-500 font-bold font-mono">@AssetChain_Support</p>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )}
+
+          </div>
+      </div>
+      )}
+      </div>
+
+      {/* Auth Modal (Sign In / Sign Up) */}
+      {isAuthModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className={`w-full max-w-md rounded-3xl border p-6 md:p-8 space-y-6 relative shadow-2xl transition-all ${
+            theme === 'dark' ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-900'
+          }`}>
+            {/* Close */}
+            <button
+              onClick={() => setIsAuthModalOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white"
+            >
+              <X size={18} />
+            </button>
+
+            <div>
+              <h2 className="text-xl font-bold tracking-tight">
+                {authMode === 'signIn' ? t.signIn : t.signUp}
+              </h2>
+              <p className="text-xs text-slate-400 mt-1">
+                {lang === 'fa' ? 'Ø³Ø±Ù…Ø§ÛŒÙ‡â€ŒÚ¯Ø°Ø§Ø±ÛŒ Ø±ÙˆÛŒ Ø¯Ø§Ø±Ø§ÛŒÛŒâ€ŒÙ‡Ø§ÛŒ Ø¯Ù†ÛŒØ§ÛŒ ÙˆØ§Ù‚Ø¹ÛŒ Ø¨Ø§ Ø§Ù…Ù†ÛŒØª Ø¨Ø§Ù„Ø§' : 'Access high-yield secured asset tokens'}
+              </p>
+            </div>
+
+            {authError && (
+              <div className="p-3 bg-rose-950/20 border border-rose-500/30 rounded-xl text-xs text-rose-400 font-semibold text-center">
+                {authError}
+              </div>
+            )}
+
+            <form onSubmit={handleAuthSubmit} className="space-y-4">
+                {authMode === 'signUp' && (
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400 uppercase">
+                      {lang === 'fa' ? 'Ù†Ø§Ù… Ú©Ø§Ù…Ù„' : 'Full name'}
+                    </label>
+                    <input
+                      type="text"
+                      value={authName}
+                      onChange={(e) => setAuthName(e.target.value)}
+                      autoComplete="name"
+                      minLength={2}
+                      className={`w-full p-3 rounded-xl border focus:outline-none focus:border-blue-500 text-sm ${
+                        theme === 'dark'
+                          ? 'bg-slate-950 border-slate-800 text-white'
+                          : 'bg-white border-slate-200 text-slate-900'
+                      }`}
+                      required
+                    />
+                  </div>
+                )}
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-400 uppercase">{lang === 'fa' ? 'Ø§ÛŒÙ…ÛŒÙ„' : 'Email'}</label>
+                <input
+                  type="email"
+                  value={authUsername}
+                  onChange={(e) => setAuthUsername(e.target.value)}
+                  autoComplete="email"
+                  className={`w-full p-3 rounded-xl border focus:outline-none focus:border-blue-500 text-sm ${
+                    theme === 'dark' ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-200'
+                  }`}
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-400 uppercase">{t.password}</label>
+                <input
+                  type="password"
+                  value={authPassword}
+                  onChange={(e) => setAuthPassword(e.target.value)}
+                  autoComplete={authMode === 'signIn' ? 'current-password' : 'new-password'}
+                  minLength={8}
+                  className={`w-full p-3 rounded-xl border focus:outline-none focus:border-blue-500 text-sm ${
+                    theme === 'dark' ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-200'
+                  }`}
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                  disabled={isAuthLoading}
+                className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm rounded-xl transition-all shadow-md mt-2"
+              >
+                {isAuthLoading ? (lang === 'fa' ? 'Ø¯Ø± Ø­Ø§Ù„ Ù¾Ø±Ø¯Ø§Ø²Ø´...' : 'Processing...') : (authMode === 'signIn' ? t.signIn : t.signUp)}
+              </button>
+            </form>
+
+            <div className="text-center">
+              <button
+                onClick={() => {
+                  setAuthMode(authMode === 'signIn' ? 'signUp' : 'signIn');
+                  setAuthError('');
+                }}
+                className="text-xs text-slate-400 hover:text-white underline cursor-pointer"
+              >
+                {authMode === 'signIn' ? t.noAccount : t.hasAccount}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Buy Order Confirmation Modal */}
+      {isBuyModalOpen && selectedAsset && (
+        <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className={`w-full max-w-md rounded-3xl border p-6 space-y-6 relative shadow-2xl ${
+            theme === 'dark' ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-900'
+          }`}>
+            <button
+              onClick={() => setIsBuyModalOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white"
+            >
+              <X size={18} />
+            </button>
+
+            <div>
+              <h2 className="text-lg font-bold tracking-tight">{t.confirmBuy}</h2>
+              <p className="text-xs text-slate-400 mt-0.5">{lang === 'fa' ? 'Ø³ÙØ§Ø±Ø´ Ø®Ø±ÛŒØ¯ Ø¯Ø§Ø±Ø§ÛŒÛŒ Iran Market' : 'Buy selected Iranian share'}</p>
+            </div>
+
+            <div className={`p-4 rounded-xl flex items-center justify-between ${
+              theme === 'dark' ? 'bg-slate-950/60' : 'bg-slate-50'
+            }`}>
+              <div>
+                <span className="text-xs text-slate-400 font-bold uppercase font-mono">#{selectedAsset.id}</span>
+                <p className="text-sm font-bold">{lang === 'fa' ? selectedAsset.faName : selectedAsset.enName}</p>
+              </div>
+              <div className="text-end">
+                <span className="text-xs text-slate-400">{t.tokenPrice}</span>
+                <p className="text-sm font-black text-blue-500">{selectedAsset.price} USDT</p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => handleOpenAssetInfo(selectedAsset)}
+              className="w-full text-xs text-blue-400 hover:text-blue-300 font-bold flex items-center justify-center gap-1.5 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 rounded-xl transition-all cursor-pointer border border-blue-500/20"
+            >
+              <Info size={13} />
+              <span>{lang === 'fa' ? 'Ù…Ø´Ø§Ù‡Ø¯Ù‡ Ø´Ù†Ø§Ø³Ù†Ø§Ù…Ù‡ Ùˆ Ù¾Ø´ØªÙˆØ§Ù†Ù‡ ÙÛŒØ²ÛŒÚ©ÛŒ Ø¯Ø§Ø±Ø§ÛŒÛŒ' : 'View Asset Specs & Physical Backing'}</span>
+            </button>
+
+            {/* Modal Sub-Tabs: Instant / OTC / Alert */}
+            <div className={`flex p-1 rounded-xl border ${
+              theme === 'dark' ? 'bg-slate-950/40 border-slate-800' : 'bg-slate-50 border-slate-200'
+            }`}>
+              <button
+                type="button"
+                onClick={() => setBuyModalTab('instant')}
+                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                  buyModalTab === 'instant'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-slate-650'
+                }`}
+              >
+                {lang === 'fa' ? 'Ø®Ø±ÛŒØ¯ ÙÙˆØ±ÛŒ' : 'Instant Buy'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setBuyModalTab('limit');
+                  if (!buyLimitPrice) setBuyLimitPrice(selectedAsset.price.toString());
+                }}
+                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                  buyModalTab === 'limit'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-slate-650'
+                }`}
+              >
+                {lang === 'fa' ? 'Ø³ÙØ§Ø±Ø´ Ù…Ø­Ø¯ÙˆØ¯ / OTC' : 'OTC / Limit'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setBuyModalTab('alert');
+                  if (!buyAlertPrice) setBuyAlertPrice(selectedAsset.price.toString());
+                }}
+                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                  buyModalTab === 'alert'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-slate-650'
+                }`}
+              >
+                {lang === 'fa' ? 'Ù‡Ø´Ø¯Ø§Ø± Ù‚ÛŒÙ…Øª' : 'Price Alert'}
+              </button>
+            </div>
+
+            <form onSubmit={handleModalSubmit} className="space-y-4">
+              {buyModalTab === 'instant' && (
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400 uppercase">{t.amountToInvest}</label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        value={buyAmount}
+                        onChange={(e) => setBuyAmount(e.target.value)}
+                        placeholder="Enter USDT Amount"
+                        className={`w-full p-3 pr-16 rounded-xl border focus:outline-none focus:border-blue-500 text-sm ${
+                          theme === 'dark' ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-200'
+                        }`}
+                        required={buyModalTab === 'instant'}
+                      />
+                      <span className="absolute right-3 top-3 text-xs font-bold text-blue-500">
+                        USDT
+                      </span>
+                    </div>
+                    {currentUser && (
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        {lang === 'fa' ? 'Ù…ÙˆØ¬ÙˆØ¯ÛŒ Ø¢Ø²Ø§Ø¯:' : 'Available Balance:'} {currentUser.usdtBalance.toLocaleString()} USDT
+                      </p>
+                    )}
+                  </div>
+
+                  {(() => {
+                    const val = parseFloat(buyAmount) || 0;
+                    const fee = val * 0.001;
+                    const shares = Math.floor(val / selectedAsset.price) || 0;
+                    const total = val + fee;
+
+                    return (
+                      <div className={`p-4 rounded-xl text-xs space-y-2 font-medium ${
+                        theme === 'dark' ? 'bg-slate-950/40' : 'bg-slate-50'
+                      }`}>
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">{t.estShares}</span>
+                          <span className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{shares.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">{t.fee}</span>
+                          <span className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{fee.toFixed(2)} USDT</span>
+                        </div>
+                        <hr className="border-slate-800/80 my-2" />
+                        <div className="flex justify-between text-sm font-extrabold">
+                          <span className="text-slate-400">{t.totalToPay}</span>
+                          <span className="text-blue-500">{total.toFixed(2)} USDT</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+
+              {buyModalTab === 'limit' && (
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400 uppercase">
+                      {lang === 'fa' ? 'Ù‚ÛŒÙ…Øª Ø®Ø±ÛŒØ¯ Ù‡Ø¯Ù (USDT)' : 'Target Buy Price (USDT)'}
+                    </label>
+                    <input
+                      type="number"
+                      step="0.0001"
+                      value={buyLimitPrice}
+                      onChange={(e) => setBuyLimitPrice(e.target.value)}
+                      placeholder={selectedAsset.price.toString()}
+                      className={`w-full p-3 rounded-xl border focus:outline-none focus:border-blue-500 text-sm ${
+                        theme === 'dark' ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-200'
+                      }`}
+                      required={buyModalTab === 'limit'}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400 uppercase">
+                      {lang === 'fa' ? 'Ø­Ø¬Ù… Ø®Ø±ÛŒØ¯ (ØªØ¹Ø¯Ø§Ø¯ Ø³Ù‡Ù…)' : 'Buy Volume (Shares)'}
+                    </label>
+                    <input
+                      type="number"
+                      value={buyLimitShares}
+                      onChange={(e) => setBuyLimitShares(e.target.value)}
+                      placeholder={lang === 'fa' ? 'ØªØ¹Ø¯Ø§Ø¯ Ø³Ù‡Ù… Ù…ÙˆØ±Ø¯ Ù†Ø¸Ø± Ø¨Ø±Ø§ÛŒ Ø®Ø±ÛŒØ¯ Ø§ØªÙˆÙ…Ø§ØªÛŒÚ©' : 'Number of shares to buy automatically'}
+                      className={`w-full p-3 rounded-xl border focus:outline-none focus:border-blue-500 text-sm ${
+                        theme === 'dark' ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-200'
+                      }`}
+                      required={buyModalTab === 'limit'}
+                    />
+                    {currentUser && (
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        {lang === 'fa' ? 'Ù…ÙˆØ¬ÙˆØ¯ÛŒ Ø¢Ø²Ø§Ø¯:' : 'Available Balance:'} {currentUser.usdtBalance.toLocaleString()} USDT
+                      </p>
+                    )}
+                  </div>
+
+                  {(() => {
+                    const price = parseFloat(buyLimitPrice) || 0;
+                    const shares = parseFloat(buyLimitShares) || 0;
+                    const totalCost = price * shares;
+                    return (
+                      <div className={`p-4 rounded-xl text-xs space-y-2 font-medium ${
+                        theme === 'dark' ? 'bg-slate-950/40' : 'bg-slate-50'
+                      }`}>
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">{lang === 'fa' ? 'Ø§Ø±Ø²Ø´ ØªØ®Ù…ÛŒÙ†ÛŒ Ú©Ù„ Ø³ÙØ§Ø±Ø´' : 'Estimated Order Total'}</span>
+                          <span className="text-blue-500 font-bold">{totalCost.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT</span>
+                        </div>
+                        <p className="text-[9.5px] text-slate-400 leading-normal mt-1 font-semibold">
+                          {lang === 'fa'
+                            ? 'ðŸ’¡ Ø³ÙØ§Ø±Ø´ OTC / Ù…Ø­Ø¯ÙˆØ¯ Ø´Ù…Ø§ Ø°Ø®ÛŒØ±Ù‡ Ø´Ø¯Ù‡ Ùˆ Ø¨Ø§ Ø±Ø³ÛŒØ¯Ù† Ù‚ÛŒÙ…Øª Ø²Ù†Ø¯Ù‡ Ø¯Ø§Ø±Ø§ÛŒÛŒ Ø¨Ù‡ Ù†Ø±Ø® ØªØ¹ÛŒÛŒÙ† Ø´Ø¯Ù‡ØŒ Ø¨Ù‡ ØµÙˆØ±Øª Ú©Ø§Ù…Ù„Ø§Ù‹ Ø®ÙˆØ¯Ú©Ø§Ø± Ù…Ø¹Ø§Ù…Ù„Ù‡ Ø§Ù†Ø¬Ø§Ù… Ù…ÛŒâ€ŒÚ¯Ø±Ø¯Ø¯.'
+                            : 'ðŸ’¡ Your OTC / Limit order will be stored and executed automatically as soon as the live asset price hits your target.'}
+                        </p>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+
+              {buyModalTab === 'alert' && (
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400 uppercase">
+                      {lang === 'fa' ? 'Ù‚ÛŒÙ…Øª Ù‡Ø¯Ù Ø¨Ø±Ø§ÛŒ Ù‡Ø´Ø¯Ø§Ø± (USDT)' : 'Target Price for Alert (USDT)'}
+                    </label>
+                    <input
+                      type="number"
+                      step="0.0001"
+                      value={buyAlertPrice}
+                      onChange={(e) => setBuyAlertPrice(e.target.value)}
+                      placeholder={selectedAsset.price.toString()}
+                      className={`w-full p-3 rounded-xl border focus:outline-none focus:border-blue-500 text-sm ${
+                        theme === 'dark' ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-200'
+                      }`}
+                      required={buyModalTab === 'alert'}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400 uppercase">
+                      {lang === 'fa' ? 'Ø´Ø±Ø§ÛŒØ· ÙØ¹Ø§Ù„ Ø´Ø¯Ù† Ù‡Ø´Ø¯Ø§Ø±' : 'Alert Condition'}
+                    </label>
+                    <select
+                      value={buyAlertCondition}
+                      onChange={(e) => setBuyAlertCondition(e.target.value as 'above' | 'below')}
+                      className={`w-full p-3 rounded-xl border focus:outline-none focus:border-blue-500 text-xs font-semibold ${
+                        theme === 'dark' ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-200'
+                      }`}
+                    >
+                      <option value="above">
+                        {lang === 'fa' ? 'Ù‚ÛŒÙ…Øª Ø¨Ù‡ Ø¨Ø§Ù„Ø§ÛŒ Ù‡Ø¯Ù Ø­Ø±Ú©Øª Ú©Ù†Ø¯ (>=)' : 'Price goes above target (>=)'}
+                      </option>
+                      <option value="below">
+                        {lang === 'fa' ? 'Ù‚ÛŒÙ…Øª Ø¨Ù‡ Ø²ÛŒØ± Ù‡Ø¯Ù Ø­Ø±Ú©Øª Ú©Ù†Ø¯ (<=)' : 'Price goes below target (<=)'}
+                      </option>
+                    </select>
+                  </div>
+
+                  <div className={`p-4 rounded-xl text-xs space-y-1 leading-normal text-slate-400 ${
+                    theme === 'dark' ? 'bg-slate-950/40' : 'bg-slate-50'
+                  }`}>
+                    <p className="font-semibold">
+                      {lang === 'fa'
+                        ? 'ðŸ’¡ Ù¾Ø³ Ø§Ø² Ø±Ø³ÛŒØ¯Ù† Ù‚ÛŒÙ…Øª Ø¨Ù‡ Ù‡Ø¯Ù ØªØ¹ÛŒÛŒÙ† Ø´Ø¯Ù‡ØŒ ÛŒÚ© Ù†ÙˆØªÛŒÙÛŒÚ©ÛŒØ´Ù† Ù‡Ø´Ø¯Ø§Ø± ÙÙˆØ±ÛŒ Ø±ÙˆÛŒ ØµÙØ­Ù‡ Ø¨Ø±Ø§ÛŒ Ø´Ù…Ø§ Ø§Ø±Ø³Ø§Ù„ Ø®ÙˆØ§Ù‡Ø¯ Ø´Ø¯.'
+                        : 'ðŸ’¡ Once the live asset price crosses your target threshold, an instant on-screen alert notification will be dispatched.'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm rounded-xl transition-all shadow-md mt-2"
+              >
+                {buyModalTab === 'instant' ? t.confirmBuy : buyModalTab === 'limit' ? (lang === 'fa' ? 'Ø«Ø¨Øª Ø³ÙØ§Ø±Ø´ Ù…Ø­Ø¯ÙˆØ¯ / OTC' : 'Set OTC / Limit Order') : (lang === 'fa' ? 'ØªÙ†Ø¸ÛŒÙ… Ù‡Ø´Ø¯Ø§Ø± Ù‚ÛŒÙ…Øª' : 'Set Price Alert')}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Sell Order Confirmation Modal */}
+      {isSellModalOpen && selectedAsset && (
+        <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className={`w-full max-w-md rounded-3xl border p-6 space-y-6 relative shadow-2xl ${
+            theme === 'dark' ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-900'
+          }`}>
+            <button
+              onClick={() => setIsSellModalOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white"
+            >
+              <X size={18} />
+            </button>
+
+            <div>
+              <h2 className="text-lg font-bold tracking-tight">{t.confirmSell}</h2>
+              <p className="text-xs text-slate-400 mt-0.5">{lang === 'fa' ? 'Ø³ÙØ§Ø±Ø´ ÙØ±ÙˆØ´ Ø³Ù‡Ù… Ø¯Ø§Ø±Ø§ÛŒÛŒ Iran Market' : 'Sell selected Iranian share'}</p>
+            </div>
+
+            <div className={`p-4 rounded-xl flex items-center justify-between ${
+              theme === 'dark' ? 'bg-slate-950/60' : 'bg-slate-50'
+            }`}>
+              <div>
+                <span className="text-xs text-slate-400 font-bold uppercase font-mono">#{selectedAsset.id}</span>
+                <p className="text-sm font-bold">{lang === 'fa' ? selectedAsset.faName : selectedAsset.enName}</p>
+              </div>
+              <div className="text-end">
+                <span className="text-xs text-slate-400">{t.tokenPrice}</span>
+                <p className="text-sm font-black text-amber-500">{selectedAsset.price} USDT</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSellSubmit} className="space-y-4">
+              <div className="space-y-1">
+                <div className="flex justify-between items-center">
+                  <label className="text-xs font-bold text-slate-400 uppercase">{t.sharesToSell}</label>
+                  <span className="text-[10px] text-slate-400 font-bold">
+                    {t.ownedShares.replace('{num}', activeMaxShares.toLocaleString())}
+                  </span>
+                </div>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={sellShares}
+                    onChange={(e) => setSellShares(e.target.value)}
+                    placeholder="Enter Shares count"
+                    className={`w-full p-3 pr-16 rounded-xl border focus:outline-none focus:border-blue-500 text-sm ${
+                      theme === 'dark' ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-200'
+                    }`}
+                    required
+                  />
+                  <span className="absolute right-3 top-3 text-xs font-bold text-slate-500">
+                    {lang === 'fa' ? 'Ø³Ù‡Ù…' : 'Shares'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Real-time Sell details breakdown */}
+              {(() => {
+                const sharesCount = parseInt(sellShares) || 0;
+                const gross = sharesCount * selectedAsset.price;
+                const fee = gross * 0.001;
+                const net = gross - fee;
+
+                return (
+                  <div className={`p-4 rounded-xl text-xs space-y-2 font-medium ${
+                    theme === 'dark' ? 'bg-slate-950/40' : 'bg-slate-50'
+                  }`}>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">{t.grossValue}</span>
+                      <span className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{gross.toFixed(2)} USDT</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">{t.fee}</span>
+                      <span className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{fee.toFixed(2)} USDT</span>
+                    </div>
+                    <hr className="border-slate-800/80 my-2" />
+                    <div className="flex justify-between text-sm font-extrabold">
+                      <span className="text-slate-400">{t.netReceive}</span>
+                      <span className="text-emerald-500">{net.toFixed(2)} USDT</span>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              <button
+                type="submit"
+                className="w-full py-3 bg-amber-600 hover:bg-amber-500 text-white font-extrabold text-sm rounded-xl transition-all shadow-md mt-2"
+              >
+                {t.confirmSell}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Asset Specifications & Info Modal */}
+      {isInfoModalOpen && infoAsset && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+          <div className={`w-full max-w-2xl rounded-3xl border p-6 md:p-8 space-y-6 relative shadow-2xl my-8 ${
+            theme === 'dark' ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-900'
+          }`}>
+            {/* Close Button */}
+            <button
+              onClick={() => setIsInfoModalOpen(false)}
+              className="absolute top-5 right-5 text-slate-400 hover:text-white p-1.5 rounded-full hover:bg-slate-800/60 transition-all cursor-pointer"
+            >
+              <X size={20} />
+            </button>
+
+            {/* Header Banner */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-800/20">
+              <div className="flex items-center gap-3">
+                <img
+                  src={`https://flagcdn.com/32x24/${infoAsset.flag}.png`}
+                  alt={infoAsset.flag}
+                  className="rounded shadow-sm shrink-0"
+                  referrerPolicy="no-referrer"
+                />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono font-bold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
+                      #{infoAsset.id}
+                    </span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${
+                      theme === 'dark' ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'
+                    }`}>
+                      {infoAsset.category === 'metals' && t.categoryMetals}
+                      {infoAsset.category === 'pharma' && t.categoryAuto}
+                      {infoAsset.category === 'petro' && t.categoryPetro}
+                      {infoAsset.category === 'investment' && t.categoryBank}
+                    </span>
+                  </div>
+                  <h2 className="text-xl md:text-2xl font-black tracking-tight mt-1">
+                    {lang === 'fa' ? infoAsset.faName : infoAsset.enName}
+                  </h2>
+                  <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                    <MapPin size={13} className="text-slate-500" />
+                    <span>{lang === 'fa' ? infoAsset.locationFa : infoAsset.locationEn}</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Live Price Badge */}
+              <div className="text-start sm:text-end bg-blue-500/10 border border-blue-500/20 p-3 rounded-2xl shrink-0">
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">{t.tokenPrice}</span>
+                <p className="text-lg font-black text-blue-500 font-mono">
+                  {infoAsset.price.toLocaleString(undefined, { minimumFractionDigits: 2 })} USDT
+                </p>
+                <span className={`text-xs font-bold flex items-center sm:justify-end gap-1 mt-0.5 ${
+                  infoAsset.change >= 0 ? 'text-emerald-500' : 'text-rose-500'
+                }`}>
+                  {infoAsset.change >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                  <span>{infoAsset.change >= 0 ? '+' : ''}{infoAsset.change}%</span>
+                </span>
+              </div>
+            </div>
+
+            {/* Main Info Sections */}
+            <div className="space-y-4">
+
+              {/* Section 1: Asset Description */}
+              <div className={`p-4 md:p-5 rounded-2xl border space-y-2 ${
+                theme === 'dark' ? 'bg-slate-950/60 border-slate-800/80' : 'bg-slate-50 border-slate-200'
+              }`}>
+                <h3 className="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Info size={16} />
+                  <span>{t.assetOverview}</span>
+                </h3>
+                <p className="text-xs md:text-sm leading-relaxed text-slate-300">
+                  {(lang === 'fa' ? infoAsset.descriptionFa : infoAsset.descriptionEn) || (
+                    lang === 'fa' ? 'Ø§Ø·Ù„Ø§Ø¹Ø§Øª Ú©Ø§Ù…Ù„ Ùˆ Ø³Ø§Ø®ØªØ§Ø± Ø­Ù‚ÙˆÙ‚ÛŒ Ø§ÛŒÙ† Ø¯Ø§Ø±Ø§ÛŒÛŒ ØªØ­Øª Ù†Ø¸Ø§Ø±Øª Ù…ØªÙˆÙ„ÛŒØ§Ù† Ø¨ÛŒÙ†â€ŒØ§Ù„Ù…Ù„Ù„ÛŒ Ø«Ø¨Øª Ø´Ø¯Ù‡ Ø§Ø³Øª.' : 'Full asset structure and legal details recorded under international regulated trust.'
+                  )}
+                </p>
+              </div>
+
+              {/* Section 2: Physical Backing & Custody */}
+              <div className={`p-4 md:p-5 rounded-2xl border space-y-3 ${
+                theme === 'dark' ? 'bg-slate-950/60 border-slate-800/80' : 'bg-slate-50 border-slate-200'
+              }`}>
+                <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <ShieldCheck size={16} />
+                  <span>{t.physicalBacking}</span>
+                </h3>
+                <p className="text-xs md:text-sm leading-relaxed text-slate-300">
+                  {(lang === 'fa' ? infoAsset.backingFa : infoAsset.backingEn) || (
+                    lang === 'fa' ? 'Ù¾Ø´ØªÙˆØ§Ù†Ù‡ ÙÛŒØ²ÛŒÚ©ÛŒ ÙˆØ§Ù‚Ø¹ÛŒ Ø¨Ø§ Ú¯ÙˆØ§Ù‡ÛŒ Ø§Ù†Ø¨Ø§Ø±Ø¯Ø§Ø±ÛŒ Ø­Ø³Ø§Ø¨Ø±Ø³ÛŒâ€ŒØ´Ø¯Ù‡.' : 'Verified physical backing with audited warehouse certificates.'
+                  )}
+                </p>
+
+                <div className="pt-2 border-t border-slate-800/40 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-bold block uppercase">{t.custodianTitle}</span>
+                    <span className="font-semibold text-slate-200 mt-0.5 block">
+                      {(lang === 'fa' ? infoAsset.custodianFa : infoAsset.custodianEn) || (lang === 'fa' ? 'Ø§Ù†Ø¨Ø§Ø± Ø±Ø³Ù…ÛŒ Ùˆ Ø®Ø²Ø§Ù†Ù‡ Ø§Ù…Ø§Ù†Øªâ€ŒØ¯Ø§Ø±ÛŒ' : 'Certified Custody Depository')}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-bold block uppercase">{t.payoutSchedule}</span>
+                    <span className="font-semibold text-slate-200 mt-0.5 block">
+                      {(lang === 'fa' ? infoAsset.payoutIntervalFa : infoAsset.payoutIntervalEn) || (lang === 'fa' ? 'ØªÙˆØ²ÛŒØ¹ Ø¯ÙˆØ±Ù‡â€ŒØ§ÛŒ Ø³ÙˆØ¯' : 'Periodic Yield Distribution')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 2.5: TSETMC Bourse Direct Link (For Bourse Stock Assets) */}
+              {(infoAsset.tsetmcUrl || infoAsset.flag === 'ir') && (
+                <div className={`p-4 md:p-5 rounded-2xl border space-y-3 transition-all ${
+                  theme === 'dark'
+                    ? 'bg-gradient-to-r from-blue-950/40 via-slate-900 to-emerald-950/30 border-blue-500/30 shadow-lg shadow-blue-950/20'
+                    : 'bg-gradient-to-r from-blue-50/90 via-white to-emerald-50/80 border-blue-300 shadow-sm'
+                }`}>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-start sm:items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center shrink-0 mt-0.5 sm:mt-0">
+                        <Globe size={20} className="text-blue-400" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="text-xs font-black text-blue-400 uppercase tracking-wider">
+                            {t.tsetmcSectionTitle}
+                          </h3>
+                          {infoAsset.bourseSymbol && (
+                            <span className="text-[11px] font-black px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                              Ù†Ù…Ø§Ø¯ Ø¨ÙˆØ±Ø³: {infoAsset.bourseSymbol}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-300/90 leading-relaxed mt-1">
+                          {t.tsetmcDesc}
+                        </p>
+                      </div>
+                    </div>
+
+                    <a
+                      href={infoAsset.tsetmcUrl || `https://www.google.com/search?q=${encodeURIComponent('Ø³Ø§ÛŒØª tsetmc Ù†Ù…Ø§Ø¯ ' + (infoAsset.bourseSymbol || infoAsset.faName))}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl transition-all shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2 shrink-0 cursor-pointer w-full sm:w-auto"
+                    >
+                      <span>{t.tsetmcBtn}</span>
+                      <ExternalLink size={14} />
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {/* Section 3: Token Specs & Risk */}
+              <div className={`p-4 md:p-5 rounded-2xl border space-y-3 ${
+                theme === 'dark' ? 'bg-slate-950/60 border-slate-800/80' : 'bg-slate-50 border-slate-200'
+              }`}>
+                <h3 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Coins size={16} />
+                  <span>{t.smartContractInfo}</span>
+                </h3>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+                  <div className={`p-3 rounded-xl border ${theme === 'dark' ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-200'}`}>
+                    <span className="text-[10px] text-slate-400 font-bold block">{t.riskLevelTitle}</span>
+                    <span className={`inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-extrabold ${
+                      infoAsset.riskLevel === 'Low' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                    }`}>
+                      {infoAsset.riskLevel || 'Low'}
+                    </span>
+                  </div>
+
+                  <div className={`p-3 rounded-xl border ${theme === 'dark' ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-200'}`}>
+                    <span className="text-[10px] text-slate-400 font-bold block">{lang === 'fa' ? 'Ø§Ø³ØªØ§Ù†Ø¯Ø§Ø±Ø¯ ØªÙˆÚ©Ù†' : 'Token Standard'}</span>
+                    <span className="font-mono text-xs font-bold text-slate-200 block mt-1">TSETMC</span>
+                  </div>
+
+                  <div className={`p-3 rounded-xl border ${theme === 'dark' ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-200'}`}>
+                    <span className="text-[10px] text-slate-400 font-bold block">{lang === 'fa' ? 'Ú©Ø§Ø±Ù…Ø²Ø¯ Ù…Ø¹Ø§Ù…Ù„Ù‡' : 'Trading Fee'}</span>
+                    <span className="font-mono text-xs font-bold text-slate-200 block mt-1">0.10% USDT</span>
+                  </div>
+                </div>
+
+                {/* Sale Progress */}
+                <div className="space-y-1.5 pt-2">
+                  <div className="flex justify-between text-xs font-semibold">
+                    <span className="text-slate-400">{t.saleProgress}</span>
+                    <span className="text-blue-400 font-bold">{infoAsset.progress}%</span>
+                  </div>
+                  <div className={`h-2 rounded-full overflow-hidden ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-200'}`}>
+                    <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500" style={{ width: `${infoAsset.progress}%` }}></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex flex-col sm:flex-row items-center gap-3 pt-4 border-t border-slate-800/20">
+              <button
+                onClick={() => setIsInfoModalOpen(false)}
+                className={`w-full sm:w-1/3 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                  theme === 'dark' ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                {t.closeModal}
+              </button>
+
+              <button
+                onClick={() => {
+                  setIsInfoModalOpen(false);
+                  if (!isLoggedIn) {
+                    setIsAuthModalOpen(true);
+                  } else {
+                    setSelectedAsset(infoAsset);
+                    setBuyAmount('');
+                    setIsBuyModalOpen(true);
+                  }
+                }}
+                className="w-full sm:w-2/3 py-3 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer shadow-lg shadow-blue-600/20 text-center flex items-center justify-center gap-2"
+              >
+                <span>{t.proceedToBuy}</span>
+                <ArrowUpRight size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      <footer className={`border-t transition-colors duration-300 ${
+        theme === 'dark' ? 'bg-slate-950 border-slate-900 text-slate-400' : 'bg-white border-slate-200 text-slate-500'
+      }`}>
+        {/* Full-width Referral Invite Card */}
+        {currentTab !== 'history' && currentTab !== 'wallet' && (
+          <div className="max-w-7xl mx-auto px-4 md:px-8 pt-8 md:pt-12">
+            {/* Staking APY Referral Invite Card (gorgeous visual highlight) */}
+            <div className="w-full bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl md:rounded-3xl p-5 md:p-8 relative overflow-hidden text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6">
+              <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 rounded-full"></div>
+              <div className="absolute -top-10 -left-10 w-24 h-24 bg-blue-400/20 rounded-full blur-xl"></div>
+
+              <div className="relative z-10 space-y-2 md:space-y-3 text-start">
+                <div className="flex items-center gap-2 md:gap-3">
+                  <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+                    <Share2 size={18} />
+                  </div>
+                  <h3 className="text-lg md:text-xl font-bold leading-tight">{t.shareAndEarn}</h3>
+                </div>
+                <p className="text-blue-100 text-[11px] md:text-sm mt-1 opacity-80 leading-relaxed max-w-xl">
+                  {t.referralText}
+                </p>
+              </div>
+              <div className="relative z-10 shrink-0 w-full md:w-64">
+                <button
+                  onClick={handleCopyCode}
+                  className="w-full py-2.5 md:py-3 bg-white hover:bg-slate-50 text-blue-600 rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-1 cursor-pointer hover:scale-[1.01]"
+                >
+                  {copiedCode ? <Check size={14} className="text-emerald-500" /> : null}
+                  <span>{copiedCode ? t.copied : t.referralCode}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Main Footer Content */}
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-16">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-12">
+
+            {/* Column 1: Brand & Identity */}
+            <div className="space-y-3.5 text-start">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 md:w-8 md:h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/25">
+                  <Coins size={14} />
+                </div>
+                <span className={`text-base md:text-lg font-extrabold tracking-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                  {t.appName}
+                </span>
+              </div>
+              <p className="text-[11px] md:text-xs leading-relaxed opacity-85">
+                {lang === 'fa' ? '\u0627\u0637\u0644\u0627\u0639\u0627\u062a \u067e\u0646\u062c \u0633\u0647\u0645 \u0645\u0646\u062a\u062e\u0628 \u0628\u0627 \u062f\u0627\u062f\u0647\u200c\u0647\u0627\u06cc \u0628\u0627\u0632\u0627\u0631 TSETMC \u0646\u0645\u0627\u06cc\u0634 \u062f\u0627\u062f\u0647 \u0645\u06cc\u200c\u0634\u0648\u062f.' : 'AssetChain presents five selected Iranian shares with market information sourced from TSETMC.'}
+              </p>
+
+              {/* Market Status Feed */}
+              <div className="space-y-2 pt-1">
+                <div className={`p-2.5 md:p-3 rounded-xl md:rounded-2xl border text-[10px] md:text-[11px] font-bold flex items-center justify-between ${
+                  theme === 'dark' ? 'bg-slate-900/40 border-slate-900/60' : 'bg-slate-50 border-slate-100'
+                }`}>
+                  <span className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                    <span>{t.marketStatus}</span>
+                  </span>
+                  <span className="text-blue-500 font-mono">{t.vol24h}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Column 2: Market Categories */}
+            <div className="space-y-3 md:space-y-4 text-start">
+              <h4 className={`text-[10px] md:text-xs font-black uppercase tracking-wider ${theme === 'dark' ? 'text-slate-200' : 'text-slate-900'}`}>
+                {lang === 'fa' ? 'Ø¨Ø§Ø²Ø§Ø±Ù‡Ø§ÛŒ Ø³Ø±Ù…Ø§ÛŒÙ‡â€ŒÚ¯Ø°Ø§Ø±ÛŒ Iran Market' : 'Market Sectors'}
+              </h4>
+              <ul className="space-y-2 text-[11px] md:text-xs">
+                {[
+        { id: 'metals', en: 'Metals & Mining', fa: '\u0641\u0644\u0632\u0627\u062a \u0648 \u0645\u0639\u0627\u062f\u0646' },
+        { id: 'pharma', en: 'Pharmaceutical', fa: '\u062f\u0627\u0631\u0648\u06cc\u06cc' },
+        { id: 'investment', en: 'Investment', fa: '\u0633\u0631\u0645\u0627\u06cc\u0647\u200c\u06af\u0630\u0627\u0631\u06cc' },
+        { id: 'petro', en: 'Refining & Petro', fa: '\u067e\u0627\u0644\u0627\u06cc\u0634\u06cc \u0648 \u067e\u062a\u0631\u0648\u0634\u06cc\u0645\u06cc' },
+                ].map(cat => (
+                  <li key={cat.id}>
+                    <button
+                      onClick={() => {
+                        setMarketFilter(cat.id);
+                        setCurrentTab('market');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="hover:text-blue-500 transition-colors flex items-center gap-1.5 cursor-pointer text-start"
+                    >
+                      <span className="opacity-40">#</span>
+                      <span>{lang === 'fa' ? cat.fa : cat.en}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Column 3: Navigation & Platform */}
+            <div className="space-y-3 md:space-y-4 text-start">
+              <h4 className={`text-[10px] md:text-xs font-black uppercase tracking-wider ${theme === 'dark' ? 'text-slate-200' : 'text-slate-900'}`}>
+                {lang === 'fa' ? 'Ù†Ø§ÙˆØ¨Ø±ÛŒ Ùˆ Ù¾Ù„ØªÙØ±Ù…' : 'Platform Navigation'}
+              </h4>
+              <ul className="space-y-2 text-[11px] md:text-xs">
+                {[
+                  { tab: 'home', label: t.home },
+                  { tab: 'market', label: t.assetsMarket },
+                  { tab: 'portfolio', label: t.portfolio, authRequired: true },
+                  { tab: 'wallet', label: t.wallet, authRequired: true },
+                  { tab: 'history', label: t.history, authRequired: true },
+                  { tab: 'about', label: t.aboutUs },
+                  { tab: 'contact', label: t.contactUs },
+                ].map(item => {
+                  if (item.authRequired && !isLoggedIn) return null;
+                  return (
+                    <li key={item.tab}>
+                      <button
+                        onClick={() => {
+                          setCurrentTab(item.tab as any);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="hover:text-blue-500 transition-colors cursor-pointer text-start"
+                      >
+                        {item.label}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+
+            {/* Column 4: Location & Support Details */}
+            <div className="space-y-3 md:space-y-4 text-start">
+              <h4 className={`text-[10px] md:text-xs font-black uppercase tracking-wider ${theme === 'dark' ? 'text-slate-200' : 'text-slate-900'}`}>
+                {lang === 'fa' ? 'Ø§Ø·Ù„Ø§Ø¹Ø§Øª Ù¾Ø´ØªÛŒØ¨Ø§Ù†ÛŒ Ùˆ Ø¯ÙØªØ± Ù…Ø±Ú©Ø²ÛŒ' : 'Support & Legal Presence'}
+              </h4>
+              <div className="space-y-2.5 md:space-y-3.5 text-[11px] md:text-xs">
+                <div className="flex items-start gap-2">
+                  <MapPin size={14} className="text-blue-500 shrink-0 mt-0.5" />
+                  <p className="leading-relaxed">
+                    {lang === 'fa'
+                      ? 'Ø¯ÙØªØ± Ù…Ø±Ú©Ø²ÛŒ: Ø¯Ø¨ÛŒØŒ Ø§Ù…Ø§Ø±Ø§ØªØŒ Ù…Ù†Ø·Ù‚Ù‡ Ø³ÛŒÙ„ÛŒÚ©ÙˆÙ† Ø§ÙˆØ¢Ø³ÛŒØ³ØŒ Ø¨Ø±Ø¬ ÙÙ†Ø§ÙˆØ±ÛŒ'
+                      : 'HQ Presence: Silicon Oasis Tech Tower, Dubai, United Arab Emirates'}
+                  </p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <ShieldCheck size={14} className="text-blue-500 shrink-0 mt-0.5" />
+                  <p className="leading-relaxed">
+                    {lang === 'fa'
+                      ? 'Ø§Ù…Ø§Ù†Øªâ€ŒØ¯Ø§Ø±ÛŒ ÙÛŒØ²ÛŒÚ©ÛŒ: Ø²ÙˆØ±ÛŒØ®ØŒ Ø³ÙˆØ¦ÛŒØ³ØŒ ØµÙ†Ø¯ÙˆÙ‚ Ø§Ù…Ø§Ù†Ø§Øª Ø¨Ø§Ù†Ú© Ú©Ø§Ù†ØªÙˆÙ†Ø§Ù„'
+                      : 'Market Data Source: TSETMC'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MessageSquare size={14} className="text-blue-500 shrink-0" />
+                  <p className="font-mono font-bold hover:text-blue-500 transition-colors cursor-pointer text-start">
+                    support@assetchain.app
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Globe size={14} className="text-blue-500 shrink-0" />
+                  <p className="font-mono font-bold hover:text-blue-500 transition-colors cursor-pointer text-start">
+                    @AssetChain_Support
+                  </p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Separation Border */}
+          <hr className={`my-8 md:my-12 ${theme === 'dark' ? 'border-slate-900' : 'border-slate-100'}`} />
+
+          {/* Legal Disclaimer Box */}
+          <div className={`p-4 md:p-5 rounded-xl md:rounded-2xl border text-[10px] md:text-[11px] leading-relaxed mb-8 md:mb-12 text-start ${
+            theme === 'dark'
+              ? 'bg-slate-900/20 border-slate-900/60 text-slate-500'
+              : 'bg-slate-50 border-slate-100 text-slate-400'
+          }`}>
+            <p className="font-bold mb-1 uppercase text-[9px] md:text-[10px] text-blue-500 tracking-wider">
+              {lang === 'fa' ? 'Ø³Ù„Ø¨ Ù…Ø³Ø¦ÙˆÙ„ÛŒØª Ùˆ Ø´ÙØ§ÙÛŒØª Ù‚Ø§Ù†ÙˆÙ†ÛŒ' : 'REGULATORY NOTICE & RISK DISCLOSURE'}
+            </p>
+            <p>
+              {lang === 'fa' ? '\u0633\u0644\u0628 \u0645\u0633\u0626\u0648\u0644\u06cc\u062a: \u0645\u0639\u0627\u0645\u0644\u0647 \u0633\u0647\u0627\u0645 \u0628\u0627 \u0631\u06cc\u0633\u06a9 \u0646\u0648\u0633\u0627\u0646 \u0642\u06cc\u0645\u062a \u0647\u0645\u0631\u0627\u0647 \u0627\u0633\u062a. \u0627\u0637\u0644\u0627\u0639\u0627\u062a \u0628\u0627\u0632\u0627\u0631 \u0627\u0632 TSETMC \u062f\u0631\u06cc\u0627\u0641\u062a \u0645\u06cc\u200c\u0634\u0648\u062f \u0648 \u0627\u06cc\u0646 \u067e\u0644\u062a\u0641\u0631\u0645 \u0645\u0634\u0627\u0648\u0631\u0647 \u0645\u0627\u0644\u06cc \u0627\u0631\u0627\u0626\u0647 \u0646\u0645\u06cc\u200c\u062f\u0647\u062f.' : 'Disclaimer: Share prices can fluctuate and investing involves market risk. Market information is sourced from TSETMC. AssetChain does not provide financial advice.'}
+            </p>
+          </div>
+
+          {/* Bottom Row */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6 text-[10px] md:text-[11px]">
+            <div className="flex items-center gap-2 font-bold text-center md:text-start">
+              <span>Â© 2026 {t.appName}. {t.rightsReserved}</span>
+            </div>
+
+            {/* Quick Links / Status indicators */}
+            <div className="flex flex-wrap items-center justify-center md:justify-end gap-3 md:gap-6">
+              <a href="#" className="hover:text-blue-500 transition-colors">{t.termsAndConditions}</a>
+              <span className="opacity-40">â€¢</span>
+              <button onClick={() => { setCurrentTab('support'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-blue-500 transition-colors cursor-pointer">
+                {t.onlineSupport}
+              </button>
+              <span className="opacity-40">â€¢</span>
+              <div className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                <span className="text-emerald-500 font-bold">{lang === 'fa' ? 'Ø´Ø¨Ú©Ù‡ Ø§ØµÙ„ÛŒ ÙØ¹Ø§Ù„' : 'Mainnet Connected'}</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </footer>
+
+    </div>
+  );
+}
