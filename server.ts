@@ -439,6 +439,7 @@ const tradeSchema = z.object({
 
 async function startServer() {
   const app = express();
+if (isProduction) app.set("trust proxy", 1);
 
   app.disable("x-powered-by");
   app.use(
@@ -557,7 +558,7 @@ async function startServer() {
             create: {
               type: "signup",
               descriptionEn: "Account created",
-              descriptionFa: "Ã˜Â­Ã˜Â³Ã˜Â§Ã˜Â¨ ÃšÂ©Ã˜Â§Ã˜Â±Ã˜Â¨Ã˜Â±Ã›Å’ Ã˜Â§Ã›Å’Ã˜Â¬Ã˜Â§Ã˜Â¯ Ã˜Â´Ã˜Â¯"
+              descriptionFa: "ÃƒËœÃ‚Â­ÃƒËœÃ‚Â³ÃƒËœÃ‚Â§ÃƒËœÃ‚Â¨ ÃƒÅ¡Ã‚Â©ÃƒËœÃ‚Â§ÃƒËœÃ‚Â±ÃƒËœÃ‚Â¨ÃƒËœÃ‚Â±Ãƒâ€ºÃ…â€™ ÃƒËœÃ‚Â§Ãƒâ€ºÃ…â€™ÃƒËœÃ‚Â¬ÃƒËœÃ‚Â§ÃƒËœÃ‚Â¯ ÃƒËœÃ‚Â´ÃƒËœÃ‚Â¯"
             }
           }
         }
@@ -596,7 +597,7 @@ async function startServer() {
           userId: user.id,
           type: "login",
           descriptionEn: "User logged in successfully",
-          descriptionFa: "Ã™Ë†Ã˜Â±Ã™Ë†Ã˜Â¯ Ã™â€¦Ã™Ë†Ã™ÂÃ™â€šÃ›Å’Ã˜ÂªÃ¢â‚¬Å’Ã˜Â¢Ã™â€¦Ã›Å’Ã˜Â² Ã˜Â¨Ã™â€¡ Ã˜Â­Ã˜Â³Ã˜Â§Ã˜Â¨ ÃšÂ©Ã˜Â§Ã˜Â±Ã˜Â¨Ã˜Â±Ã›Å’"
+          descriptionFa: "Ãƒâ„¢Ã‹â€ ÃƒËœÃ‚Â±Ãƒâ„¢Ã‹â€ ÃƒËœÃ‚Â¯ Ãƒâ„¢Ã¢â‚¬Â¦Ãƒâ„¢Ã‹â€ Ãƒâ„¢Ã‚ÂÃƒâ„¢Ã¢â‚¬Å¡Ãƒâ€ºÃ…â€™ÃƒËœÃ‚ÂªÃƒÂ¢Ã¢â€šÂ¬Ã…â€™ÃƒËœÃ‚Â¢Ãƒâ„¢Ã¢â‚¬Â¦Ãƒâ€ºÃ…â€™ÃƒËœÃ‚Â² ÃƒËœÃ‚Â¨Ãƒâ„¢Ã¢â‚¬Â¡ ÃƒËœÃ‚Â­ÃƒËœÃ‚Â³ÃƒËœÃ‚Â§ÃƒËœÃ‚Â¨ ÃƒÅ¡Ã‚Â©ÃƒËœÃ‚Â§ÃƒËœÃ‚Â±ÃƒËœÃ‚Â¨ÃƒËœÃ‚Â±Ãƒâ€ºÃ…â€™"
         }
       });
 
@@ -764,7 +765,7 @@ async function startServer() {
               userId,
               type: "trade",
               descriptionEn: `Bought ${input.shares} shares of #${asset.id}`,
-              descriptionFa: `Ã˜Â®Ã˜Â±Ã›Å’Ã˜Â¯ ${input.shares} Ã˜Â³Ã™â€¡Ã™â€¦ Ã˜Â§Ã˜Â² #${asset.id}`
+              descriptionFa: `ÃƒËœÃ‚Â®ÃƒËœÃ‚Â±Ãƒâ€ºÃ…â€™ÃƒËœÃ‚Â¯ ${input.shares} ÃƒËœÃ‚Â³Ãƒâ„¢Ã¢â‚¬Â¡Ãƒâ„¢Ã¢â‚¬Â¦ ÃƒËœÃ‚Â§ÃƒËœÃ‚Â² #${asset.id}`
             }
           });
         },
@@ -925,7 +926,7 @@ async function startServer() {
               userId,
               type: "trade",
               descriptionEn: `Sold ${input.shares} shares of #${asset.id}`,
-              descriptionFa: `Ã™ÂÃ˜Â±Ã™Ë†Ã˜Â´ ${input.shares} Ã˜Â³Ã™â€¡Ã™â€¦ Ã˜Â§Ã˜Â² #${asset.id}`
+              descriptionFa: `Ãƒâ„¢Ã‚ÂÃƒËœÃ‚Â±Ãƒâ„¢Ã‹â€ ÃƒËœÃ‚Â´ ${input.shares} ÃƒËœÃ‚Â³Ãƒâ„¢Ã¢â‚¬Â¡Ãƒâ„¢Ã¢â‚¬Â¦ ÃƒËœÃ‚Â§ÃƒËœÃ‚Â² #${asset.id}`
             }
           });
         },
@@ -1023,7 +1024,7 @@ async function startServer() {
     });
   }
 
-  const server = app.listen(env.PORT, "0.0.0.0", () => {
+  const server = app.listen(env.PORT, isProduction ? "127.0.0.1" : "0.0.0.0", () => {
     console.log(
       `AssetChain running at http://localhost:${env.PORT} (${env.NODE_ENV})`
     );
