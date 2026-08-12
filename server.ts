@@ -20,7 +20,8 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3000),
   JWT_SECRET: z.string().min(32),
   DEMO_MODE: z.enum(["true", "false"]).default("true"),
-  IRR_PER_USDT: z.coerce.number().int().nonnegative().default(0)
+  IRR_PER_USDT: z.coerce.number().int().nonnegative().default(0),
+  TSETMC_SYNC_ENABLED: z.enum(["true", "false"]).default("false")
 });
 
 const env = envSchema.parse(process.env);
@@ -235,6 +236,7 @@ let lastTsetmcSyncAttemptAt = 0;
 let tsetmcSyncInFlight: Promise<void> | null = null;
 
 async function syncTsetmcMarketData(): Promise<void> {
+  if (env.TSETMC_SYNC_ENABLED !== "true") return;
   const now = Date.now();
 
   if (now - lastTsetmcSyncAttemptAt < TSETMC_SYNC_TTL_MS) {
@@ -555,7 +557,7 @@ async function startServer() {
             create: {
               type: "signup",
               descriptionEn: "Account created",
-              descriptionFa: "Ø­Ø³Ø§Ø¨ Ú©Ø§Ø±Ø¨Ø±ÛŒ Ø§ÛŒØ¬Ø§Ø¯ Ø´Ø¯"
+              descriptionFa: "Ã˜Â­Ã˜Â³Ã˜Â§Ã˜Â¨ ÃšÂ©Ã˜Â§Ã˜Â±Ã˜Â¨Ã˜Â±Ã›Å’ Ã˜Â§Ã›Å’Ã˜Â¬Ã˜Â§Ã˜Â¯ Ã˜Â´Ã˜Â¯"
             }
           }
         }
@@ -594,7 +596,7 @@ async function startServer() {
           userId: user.id,
           type: "login",
           descriptionEn: "User logged in successfully",
-          descriptionFa: "ÙˆØ±ÙˆØ¯ Ù…ÙˆÙÙ‚ÛŒØªâ€ŒØ¢Ù…ÛŒØ² Ø¨Ù‡ Ø­Ø³Ø§Ø¨ Ú©Ø§Ø±Ø¨Ø±ÛŒ"
+          descriptionFa: "Ã™Ë†Ã˜Â±Ã™Ë†Ã˜Â¯ Ã™â€¦Ã™Ë†Ã™ÂÃ™â€šÃ›Å’Ã˜ÂªÃ¢â‚¬Å’Ã˜Â¢Ã™â€¦Ã›Å’Ã˜Â² Ã˜Â¨Ã™â€¡ Ã˜Â­Ã˜Â³Ã˜Â§Ã˜Â¨ ÃšÂ©Ã˜Â§Ã˜Â±Ã˜Â¨Ã˜Â±Ã›Å’"
         }
       });
 
@@ -762,7 +764,7 @@ async function startServer() {
               userId,
               type: "trade",
               descriptionEn: `Bought ${input.shares} shares of #${asset.id}`,
-              descriptionFa: `Ø®Ø±ÛŒØ¯ ${input.shares} Ø³Ù‡Ù… Ø§Ø² #${asset.id}`
+              descriptionFa: `Ã˜Â®Ã˜Â±Ã›Å’Ã˜Â¯ ${input.shares} Ã˜Â³Ã™â€¡Ã™â€¦ Ã˜Â§Ã˜Â² #${asset.id}`
             }
           });
         },
@@ -923,7 +925,7 @@ async function startServer() {
               userId,
               type: "trade",
               descriptionEn: `Sold ${input.shares} shares of #${asset.id}`,
-              descriptionFa: `ÙØ±ÙˆØ´ ${input.shares} Ø³Ù‡Ù… Ø§Ø² #${asset.id}`
+              descriptionFa: `Ã™ÂÃ˜Â±Ã™Ë†Ã˜Â´ ${input.shares} Ã˜Â³Ã™â€¡Ã™â€¦ Ã˜Â§Ã˜Â² #${asset.id}`
             }
           });
         },

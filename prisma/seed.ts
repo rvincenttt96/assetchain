@@ -1,104 +1,79 @@
-import "dotenv/config";
+﻿import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
-import { hash } from "bcryptjs";
-import { INITIAL_ASSETS } from "../src/data";
 
 const prisma = new PrismaClient();
-const MICROS = 1_000_000;
 
-function toMicros(value: number): bigint {
-  return BigInt(Math.round(value * MICROS));
-}
+const assets = [
+  {
+    id: "KGOL",
+    enName: "Gol Gohar Mining and Industrial",
+    faName: "کگل",
+    category: "metals",
+    bourseSymbol: "کگل",
+    tsetmcInsCode: "35700344742885862"
+  },
+  {
+    id: "DTMAD",
+    enName: "Darou Pakhsh Raw Materials",
+    faName: "دتماد",
+    category: "pharma",
+    bourseSymbol: "دتماد",
+    tsetmcInsCode: "34641719089573667"
+  },
+  {
+    id: "SHTRAN",
+    enName: "Tehran Oil Refining",
+    faName: "شتران",
+    category: "petro",
+    bourseSymbol: "شتران",
+    tsetmcInsCode: "51617145873056483"
+  },
+  {
+    id: "SHASTA",
+    enName: "Social Security Investment",
+    faName: "شستا",
+    category: "investment",
+    bourseSymbol: "شستا",
+    tsetmcInsCode: "2400322364771558"
+  },
+  {
+    id: "KAVEH",
+    enName: "South Kaveh Steel",
+    faName: "کاوه",
+    category: "metals",
+    bourseSymbol: "کاوه",
+    tsetmcInsCode: "60350996279289099"
+  }
+];
 
 async function main() {
-  for (const asset of INITIAL_ASSETS) {
+  for (const asset of assets) {
     await prisma.asset.upsert({
       where: { id: asset.id },
       update: {
-        enName: asset.enName,
-        faName: asset.faName,
-        category: asset.category,
-        priceMicros: toMicros(asset.price),
-        change: asset.change,
-        flag: asset.flag,
-        locationEn: asset.locationEn,
-        locationFa: asset.locationFa,
-        progress: asset.progress,
-        descriptionEn: asset.descriptionEn ?? null,
-        descriptionFa: asset.descriptionFa ?? null,
-        backingEn: asset.backingEn ?? null,
-        backingFa: asset.backingFa ?? null,
-        custodianEn: asset.custodianEn ?? null,
-        custodianFa: asset.custodianFa ?? null,
-        riskLevel: asset.riskLevel ?? null,
-        payoutIntervalEn: asset.payoutIntervalEn ?? null,
-        payoutIntervalFa: asset.payoutIntervalFa ?? null,
-        tsetmcUrl: asset.tsetmcUrl ?? null,
-        bourseSymbol: asset.bourseSymbol ?? null
+        ...asset,
+        priceMicros: 0n,
+        change: 0,
+        flag: "ir",
+        locationEn: "Iran",
+        locationFa: "ایران",
+        progress: 100,
+        tsetmcUrl: `https://main.tsetmc.com/InstInfo/${asset.tsetmcInsCode}`
       },
       create: {
-        id: asset.id,
-        enName: asset.enName,
-        faName: asset.faName,
-        category: asset.category,
-        priceMicros: toMicros(asset.price),
-        change: asset.change,
-        flag: asset.flag,
-        locationEn: asset.locationEn,
-        locationFa: asset.locationFa,
-        progress: asset.progress,
-        descriptionEn: asset.descriptionEn ?? null,
-        descriptionFa: asset.descriptionFa ?? null,
-        backingEn: asset.backingEn ?? null,
-        backingFa: asset.backingFa ?? null,
-        custodianEn: asset.custodianEn ?? null,
-        custodianFa: asset.custodianFa ?? null,
-        riskLevel: asset.riskLevel ?? null,
-        payoutIntervalEn: asset.payoutIntervalEn ?? null,
-        payoutIntervalFa: asset.payoutIntervalFa ?? null,
-        tsetmcUrl: asset.tsetmcUrl ?? null,
-        bourseSymbol: asset.bourseSymbol ?? null
+        ...asset,
+        priceMicros: 0n,
+        change: 0,
+        flag: "ir",
+        locationEn: "Iran",
+        locationFa: "ایران",
+        progress: 100,
+        tsetmcUrl: `https://main.tsetmc.com/InstInfo/${asset.tsetmcInsCode}`
       }
     });
   }
 
-  const passwordHash = await hash("DemoPass123!", 12);
-
-  const demo = await prisma.user.upsert({
-    where: { email: "demo@assetchain.local" },
-    update: {
-      name: "Demo Investor",
-      passwordHash
-    },
-    create: {
-      email: "demo@assetchain.local",
-      name: "Demo Investor",
-      passwordHash
-    }
-  });
-
-  await prisma.account.upsert({
-    where: { userId: demo.id },
-    update: { usdtBalanceMicros: toMicros(10_000) },
-    create: {
-      userId: demo.id,
-      usdtBalanceMicros: toMicros(10_000),
-      tomanBalance: 0
-    }
-  });
-
-  await prisma.activity.create({
-    data: {
-      userId: demo.id,
-      type: "system",
-      descriptionEn: "Demo database was seeded",
-      descriptionFa: "دیتابیس آزمایشی مقداردهی اولیه شد"
-    }
-  });
-
-  console.log("Seed completed.");
-  console.log("Demo email: demo@assetchain.local");
-  console.log("Demo password: DemoPass123!");
+  console.log("Production seed completed: 5 TSETMC assets, trading price locked at zero.");
 }
 
 main()
