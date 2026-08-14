@@ -33,10 +33,6 @@ interface LandingPageProps {
   theme: 'dark' | 'light';
   lang: 'fa' | 'en';
   t: any;
-  stats: {
-    tvl: number;
-    soldUnits: number;
-  };
   onExplore: (category?: string) => void;
   onSupport: () => void;
   onOpenInfo?: (asset: Asset) => void;
@@ -44,20 +40,23 @@ interface LandingPageProps {
   onLoginClick?: () => void;
   myPortfolio?: any[];
   assets?: Asset[];
+  portfolioBalanceUsdt?: number;
+  portfolioPnlUsdt?: number;
 }
 
 export default function LandingPage({
   theme,
   lang,
   t,
-  stats,
   onExplore,
   onSupport,
   onOpenInfo,
   isLoggedIn = false,
   onLoginClick = () => {},
   myPortfolio = [],
-  assets = INITIAL_ASSETS
+  assets = INITIAL_ASSETS,
+  portfolioBalanceUsdt = 0,
+  portfolioPnlUsdt = 0
 }: LandingPageProps) {
   const isRtl = lang === 'fa';
   const [activeStep, setActiveStep] = useState<number>(0);
@@ -868,36 +867,31 @@ useEffect(() => {
                 {/* Balance display */}
                 <div className="space-y-1">
                   <h3 className={`text-xl md:text-3xl font-black font-mono tracking-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                    {isLoggedIn
-                      ? `${(15450 + (myPortfolio.reduce((acc: number, item: any) => {
-                          const asset = assets.find(a => a.id === item.assetId);
-                          return acc + (item.shares * (asset?.price || 0));
-                        }, 0))).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT`
-                      : '$8,319.40 USDT'}
+                    {isLoggedIn ? `${portfolioBalanceUsdt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT` : '?'}
                   </h3>
                   <p className="text-[9px] md:text-[10px] text-slate-400">
                     {isLoggedIn
                       ? (isRtl
-                          ? 'شامل تراز نقد حساب + کل ارزش بازار دارایی‌های توکنایز شده فیزیکی'
+                          ? '\u0634\u0627\u0645\u0644 \u0645\u0648\u062c\u0648\u062f\u06cc USDT \u0648 \u0627\u0631\u0632\u0634 \u0641\u0639\u0644\u06cc \u0633\u0628\u062f'
                           : 'Includes wallet USDT + current portfolio value')
                       : (isRtl
-                          ? 'حساب دمو • نمونه عملکرد سرمایه‌گذاری برای طلا و املاک'
-                          : 'Selected Iranian shares from TSETMC')}
+                          ? '\u0628\u0631\u0627\u06cc \u0645\u0634\u0627\u0647\u062f\u0647 \u0645\u0648\u062c\u0648\u062f\u06cc \u0648 \u0633\u0628\u062f \u0634\u062e\u0635\u06cc \u0648\u0627\u0631\u062f \u062d\u0633\u0627\u0628 \u0634\u0648\u06cc\u062f'
+                          : 'Sign in to view your personal balance and portfolio')}
                   </p>
                 </div>
 
                 {/* Return metrics */}
                 <div className="mt-4 md:mt-6 pt-3 md:pt-4 border-t border-slate-800/20 flex items-center justify-between">
                   <div>
-                    <p className="text-[8px] md:text-[9px] text-slate-400 font-bold uppercase">{isRtl ? 'سود ناخالص (PnL)' : 'Total Gross PnL'}</p>
+                    <p className="text-[8px] md:text-[9px] text-slate-400 font-bold uppercase">{isRtl ? '\u0633\u0648\u062f \u0648 \u0632\u06cc\u0627\u0646 \u0633\u0628\u062f' : 'Portfolio PnL'}</p>
                     <p className="text-xs md:text-sm font-extrabold text-emerald-500 font-mono">
-                      {isLoggedIn ? '+319.40 USDT' : '+1,119.40 USDT'}
+                      {isLoggedIn ? `${portfolioPnlUsdt >= 0 ? '+' : ''}${portfolioPnlUsdt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT` : '?'}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[8px] md:text-[9px] text-slate-400 font-bold uppercase">{isRtl ? 'میانگین بازدهی' : 'Average APY'}</p>
+                    <p className="text-[8px] md:text-[9px] text-slate-400 font-bold uppercase">{isRtl ? '\u062a\u0639\u062f\u0627\u062f \u062f\u0627\u0631\u0627\u06cc\u06cc\u200c\u0647\u0627\u06cc \u0633\u0628\u062f' : 'Portfolio Assets'}</p>
                     <p className="text-xs md:text-sm font-extrabold text-blue-500 font-mono">
-                      +16.45%
+                      {isLoggedIn ? myPortfolio.length.toLocaleString() : '?'}
                     </p>
                   </div>
                 </div>

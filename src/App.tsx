@@ -125,6 +125,36 @@ export default function App() {
   // Live Assets Pricing state
   const [assets, setAssets] = useState<Asset[]>([]);
 
+const platformFundedSharesByAssetId: Record<string, number> = {
+  KGOL: 33780,
+  KAVEH: 15750,
+  SHTRAN: 19450,
+  SHASTA: 35300,
+  DTMAD: 1781
+};
+
+const platformFundedAssets = assets
+  .map(asset => ({
+    asset,
+    shares: platformFundedSharesByAssetId[asset.id] ?? 0
+  }))
+  .filter(item => item.shares > 0);
+
+const platformFundedShares = platformFundedAssets.reduce(
+  (sum, item) => sum + item.shares,
+  0
+);
+
+const platformFundedRial = platformFundedAssets.reduce(
+  (sum, item) => sum + item.shares * (item.asset.lastPriceRial ?? 0),
+  0
+);
+
+const platformFundedUsdt = platformFundedAssets.reduce(
+  (sum, item) => sum + item.shares * item.asset.price,
+  0
+);
+
   // Price Alerts State
   const [priceAlerts, setPriceAlerts] = useState<PriceAlert[]>([]);
 
@@ -162,12 +192,6 @@ export default function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
   const [copiedCode, setCopiedCode] = useState<boolean>(false);
-
-  // Dynamic APY / TVL / Units Stats
-  const [stats, setStats] = useState({
-    tvl: 124580250,
-    soldUnits: 12480,
-  });
 
   const t = TRANSLATIONS[lang];
 
@@ -1205,11 +1229,11 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                 theme === 'dark' ? 'bg-slate-900/60 border-slate-800/80' : 'bg-white border-slate-200'
               }`}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-slate-400 text-xs font-semibold">{t.statTvl}</span>
+                  <span className="text-slate-400 text-xs font-semibold">{lang === 'fa' ? '\u0627\u0631\u0632\u0634 \u062a\u0623\u0645\u06cc\u0646' : 'Funded Value'}</span>
                   <TrendingUp size={16} className="text-emerald-500" />
                 </div>
                 <p className={`text-2xl md:text-3xl font-extrabold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                  ${stats.tvl.toLocaleString()}
+                  {platformFundedUsdt.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT
                 </p>
                 <span className="text-emerald-500 text-xs font-bold mt-1 inline-block">
                   +14.2% {lang === 'fa' ? 'نسبت به ماه قبل' : 'vs last month'}
@@ -1220,14 +1244,14 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                 theme === 'dark' ? 'bg-slate-900/60 border-slate-800/80' : 'bg-white border-slate-200'
               }`}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-slate-400 text-xs font-semibold">{t.statApy}</span>
+                  <span className="text-slate-400 text-xs font-semibold">{lang === 'fa' ? '\u0646\u0645\u0627\u062f\u0647\u0627\u06cc \u062a\u0623\u0645\u06cc\u0646\u200c\u0634\u062f\u0647' : 'Funded Symbols'}</span>
                   <Percent size={16} className="text-blue-500" />
                 </div>
                 <p className={`text-2xl md:text-3xl font-extrabold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                  16.45%
+                  {platformFundedAssets.length}
                 </p>
                 <span className="text-blue-500 text-xs font-bold mt-1 inline-block italic">
-                  {lang === 'fa' ? 'تضمین شده با دارایی‌های فیزیکی واقعی' : 'Backed by real physical reserves'}
+              {lang === 'fa' ? '\u0646\u0645\u0627\u062f \u062a\u0623\u0645\u06cc\u0646\u200c\u0634\u062f\u0647' : 'funded symbols'}
                 </span>
               </div>
 
@@ -1235,14 +1259,14 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                 theme === 'dark' ? 'bg-slate-900/60 border-slate-800/80' : 'bg-white border-slate-200'
               }`}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-slate-400 text-xs font-semibold">{t.statSold}</span>
+                  <span className="text-slate-400 text-xs font-semibold">{lang === 'fa' ? '\u0645\u062c\u0645\u0648\u0639 \u0633\u0647\u0627\u0645 \u062a\u0623\u0645\u06cc\u0646\u200c\u0634\u062f\u0647' : 'Total Funded Shares'}</span>
                   <ShieldCheck size={16} className="text-purple-500" />
                 </div>
                 <p className={`text-2xl md:text-3xl font-extrabold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                  {stats.soldUnits.toLocaleString()} <span className="text-sm font-normal text-slate-500">{lang === 'fa' ? 'توکن' : 'Tokens'}</span>
+              {platformFundedShares.toLocaleString()} <span className="text-sm font-normal text-slate-500">{lang === 'fa' ? '\u0633\u0647\u0645' : 'shares'}</span>
                 </p>
                 <span className="text-purple-500 text-xs font-bold mt-1 inline-block">
-                  {lang === 'fa' ? 'در ۱۵ طبقه دارایی معتبر' : 'Across 15 certified asset classes'}
+              {lang === 'fa' ? '\u0628\u0631\u0627\u0633\u0627\u0633 \u0645\u0648\u062c\u0648\u062f\u06cc \u062a\u0623\u0645\u06cc\u0646\u200c\u0634\u062f\u0647' : 'Across 5 funded symbols'}
                 </span>
               </div>
             </div>
@@ -1260,11 +1284,11 @@ const handleExecuteLimitOrder = (_orderId: string) => {
               theme === 'dark' ? 'bg-slate-900/60 border-slate-800/80' : 'bg-white border-slate-200'
             }`}>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-slate-400 text-xs font-semibold">{t.statTvl}</span>
+                <span className="text-slate-400 text-xs font-semibold">{lang === 'fa' ? '\u0627\u0631\u0632\u0634 \u062a\u0623\u0645\u06cc\u0646' : 'Funded Value'}</span>
                 <TrendingUp size={16} className="text-emerald-500" />
               </div>
               <p className={`text-2xl md:text-3xl font-extrabold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                ${stats.tvl.toLocaleString()}
+                {platformFundedUsdt.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT
               </p>
               <span className="text-emerald-500 text-xs font-bold mt-1 inline-block">
                 +14.2% {lang === 'fa' ? 'نسبت به ماه قبل' : 'vs last month'}
@@ -1275,14 +1299,14 @@ const handleExecuteLimitOrder = (_orderId: string) => {
               theme === 'dark' ? 'bg-slate-900/60 border-slate-800/80' : 'bg-white border-slate-200'
             }`}>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-slate-400 text-xs font-semibold">{t.statApy}</span>
+                <span className="text-slate-400 text-xs font-semibold">{lang === 'fa' ? '\u0646\u0645\u0627\u062f\u0647\u0627\u06cc \u062a\u0623\u0645\u06cc\u0646\u200c\u0634\u062f\u0647' : 'Funded Symbols'}</span>
                 <Percent size={16} className="text-blue-500" />
               </div>
               <p className={`text-2xl md:text-3xl font-extrabold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                16.45%
+                {platformFundedAssets.length}
               </p>
               <span className="text-blue-500 text-xs font-bold mt-1 inline-block italic">
-                {lang === 'fa' ? 'تضمین شده با دارایی‌های فیزیکی واقعی' : 'Backed by real physical reserves'}
+              {lang === 'fa' ? '\u0646\u0645\u0627\u062f \u062a\u0623\u0645\u06cc\u0646\u200c\u0634\u062f\u0647' : 'funded symbols'}
               </span>
             </div>
 
@@ -1290,14 +1314,14 @@ const handleExecuteLimitOrder = (_orderId: string) => {
               theme === 'dark' ? 'bg-slate-900/60 border-slate-800/80' : 'bg-white border-slate-200'
             }`}>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-slate-400 text-xs font-semibold">{t.statSold}</span>
+                <span className="text-slate-400 text-xs font-semibold">{lang === 'fa' ? '\u0645\u062c\u0645\u0648\u0639 \u0633\u0647\u0627\u0645 \u062a\u0623\u0645\u06cc\u0646\u200c\u0634\u062f\u0647' : 'Total Funded Shares'}</span>
                 <ShieldCheck size={16} className="text-purple-500" />
               </div>
               <p className={`text-2xl md:text-3xl font-extrabold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                {stats.soldUnits.toLocaleString()} <span className="text-sm font-normal text-slate-500">{lang === 'fa' ? 'توکن' : 'Tokens'}</span>
+              {platformFundedShares.toLocaleString()} <span className="text-sm font-normal text-slate-500">{lang === 'fa' ? '\u0633\u0647\u0645' : 'shares'}</span>
               </p>
               <span className="text-purple-500 text-xs font-bold mt-1 inline-block">
-                {lang === 'fa' ? 'در ۱۵ طبقه دارایی معتبر' : 'Across 15 certified asset classes'}
+              {lang === 'fa' ? '\u0628\u0631\u0627\u0633\u0627\u0633 \u0645\u0648\u062c\u0648\u062f\u06cc \u062a\u0623\u0645\u06cc\u0646\u200c\u0634\u062f\u0647' : 'Across 5 funded symbols'}
               </span>
             </div>
           </div>
@@ -1311,11 +1335,12 @@ const handleExecuteLimitOrder = (_orderId: string) => {
             theme={theme}
             lang={lang}
             t={t}
-            stats={stats}
-            isLoggedIn={isLoggedIn}
+isLoggedIn={isLoggedIn}
             onLoginClick={() => { setAuthMode('signIn'); setIsAuthModalOpen(true); }}
             myPortfolio={myPortfolio}
             assets={assets}
+portfolioBalanceUsdt={totalBalanceCalculated}
+portfolioPnlUsdt={totalPnLCalculated}
             onOpenInfo={handleOpenAssetInfo}
             onExplore={(category?: string) => {
               setCurrentTab('market');
