@@ -1,1 +1,14 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
+
+@font-face {
+  font-family: "Yekan Bakh FaNum";
+  src: url("/fonts/YekanBakhFaNum-Regular.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+[dir="rtl"],
+[dir="rtl"] * {
+  font-family: "Yekan Bakh FaNum", Tahoma, Arial, sans-serif;
+}
