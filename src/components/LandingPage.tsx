@@ -185,7 +185,7 @@ export default function LandingPage({
   const fundedAssets = featuredAssets
     .map(asset => ({
       asset,
-      fundedShares: fundedSharesByAssetId[asset.bourseSymbol || asset.id] ?? 0
+      fundedShares: fundedSharesByAssetId[asset.id] ?? 0
     }))
     .filter(item => item.fundedShares > 0);
 
