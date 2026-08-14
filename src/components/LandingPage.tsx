@@ -347,7 +347,7 @@ useEffect(() => {
                     : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
                 }`}
               >
-                {isRtl ? 'Ù…Ø´Ø§ÙˆØ±Ù‡ Ø±Ø§ÛŒÚ¯Ø§Ù† Market' : 'Market Data Support'}
+                {isRtl ? 'مشاوره رایگان Market' : 'Market Data Support'}
               </button>
             </div>
           </div>
@@ -420,7 +420,7 @@ useEffect(() => {
           <div className="lg:col-span-5 space-y-4 md:space-y-6 text-start self-center">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] md:text-xs font-bold bg-blue-500/10 text-blue-500 border border-blue-500/20">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
-              <span>{isRtl ? 'Ù¾Ù„ØªÙØ±Ù… Ø§Ø«Ø¨Ø§Øªâ€ŒØ´Ø¯Ù‡ Ø¯Ø§Ø±Ø§ÛŒÛŒâ€ŒÙ‡Ø§ÛŒ ÙˆØ§Ù‚Ø¹ÛŒ (Market)' : 'TSETMC Market Data Infrastructure'}</span>
+              <span>{isRtl ? 'پلتفرم اثبات‌شده دارایی‌های واقعی (Market)' : 'TSETMC Market Data Infrastructure'}</span>
             </div>
 
             <h1 className={`text-2xl md:text-5xl lg:text-[46px] font-black tracking-tight leading-tight md:leading-[1.15] ${
@@ -457,21 +457,21 @@ useEffect(() => {
             {/* Quick trust badges */}
             <div className="grid grid-cols-3 gap-2 md:gap-4 pt-4 md:pt-6 border-t border-slate-800/20 text-[10px] md:text-xs">
               <div className="space-y-1">
-                <span className="text-[9px] md:text-[10px] text-slate-500 block uppercase font-bold">{isRtl ? 'Ù¾Ø´ØªÛŒØ¨Ø§Ù† Ø¯Ø§Ø±Ø§ÛŒÛŒ' : 'Data Source'}</span>
+                <span className="text-[9px] md:text-[10px] text-slate-500 block uppercase font-bold">{isRtl ? 'پشتیبان دارایی' : 'Data Source'}</span>
                 <span className={`font-black ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                  {isRtl ? 'Û±Û°Û°Ùª ÙÛŒØ²ÛŒÚ©ÛŒ' : 'TSETMC'}
+                  {isRtl ? '۱۰۰٪ فیزیکی' : 'TSETMC'}
                 </span>
               </div>
               <div className="space-y-1">
-                <span className="text-[9px] md:text-[10px] text-slate-500 block uppercase font-bold">{isRtl ? 'Ø¯ÙˆØ±Ù‡ ØªØ³ÙˆÛŒÙ‡' : 'Market Coverage'}</span>
+                <span className="text-[9px] md:text-[10px] text-slate-500 block uppercase font-bold">{isRtl ? 'دوره تسویه' : 'Market Coverage'}</span>
                 <span className="text-blue-500 font-black">
-                  {isRtl ? 'Ø¢Ù†ÛŒ Û²Û´/Û·' : '5 Shares'}
+                  {isRtl ? 'آنی ۲۴/۷' : '5 Shares'}
                 </span>
               </div>
               <div className="space-y-1">
-                <span className="text-[9px] md:text-[10px] text-slate-500 block uppercase font-bold">{isRtl ? 'Ù†Ø¸Ø§Ø±Øª Ù‚Ø§Ù†ÙˆÙ†ÛŒ' : 'Official Links'}</span>
+                <span className="text-[9px] md:text-[10px] text-slate-500 block uppercase font-bold">{isRtl ? 'نظارت قانونی' : 'Official Links'}</span>
                 <span className="text-emerald-500 font-black">
-                  {isRtl ? 'Ø­Ø³Ø§Ø¨Ø±Ø³ÛŒ SGS' : 'Included'}
+                  {isRtl ? 'حسابرسی SGS' : 'Included'}
                 </span>
               </div>
             </div>
@@ -491,18 +491,18 @@ useEffect(() => {
                 <div>
                   <h3 className="text-xs md:text-sm font-black tracking-tight flex items-center gap-1.5 md:gap-2">
                     <Activity size={14} className="text-emerald-500 animate-pulse" />
-                    <span>{isRtl ? 'Ø§ØµÙˆÙ„ Ø³Ø±Ù…Ø§ÛŒÙ‡â€ŒÚ¯Ø°Ø§Ø±ÛŒ Ùˆ ÙØ±Ø¢ÛŒÙ†Ø¯ ØªÙˆÚ©Ù†Ø§ÛŒØ²Ø§Ø³ÛŒÙˆÙ†' : 'TSETMC Market Data Flow'}</span>
+                    <span>{isRtl ? 'اصول سرمایه‌گذاری و فرآیند توکنایزاسیون' : 'TSETMC Market Data Flow'}</span>
                   </h3>
                   <p className="text-[10px] md:text-[11px] text-slate-400 mt-0.5">
                     {isRtl
-                      ? 'Ù…Ø±Ø§Ø­Ù„ Ú¯Ø§Ù…â€ŒØ¨Ù‡â€ŒÚ¯Ø§Ù… ÙÛŒØ²ÛŒÚ©ÛŒ ØªØ§ Ø¯ÛŒØ¬ÛŒØªØ§Ù„ÛŒ Ø¯Ø§Ø±Ø§ÛŒÛŒâ€ŒÙ‡Ø§ÛŒ Ø«Ø¨Øª Ø´Ø¯Ù‡ Ø±Ø§ Ø¨Ø±Ø±Ø³ÛŒ Ú©Ù†ÛŒØ¯'
+                      ? 'مراحل گام‌به‌گام فیزیکی تا دیجیتالی دارایی‌های ثبت شده را بررسی کنید'
                       : 'Selected Iranian shares are presented with market information sourced from TSETMC.'}
                   </p>
                 </div>
 
                 {/* Mode Indicator */}
                 <span className="px-2 py-0.5 md:px-2.5 md:py-1 rounded-full text-[8px] md:text-[9px] font-mono font-bold bg-blue-500/10 text-blue-400 border border-blue-500/15 uppercase self-start sm:self-auto">
-                  {isRtl ? 'ÙˆØ¶Ø¹ÛŒØª Ø´ÙØ§Ù Ø¯Ø±ÙˆÙ†â€ŒØ²Ù†Ø¬ÛŒØ±Ù‡â€ŒØ§ÛŒ' : 'Stored Market Data'}
+                  {isRtl ? 'وضعیت شفاف درون‌زنجیره‌ای' : 'Stored Market Data'}
                 </span>
               </div>
 
@@ -576,7 +576,7 @@ useEffect(() => {
                   <div className="flex justify-between items-start gap-2">
                     <div className="space-y-0.5">
                       <span className="text-[9px] md:text-[10px] font-mono font-bold uppercase tracking-wider text-blue-500">
-                        {isRtl ? 'Ú¯Ø§Ù… Ù¾Ø±Ø¯Ø§Ø²Ø´ÛŒ Ø¯Ø§Ø±Ø§ÛŒÛŒ' : 'MARKET DATA STEP'}
+                        {isRtl ? 'گام پردازشی دارایی' : 'MARKET DATA STEP'}
                       </span>
                       <h4 className="text-sm md:text-base font-black leading-tight">
                         {isRtl ? currentActiveStepData.titleFa : currentActiveStepData.titleEn}
@@ -597,25 +597,25 @@ useEffect(() => {
                     theme === 'dark' ? 'bg-slate-900/50 border-slate-800/60' : 'bg-slate-50 border-slate-100'
                   }`}>
                     <div>
-                      <span className="text-slate-500 block">{isRtl ? 'Ù†Ø§Ø¸Ø± Ùˆ Ù…ØªÙˆÙ„ÛŒ Ù‚Ø§Ù†ÙˆÙ†:' : 'Entity / Partner:'}</span>
+                      <span className="text-slate-500 block">{isRtl ? 'ناظر و متولی قانون:' : 'Entity / Partner:'}</span>
                       <span className="font-extrabold text-slate-350 md:text-slate-300">
                         {isRtl ? currentActiveStepData.details.partnerFa : currentActiveStepData.details.partnerEn}
                       </span>
                     </div>
                     <div>
-                      <span className="text-slate-500 block">{isRtl ? 'Ø¢Ø¯Ø±Ø³ ÙÛŒØ²ÛŒÚ©ÛŒ Ø°Ø®ÛŒØ±Ù‡:' : 'Physical Location:'}</span>
+                      <span className="text-slate-500 block">{isRtl ? 'آدرس فیزیکی ذخیره:' : 'Physical Location:'}</span>
                       <span className="font-extrabold text-slate-350 md:text-slate-300">
                         {isRtl ? currentActiveStepData.details.locationFa : currentActiveStepData.details.locationEn}
                       </span>
                     </div>
                     <div>
-                      <span className="text-slate-500 block">{isRtl ? 'Ø§Ø±Ø²Ø´ Ø¨ÛŒÙ…Ù‡ Ø°Ø®Ø§ÛŒØ±:' : 'Insurance Guarantee:'}</span>
+                      <span className="text-slate-500 block">{isRtl ? 'ارزش بیمه ذخایر:' : 'Insurance Guarantee:'}</span>
                       <span className="font-extrabold text-emerald-500">
                         {isRtl ? currentActiveStepData.details.insuredValueFa : currentActiveStepData.details.insuredValueEn}
                       </span>
                     </div>
                     <div>
-                      <span className="text-slate-500 block">{isRtl ? 'ÙˆØ¶Ø¹ÛŒØª ØªØ§ÛŒÛŒØ¯ ÙÙ†ÛŒ:' : 'Official Links Status:'}</span>
+                      <span className="text-slate-500 block">{isRtl ? 'وضعیت تایید فنی:' : 'Official Links Status:'}</span>
                       <span className="font-extrabold text-blue-500">
                         {isRtl ? currentActiveStepData.details.registryFa : currentActiveStepData.details.registryEn}
                       </span>
@@ -626,7 +626,7 @@ useEffect(() => {
                   <div className="flex items-center justify-between text-[9px] md:text-[10px] text-slate-500 pt-0.5">
                     <span className="flex items-center gap-1 md:gap-1.5">
                       <Network size={11} className="text-emerald-500 animate-pulse" />
-                      <span>{isRtl ? 'Ú©Ø¯ Ø±Ù‡Ú¯ÛŒØ±ÛŒ Ø±Ù…Ø²Ù†Ú¯Ø§Ø±ÛŒ Ø´Ø¯Ù‡:' : 'Source / Coverage:'}</span>
+                      <span>{isRtl ? 'کد رهگیری رمزنگاری شده:' : 'Source / Coverage:'}</span>
                     </span>
                     <span className="font-mono text-slate-400 hover:text-slate-200 transition-colors cursor-pointer select-all">
                       TSETMC / 5 instruments
@@ -654,7 +654,7 @@ useEffect(() => {
               ${stats.tvl.toLocaleString()}
             </p>
             <span className="text-emerald-500 text-[10px] md:text-xs font-bold mt-0.5 md:mt-1 inline-block">
-              +14.2% {isRtl ? 'Ø±Ø´Ø¯ Ø¯Ø± Ù…Ø§Ù‡ Ú¯Ø°Ø´ØªÙ‡' : 'vs last month'}
+              +14.2% {isRtl ? 'رشد در ماه گذشته' : 'vs last month'}
             </span>
           </div>
 
@@ -664,17 +664,17 @@ useEffect(() => {
               16.45%
             </p>
             <span className="text-blue-500 text-[10px] md:text-xs font-bold mt-0.5 md:mt-1 inline-block italic">
-              {isRtl ? 'Ù¾Ø´ØªÙˆØ§Ù†Ù‡ Ø¯Ø±Ø¢Ù…Ø¯ÛŒ Ø§Ù…Ù„Ø§Ú© Ùˆ Ù…Ø¹Ø§Ø¯Ù† ÙˆØ§Ù‚Ø¹ÛŒ' : 'Market data sourced from TSETMC'}
+              {isRtl ? 'پشتوانه درآمدی املاک و معادن واقعی' : 'Market data sourced from TSETMC'}
             </span>
           </div>
 
           <div className="pt-5 md:pt-0">
             <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-wider">{t.statSold}</p>
             <p className={`text-2xl md:text-4xl font-black mt-1.5 md:mt-2 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-              {stats.soldUnits.toLocaleString()} <span className="text-xs md:text-sm font-normal text-slate-500">{isRtl ? 'ØªÙˆÚ©Ù† ÙØ¹Ø§Ù„' : 'Active Tokens'}</span>
+              {stats.soldUnits.toLocaleString()} <span className="text-xs md:text-sm font-normal text-slate-500">{isRtl ? 'توکن فعال' : 'Active Tokens'}</span>
             </p>
             <span className="text-purple-500 text-[10px] md:text-xs font-bold mt-0.5 md:mt-1 inline-block">
-              {isRtl ? 'Ø¨ÛŒØ´ Ø§Ø² Û±Ûµ Ø¯Ø³ØªÙ‡ Ø¯Ø§Ø±Ø§ÛŒÛŒ Ù…Ø¹ØªØ¨Ø±' : 'Across 15+ certified asset classes'}
+              {isRtl ? 'بیش از ۱۵ دسته دارایی معتبر' : 'Across 15+ certified asset classes'}
             </span>
           </div>
         </div>
@@ -687,14 +687,14 @@ useEffect(() => {
           <div className="text-start space-y-1.5 md:space-y-2">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] md:text-xs font-bold bg-blue-500/10 text-blue-500 border border-blue-500/20">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
-              <span>{isRtl ? 'Ø¨Ø®Ø´ Ú©Ø§Ø±Ø¨Ø±ÛŒ â€¢ Ù…Ø¯ÛŒØ±ÛŒØª ÛŒÚ©Ù¾Ø§Ø±Ú†Ù‡ Ø³ÙˆØ¯ Ø§Ù†Ø¨Ø§Ø´ØªÙ‡' : 'User Station â€¢ Unified Asset & Yield Hub'}</span>
+              <span>{isRtl ? 'بخش کاربری • مدیریت یکپارچه سود انباشته' : 'User Station • Unified Asset & Yield Hub'}</span>
             </div>
             <h2 className={`text-xl md:text-4xl font-black tracking-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-              {isRtl ? 'Ù…ÛŒØ²Ø§Ù† Ø³ÙˆØ¯Ø¯Ù‡ÛŒ Ùˆ Ø³Ø¨Ø¯ Ø¯Ø§Ø±Ø§ÛŒÛŒâ€ŒÙ‡Ø§ÛŒ Ø´Ù…Ø§' : 'Your Personal Assets & Yield Performance'}
+              {isRtl ? 'میزان سوددهی و سبد دارایی‌های شما' : 'Your Personal Assets & Yield Performance'}
             </h2>
             <p className={`text-[11px] md:text-sm max-w-3xl leading-relaxed ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
               {isRtl
-                ? 'Ø±ÙˆÙ†Ø¯ Ø²Ù†Ø¯Ù‡ Ø±Ø´Ø¯ Ø³Ø±Ù…Ø§ÛŒÙ‡ØŒ Ø§Ø±Ø²Ø´ Ø¯Ù„Ø§Ø±ÛŒ Ø¯Ø§Ø±Ø§ÛŒÛŒâ€ŒÙ‡Ø§ Ùˆ Ù…ÛŒØ²Ø§Ù† Ø¨Ø§Ø²Ø¯Ù‡ÛŒ Ú©Ù„ (APY) Ø°Ø®Ø§ÛŒØ± ÙˆØ«ÛŒÙ‚Ù‡ Ø´Ø¯Ù‡ ÙÛŒØ²ÛŒÚ©ÛŒ Ø´Ù…Ø§.'
+                ? 'روند زنده رشد سرمایه، ارزش دلاری دارایی‌ها و میزان بازدهی کل (APY) ذخایر وثیقه شده فیزیکی شما.'
                 : 'Monitor selected Iranian shares using stored TSETMC market data.'}
             </p>
           </div>
@@ -725,7 +725,7 @@ useEffect(() => {
                   : 'bg-gradient-to-br from-white to-slate-50 border-slate-200'
               }`}>
                 <span className="text-[9px] md:text-[10px] uppercase font-bold tracking-widest text-slate-400 block mb-1">
-                  {isRtl ? 'Ù…Ø¬Ù…ÙˆØ¹ Ø§Ø±Ø²Ø´ Ø¯Ø§Ø±Ø§ÛŒÛŒâ€ŒÙ‡Ø§ Ùˆ ØªØ±Ø§Ø² Ø­Ø³Ø§Ø¨' : 'Total Asset Valuation & Balance'}
+                  {isRtl ? 'مجموع ارزش دارایی‌ها و تراز حساب' : 'Total Asset Valuation & Balance'}
                 </span>
 
                 {/* Balance display */}
@@ -741,10 +741,10 @@ useEffect(() => {
                   <p className="text-[9px] md:text-[10px] text-slate-400">
                     {isLoggedIn
                       ? (isRtl
-                          ? 'Ø´Ø§Ù…Ù„ ØªØ±Ø§Ø² Ù†Ù‚Ø¯ Ø­Ø³Ø§Ø¨ + Ú©Ù„ Ø§Ø±Ø²Ø´ Ø¨Ø§Ø²Ø§Ø± Ø¯Ø§Ø±Ø§ÛŒÛŒâ€ŒÙ‡Ø§ÛŒ ØªÙˆÚ©Ù†Ø§ÛŒØ² Ø´Ø¯Ù‡ ÙÛŒØ²ÛŒÚ©ÛŒ'
+                          ? 'شامل تراز نقد حساب + کل ارزش بازار دارایی‌های توکنایز شده فیزیکی'
                           : 'Includes wallet USDT + current portfolio value')
                       : (isRtl
-                          ? 'Ø­Ø³Ø§Ø¨ Ø¯Ù…Ùˆ â€¢ Ù†Ù…ÙˆÙ†Ù‡ Ø¹Ù…Ù„Ú©Ø±Ø¯ Ø³Ø±Ù…Ø§ÛŒÙ‡â€ŒÚ¯Ø°Ø§Ø±ÛŒ Ø¨Ø±Ø§ÛŒ Ø·Ù„Ø§ Ùˆ Ø§Ù…Ù„Ø§Ú©'
+                          ? 'حساب دمو • نمونه عملکرد سرمایه‌گذاری برای طلا و املاک'
                           : 'Selected Iranian shares from TSETMC')}
                   </p>
                 </div>
@@ -752,13 +752,13 @@ useEffect(() => {
                 {/* Return metrics */}
                 <div className="mt-4 md:mt-6 pt-3 md:pt-4 border-t border-slate-800/20 flex items-center justify-between">
                   <div>
-                    <p className="text-[8px] md:text-[9px] text-slate-400 font-bold uppercase">{isRtl ? 'Ø³ÙˆØ¯ Ù†Ø§Ø®Ø§Ù„Øµ (PnL)' : 'Total Gross PnL'}</p>
+                    <p className="text-[8px] md:text-[9px] text-slate-400 font-bold uppercase">{isRtl ? 'سود ناخالص (PnL)' : 'Total Gross PnL'}</p>
                     <p className="text-xs md:text-sm font-extrabold text-emerald-500 font-mono">
                       {isLoggedIn ? '+319.40 USDT' : '+1,119.40 USDT'}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[8px] md:text-[9px] text-slate-400 font-bold uppercase">{isRtl ? 'Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† Ø¨Ø§Ø²Ø¯Ù‡ÛŒ' : 'Average APY'}</p>
+                    <p className="text-[8px] md:text-[9px] text-slate-400 font-bold uppercase">{isRtl ? 'میانگین بازدهی' : 'Average APY'}</p>
                     <p className="text-xs md:text-sm font-extrabold text-blue-500 font-mono">
                       +16.45%
                     </p>
@@ -769,7 +769,7 @@ useEffect(() => {
               {/* Assets List cards inside the hub */}
               <div className="space-y-2.5">
                 <span className="text-[9px] md:text-[10px] uppercase font-black tracking-widest text-slate-400 block px-1">
-                  {isRtl ? 'ØªÙˆØ²ÛŒØ¹ Ø¯Ø§Ø±Ø§ÛŒÛŒâ€ŒÙ‡Ø§ÛŒ Ø³Ø¨Ø¯ Ø´Ù…Ø§' : 'Your Holdings Distribution'}
+                  {isRtl ? 'توزیع دارایی‌های سبد شما' : 'Your Holdings Distribution'}
                 </span>
 
                 {/* If Logged in, show actual assets, else show stunning premium placeholders */}
@@ -794,7 +794,7 @@ useEffect(() => {
                               {isRtl ? asset.faName : asset.enName}
                             </h4>
                             <p className="text-[8px] md:text-[9px] text-slate-400 mt-0.5">
-                              {item.shares.toLocaleString()} {isRtl ? 'Ø³Ù‡Ù… ØªÙˆÚ©Ù†Ø§ÛŒØ² Ø´Ø¯Ù‡' : 'Shares'}
+                              {item.shares.toLocaleString()} {isRtl ? 'سهم توکنایز شده' : 'Shares'}
                             </p>
                           </div>
                         </div>
@@ -929,17 +929,17 @@ useEffect(() => {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
           <div className="text-start space-y-1.5">
             <h2 className={`text-xl md:text-3xl font-extrabold tracking-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-              {isRtl ? 'ÙØ±ØµØªâ€ŒÙ‡Ø§ÛŒ Ø¯Ø§Øº Ø¨Ø§Ø²Ø§Ø± Ø¯Ø§Ø±Ø§ÛŒÛŒâ€ŒÙ‡Ø§' : 'Featured Investment Opportunities'}
+              {isRtl ? 'فرصت‌های داغ بازار دارایی‌ها' : 'Featured Investment Opportunities'}
             </h2>
             <p className="text-slate-400 text-xs md:text-sm max-w-md leading-relaxed">
-              {isRtl ? 'Ø¨Ø±Ø®ÛŒ Ø§Ø² Ù…Ø­Ø¨ÙˆØ¨â€ŒØªØ±ÛŒÙ† ØªÙˆÚ©Ù†â€ŒÙ‡Ø§ÛŒ Ø¨Ø§ Ù¾Ø´ØªÙˆØ§Ù†Ù‡ ÙˆØ§Ù‚Ø¹ÛŒ Ø¯Ù†ÛŒØ§ÛŒ ÙÛŒØ²ÛŒÚ©ÛŒ Ú©Ù‡ Ú©Ø§Ø±Ø¨Ø±Ø§Ù† Ø¯Ø± Ø­Ø§Ù„ Ø­Ø§Ø¶Ø± Ù…Ø¹Ø§Ù…Ù„Ù‡ Ù…ÛŒâ€ŒÚ©Ù†Ù†Ø¯.' : 'Explore selected Iranian shares and their official TSETMC instrument pages.'}
+              {isRtl ? 'برخی از محبوب‌ترین توکن‌های با پشتوانه واقعی دنیای فیزیکی که کاربران در حال حاضر معامله می‌کنند.' : 'Explore selected Iranian shares and their official TSETMC instrument pages.'}
             </p>
           </div>
           <button
             onClick={() => onExplore()}
             className="px-4 py-2 bg-blue-600/10 hover:bg-blue-600/25 text-blue-500 rounded-lg text-[11px] md:text-xs font-extrabold transition-all shrink-0 flex items-center gap-1 cursor-pointer align-middle self-start md:self-auto"
           >
-            <span>{isRtl ? 'Ù…Ø´Ø§Ù‡Ø¯Ù‡ Ù‡Ù…Ù‡ Ø¨Ø§Ø²Ø§Ø±Ù‡Ø§' : 'View All Markets'}</span>
+            <span>{isRtl ? 'مشاهده همه بازارها' : 'View All Markets'}</span>
             <ChevronRight size={12} className={isRtl ? 'rotate-180' : ''} />
           </button>
         </div>
@@ -1012,7 +1012,7 @@ useEffect(() => {
                     className="py-1.5 px-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/25 rounded-lg text-[11px] font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <Globe size={13} className="text-emerald-400 shrink-0" />
-                    <span className="truncate">{isRtl ? `Ø§Ø·Ù„Ø§Ø¹Ø§Øª Ø¨ÙˆØ±Ø³ TSETMC (${asset.bourseSymbol || asset.faName})` : `TSETMC Stock (${asset.bourseSymbol || asset.id})`}</span>
+                    <span className="truncate">{isRtl ? `اطلاعات بورس TSETMC (${asset.bourseSymbol || asset.faName})` : `TSETMC Stock (${asset.bourseSymbol || asset.id})`}</span>
                     <ExternalLink size={12} className="shrink-0" />
                   </a>
                 )}
@@ -1050,11 +1050,11 @@ useEffect(() => {
 
         <div className="relative z-10 max-w-xl mx-auto space-y-4 md:space-y-6">
           <h2 className="text-xl md:text-3xl font-black tracking-tight leading-tight">
-            {isRtl ? 'Ø¢Ù…Ø§Ø¯Ù‡ Ø³Ø±Ù…Ø§ÛŒÙ‡â€ŒÚ¯Ø°Ø§Ø±ÛŒ Ù‡Ø³ØªÛŒØ¯ØŸ' : 'Explore the Selected Iranian Shares'}
+            {isRtl ? 'آماده سرمایه‌گذاری هستید؟' : 'Explore the Selected Iranian Shares'}
           </h2>
           <p className="text-blue-100 text-[11px] md:text-sm leading-relaxed opacity-90">
             {isRtl
-              ? 'Ù‡Ù…ÛŒÙ† Ø­Ø§Ù„Ø§ ÙˆØ§Ø±Ø¯ Ù¾Ù†Ù„ Ø¨Ø§Ø²Ø§Ø±Ù‡Ø§ Ø´ÙˆÛŒØ¯ Ùˆ Ø§Ø² Ø·Ù„Ø§ ØªØ§ Ø§Ù…Ù„Ø§Ú© Ù„ÙˆÚ©Ø³ Ø¬Ù…ÛŒØ±Ø§ Ø±Ø§ Ø¨Ù‡ Ø´Ú©Ù„ ØªÙˆÚ©Ù†â€ŒÙ‡Ø§ÛŒ Ø®Ø±Ø¯ Ø´Ø¯Ù‡ Ø®Ø±ÛŒØ¯Ø§Ø±ÛŒ Ú©Ù†ÛŒØ¯.'
+              ? 'همین حالا وارد پنل بازارها شوید و از طلا تا املاک لوکس جمیرا را به شکل توکن‌های خرد شده خریداری کنید.'
               : 'Review selected Iranian shares with market information sourced from TSETMC.'}
           </p>
           <div className="flex justify-center pt-1">
@@ -1076,14 +1076,14 @@ useEffect(() => {
             {t.homeHowItWorksTitle}
           </h2>
           <p className="text-slate-400 text-xs md:text-sm max-w-md mx-auto leading-relaxed">
-            {isRtl ? 'Ø¯Ø± Ú©Ù…ØªØ± Ø§Ø² Ú†Ù†Ø¯ Ø¯Ù‚ÛŒÙ‚Ù‡ Ù…Ø§Ù„Ú© Ø¯Ø§Ø±Ø§ÛŒÛŒâ€ŒÙ‡Ø§ÛŒ ÙÛŒØ²ÛŒÚ©ÛŒ Ø¨ÛŒÙ…Ù‡â€ŒØ´Ø¯Ù‡ Ø¯Ø± Ø³Ø±Ø§Ø³Ø± Ø¬Ù‡Ø§Ù† Ø´ÙˆÛŒØ¯.' : 'Review selected Iranian shares and their market information in a few simple steps.'}
+            {isRtl ? 'در کمتر از چند دقیقه مالک دارایی‌های فیزیکی بیمه‌شده در سراسر جهان شوید.' : 'Review selected Iranian shares and their market information in a few simple steps.'}
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
           <div className="text-center space-y-2 md:space-y-3 p-2 md:p-4">
             <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center mx-auto text-base md:text-xl font-black">
-              Û±
+              ۱
             </div>
             <h3 className={`text-sm md:text-base font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
               {t.homeHowStep1}
@@ -1095,7 +1095,7 @@ useEffect(() => {
 
           <div className="text-center space-y-2 md:space-y-3 p-2 md:p-4">
             <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center mx-auto text-base md:text-xl font-black">
-              Û²
+              ۲
             </div>
             <h3 className={`text-sm md:text-base font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
               {t.homeHowStep2}
@@ -1107,7 +1107,7 @@ useEffect(() => {
 
           <div className="text-center space-y-2 md:space-y-3 p-2 md:p-4">
             <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center mx-auto text-base md:text-xl font-black">
-              Û³
+              ۳
             </div>
             <h3 className={`text-sm md:text-base font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
               {t.homeHowStep3}
