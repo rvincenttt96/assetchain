@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Coins,
   Wallet,
@@ -261,7 +261,7 @@ export default function App() {
           };
         });
 
-        // â”€â”€â”€ Automated Order Execution â”€â”€â”€
+        // ─── Automated Order Execution ───
         if (isLoggedIn) {
           limitOrders.forEach(order => {
             if (order.status !== 'pending') return;
@@ -283,7 +283,7 @@ export default function App() {
             }
           });
 
-          // â”€â”€â”€ Real-time Price Alerts â”€â”€â”€
+          // ─── Real-time Price Alerts ───
           priceAlerts.forEach(alert => {
             if (alert.isTriggered) return;
             const liveAsset = nextAssets.find(a => a.id === alert.assetId);
@@ -301,13 +301,13 @@ export default function App() {
               setTimeout(() => {
                 const nameStr = lang === 'fa' ? liveAsset.faName : liveAsset.enName;
                 triggerAlert('success', lang === 'fa'
-                  ? `ðŸ”” Ù‡Ø´Ø¯Ø§Ø±: Ù‚ÛŒÙ…Øª Ø¯Ø§Ø±Ø§ÛŒÛŒ ${nameStr} Ø¨Ù‡ Ù‡Ø¯Ù ${alert.targetPrice} ØªØªØ± Ø±Ø³ÛŒØ¯! (Ù‚ÛŒÙ…Øª ÙØ¹Ù„ÛŒ: ${liveAsset.price} ØªØªØ±)`
-                  : `ðŸ”” Alert: ${liveAsset.enName} has reached target of ${alert.targetPrice} USDT! (Current: ${liveAsset.price} USDT)`
+                  ? `🔔 هشدار: قیمت دارایی ${nameStr} به هدف ${alert.targetPrice} تتر رسید! (قیمت فعلی: ${liveAsset.price} تتر)`
+                  : `🔔 Alert: ${liveAsset.enName} has reached target of ${alert.targetPrice} USDT! (Current: ${liveAsset.price} USDT)`
                 );
                 setPriceAlerts(prev => prev.map(a => a.id === alert.id ? { ...a, isTriggered: true } : a));
                 recordActivity('alert_trigger',
                   `Price alert triggered for #${alert.assetId} at ${alert.targetPrice} USDT`,
-                  `ÙØ¹Ø§Ù„ Ø´Ø¯Ù† Ù‡Ø´Ø¯Ø§Ø± Ù‚ÛŒÙ…Øª Ø¨Ø±Ø§ÛŒ #${alert.assetId} Ø±ÙˆÛŒ Ù‚ÛŒÙ…Øª ${alert.targetPrice} ØªØªØ±`
+                  `فعال شدن هشدار قیمت برای #${alert.assetId} روی قیمت ${alert.targetPrice} تتر`
                 );
               }, 10);
             }
@@ -367,7 +367,7 @@ export default function App() {
     setActivities([]);
     setIsDropdownOpen(false);
     setCurrentTab('market');
-    triggerAlert('success', lang === 'fa' ? 'Ø¨Ø§ Ù…ÙˆÙÙ‚ÛŒØª Ø§Ø² Ø­Ø³Ø§Ø¨ Ø®Ø§Ø±Ø¬ Ø´Ø¯ÛŒØ¯.' : 'Logged out successfully.');
+    triggerAlert('success', lang === 'fa' ? 'با موفقیت از حساب خارج شدید.' : 'Logged out successfully.');
   } catch (error) {
     triggerAlert(
       'error',
@@ -393,7 +393,7 @@ export default function App() {
   if (!isLoggedIn) {
     triggerAlert(
       'error',
-      lang === 'fa' ? 'Ø§Ø¨ØªØ¯Ø§ ÙˆØ§Ø±Ø¯ Ø­Ø³Ø§Ø¨ Ø´ÙˆÛŒØ¯.' : 'Please sign in first!'
+      lang === 'fa' ? 'ابتدا وارد حساب شوید.' : 'Please sign in first!'
     );
     return;
   }
@@ -411,7 +411,7 @@ export default function App() {
     triggerAlert(
       'error',
       lang === 'fa'
-        ? 'Ù…Ø¨Ù„Øº Ø³Ø±Ù…Ø§ÛŒÙ‡â€ŒÚ¯Ø°Ø§Ø±ÛŒ Ø¨Ø±Ø§ÛŒ Ø®Ø±ÛŒØ¯ ÛŒÚ© Ø³Ù‡Ù… Ú©Ø§ÙÛŒ Ù†ÛŒØ³Øª.'
+        ? 'مبلغ سرمایه‌گذاری برای خرید یک سهم کافی نیست.'
         : 'The investment amount is too low to buy one share.'
     );
     return;
@@ -441,7 +441,7 @@ export default function App() {
   if (!isLoggedIn) {
     triggerAlert(
       'error',
-      lang === 'fa' ? 'Ø§Ø¨ØªØ¯Ø§ ÙˆØ§Ø±Ø¯ Ø­Ø³Ø§Ø¨ Ú©Ø§Ø±Ø¨Ø±ÛŒ Ø´ÙˆÛŒØ¯.' : 'Please sign in first!'
+      lang === 'fa' ? 'ابتدا وارد حساب کاربری شوید.' : 'Please sign in first!'
     );
     return;
   }
@@ -452,7 +452,7 @@ export default function App() {
     triggerAlert(
       'error',
       lang === 'fa'
-        ? 'Ø³ÙØ§Ø±Ø´ Ù…Ø­Ø¯ÙˆØ¯ Ùˆ OTC Ø¯Ø± Ù†Ø³Ø®Ù‡ ÙØ¹Ù„ÛŒ ØºÛŒØ±ÙØ¹Ø§Ù„ Ø§Ø³Øª.'
+        ? 'سفارش محدود و OTC در نسخه فعلی غیرفعال است.'
         : 'Limit and OTC orders are disabled in this version.'
     );
     return;
@@ -477,7 +477,7 @@ export default function App() {
   if (!isLoggedIn) {
     triggerAlert(
       'error',
-      lang === 'fa' ? 'Ø§Ø¨ØªØ¯Ø§ ÙˆØ§Ø±Ø¯ Ø­Ø³Ø§Ø¨ Ø´ÙˆÛŒØ¯.' : 'Please sign in first!'
+      lang === 'fa' ? 'ابتدا وارد حساب شوید.' : 'Please sign in first!'
     );
     return;
   }
@@ -519,7 +519,7 @@ export default function App() {
     if (!clean) {
       return {
         valid: false,
-        msg: lang === 'fa' ? 'Ù„Ø·ÙØ§Ù‹ Ú©Ø¯ Ù‡Ø´ ØªØ±Ø§Ú©Ù†Ø´ (TxID) Ø±Ø§ ÙˆØ§Ø±Ø¯ Ú©Ù†ÛŒØ¯!' : 'Please enter the transaction hash (TxID)!'
+        msg: lang === 'fa' ? 'لطفاً کد هش تراکنش (TxID) را وارد کنید!' : 'Please enter the transaction hash (TxID)!'
       };
     }
 
@@ -530,7 +530,7 @@ export default function App() {
         return {
           valid: false,
           msg: lang === 'fa'
-            ? 'ÙØ±Ù…Øª Ù‡Ø´ ØªØ±Ø§Ú©Ù†Ø´ Ø±ÙˆÛŒ Ø´Ø¨Ú©Ù‡ TRC20 (ØªØ±ÙˆÙ†) Ù†Ø§Ù…Ø¹ØªØ¨Ø± Ø§Ø³Øª. Ú©Ø¯ Ù‡Ø´ Ø¨Ø§ÛŒØ¯ Û¶Û´ Ú©Ø§Ø±Ø§Ú©ØªØ± Ù‡Ú¯Ø²Ø§Ø¯Ø³ÛŒÙ¾Ù…Ø§Ù„ Ø¨Ø§Ø´Ø¯.'
+            ? 'فرمت هش تراکنش روی شبکه TRC20 (ترون) نامعتبر است. کد هش باید ۶۴ کاراکتر هگزادسیپمال باشد.'
             : 'Invalid TRC20 transaction hash. TRON TxID must be a 64-character hexadecimal string.'
         };
       }
@@ -541,7 +541,7 @@ export default function App() {
         return {
           valid: false,
           msg: lang === 'fa'
-            ? 'ÙØ±Ù…Øª Ù‡Ø´ ØªØ±Ø§Ú©Ù†Ø´ Ø±ÙˆÛŒ Ø´Ø¨Ú©Ù‡ ERC20 (Ø§ØªØ±ÛŒÙˆÙ…) Ù†Ø§Ù…Ø¹ØªØ¨Ø± Ø§Ø³Øª. Ú©Ø¯ Ù‡Ø´ Ø¨Ø§ÛŒØ¯ Ø¨Ø§ 0x Ø´Ø±ÙˆØ¹ Ø´Ø¯Ù‡ Ùˆ Û¶Û´ Ú©Ø§Ø±Ø§Ú©ØªØ± Ù‡Ú¯Ø²Ø§Ø¯Ø³ÛŒÙ¾Ù…Ø§Ù„ Ø¯Ø§Ø´ØªÙ‡ Ø¨Ø§Ø´Ø¯.'
+            ? 'فرمت هش تراکنش روی شبکه ERC20 (اتریوم) نامعتبر است. کد هش باید با 0x شروع شده و ۶۴ کاراکتر هگزادسیپمال داشته باشد.'
             : 'Invalid ERC20 transaction hash. Ethereum TxID must start with 0x followed by 64 hex characters.'
         };
       }
@@ -552,7 +552,7 @@ export default function App() {
         return {
           valid: false,
           msg: lang === 'fa'
-            ? 'ÙØ±Ù…Øª Ù‡Ø´ ØªØ±Ø§Ú©Ù†Ø´ Ø±ÙˆÛŒ Ø´Ø¨Ú©Ù‡ BEP20 (Ø¨Ø§ÛŒÙ†Ù†Ø³ Ø§Ø³Ù…Ø§Ø±Øª Ú†ÛŒÙ†) Ù†Ø§Ù…Ø¹ØªØ¨Ø± Ø§Ø³Øª. Ú©Ø¯ Ù‡Ø´ Ø¨Ø§ÛŒØ¯ Ø¨Ø§ 0x Ø´Ø±ÙˆØ¹ Ø´Ø¯Ù‡ Ùˆ Û¶Û´ Ú©Ø§Ø±Ø§Ú©ØªØ± Ù‡Ú¯Ø²Ø§Ø¯Ø³ÛŒÙ¾Ù…Ø§Ù„ Ø¯Ø§Ø´ØªÙ‡ Ø¨Ø§Ø´Ø¯.'
+            ? 'فرمت هش تراکنش روی شبکه BEP20 (بایننس اسمارت چین) نامعتبر است. کد هش باید با 0x شروع شده و ۶۴ کاراکتر هگزادسیپمال داشته باشد.'
             : 'Invalid BEP20 transaction hash. BSC TxID must start with 0x followed by 64 hex characters.'
         };
       }
@@ -567,7 +567,7 @@ export default function App() {
     if (!clean) {
       return {
         valid: false,
-        msg: lang === 'fa' ? 'Ù„Ø·ÙØ§Ù‹ Ø¢Ø¯Ø±Ø³ Ú©ÛŒÙ Ù¾ÙˆÙ„ Ù…Ù‚ØµØ¯ Ø±Ø§ ÙˆØ§Ø±Ø¯ Ú©Ù†ÛŒØ¯!' : 'Please enter destination wallet address!'
+        msg: lang === 'fa' ? 'لطفاً آدرس کیف پول مقصد را وارد کنید!' : 'Please enter destination wallet address!'
       };
     }
 
@@ -578,7 +578,7 @@ export default function App() {
         return {
           valid: false,
           msg: lang === 'fa'
-            ? 'Ø¢Ø¯Ø±Ø³ Ù…Ù‚ØµØ¯ Ø¨Ø§ Ø§Ù„Ú¯ÙˆÛŒ Ø´Ø¨Ú©Ù‡ TRC20 Ù…Ø·Ø§Ø¨Ù‚Øª Ù†Ø¯Ø§Ø±Ø¯. Ø¢Ø¯Ø±Ø³ ØªØ±ÙˆÙ† Ø¨Ø§ÛŒØ¯ Ø¨Ø§ Ø­Ø±Ù T Ø´Ø±ÙˆØ¹ Ø´Ø¯Ù‡ Ùˆ Û³Û´ Ú©Ø§Ø±Ø§Ú©ØªØ± Ø¨Ø§Ø´Ø¯.'
+            ? 'آدرس مقصد با الگوی شبکه TRC20 مطابقت ندارد. آدرس ترون باید با حرف T شروع شده و ۳۴ کاراکتر باشد.'
             : 'Invalid TRC20 address. TRON wallet addresses must start with "T" and be 34 characters long.'
         };
       }
@@ -586,12 +586,12 @@ export default function App() {
       // EVM address starts with 0x followed by 40 hex characters
       const evmRegex = /^0x[0-9a-fA-F]{40}$/;
       if (!evmRegex.test(clean)) {
-        const netLabel = network === 'erc20' ? 'ERC20 (Ø§ØªØ±ÛŒÙˆÙ…)' : 'BEP20 (Ø¨Ø§ÛŒÙ†Ù†Ø³ Ø§Ø³Ù…Ø§Ø±Øª Ú†ÛŒÙ†)';
+        const netLabel = network === 'erc20' ? 'ERC20 (اتریوم)' : 'BEP20 (بایننس اسمارت چین)';
         const netLabelEn = network === 'erc20' ? 'ERC20' : 'BEP20';
         return {
           valid: false,
           msg: lang === 'fa'
-            ? `Ø¢Ø¯Ø±Ø³ Ù…Ù‚ØµØ¯ Ø¨Ø§ Ø§Ù„Ú¯ÙˆÛŒ Ø´Ø¨Ú©Ù‡ ${netLabel} Ù…Ø·Ø§Ø¨Ù‚Øª Ù†Ø¯Ø§Ø±Ø¯. Ø¢Ø¯Ø±Ø³ Ø¨Ø§ÛŒØ¯ Ø¨Ø§ 0x Ø´Ø±ÙˆØ¹ Ø´Ø¯Ù‡ Ùˆ Û´Û² Ú©Ø§Ø±Ø§Ú©ØªØ± Ø¨Ø§Ø´Ø¯.`
+            ? `آدرس مقصد با الگوی شبکه ${netLabel} مطابقت ندارد. آدرس باید با 0x شروع شده و ۴۲ کاراکتر باشد.`
             : `Invalid ${netLabelEn} address. EVM wallet addresses must start with "0x" and be 42 characters long.`
         };
       }
@@ -607,7 +607,7 @@ export default function App() {
   triggerAlert(
     'error',
     lang === 'fa'
-      ? 'ÙˆØ§Ø±ÛŒØ² Ø±Ù…Ø²Ø§Ø±Ø² Ø¯Ø± Ù†Ø³Ø®Ù‡ ÙØ¹Ù„ÛŒ ØºÛŒØ±ÙØ¹Ø§Ù„ Ø§Ø³Øª.'
+      ? 'واریز رمزارز در نسخه فعلی غیرفعال است.'
       : 'Crypto deposits are disabled in this version.'
   );
 };
@@ -618,7 +618,7 @@ const handleWithdrawSubmit = (e: React.FormEvent) => {
   triggerAlert(
     'error',
     lang === 'fa'
-      ? 'Ø¨Ø±Ø¯Ø§Ø´Øª Ø±Ù…Ø²Ø§Ø±Ø² Ø¯Ø± Ù†Ø³Ø®Ù‡ ÙØ¹Ù„ÛŒ ØºÛŒØ±ÙØ¹Ø§Ù„ Ø§Ø³Øª.'
+      ? 'برداشت رمزارز در نسخه فعلی غیرفعال است.'
       : 'Crypto withdrawals are disabled in this version.'
   );
 };
@@ -633,7 +633,7 @@ const handleWithdrawSubmit = (e: React.FormEvent) => {
     const feedback = t.ticketSuccess.replace('{num}', `#TKT-${ticketNumber}`);
     triggerAlert('success', feedback);
     setSupportText('');
-    recordActivity('ticket', `Submitted a support ticket (#TKT-${ticketNumber})`, `Ø«Ø¨Øª ØªÛŒÚ©Øª Ù¾Ø´ØªÛŒØ¨Ø§Ù†ÛŒ Ø¬Ø¯ÛŒØ¯ (#TKT-${ticketNumber})`);
+    recordActivity('ticket', `Submitted a support ticket (#TKT-${ticketNumber})`, `ثبت تیکت پشتیبانی جدید (#TKT-${ticketNumber})`);
   };
 
   // Create Limit Order
@@ -859,7 +859,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                   <User size={12} />
                 </div>
                 <span className="max-w-[80px] truncate">{currentUser.username}</span>
-                <span className="text-[10px] opacity-60">â–¾</span>
+                <span className="text-[10px] opacity-60">▾</span>
               </button>
 
               {/* User Dropdown */}
@@ -1016,7 +1016,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                             onClick={() => { setCurrentTab('wallet'); setIsMobileMenuOpen(false); }}
                             className="text-[10px] bg-blue-600 hover:bg-blue-500 text-white font-extrabold px-2 py-1 rounded-lg transition-all"
                           >
-                            {lang === 'fa' ? 'ÙˆØ§Ø±ÛŒØ²' : 'Deposit'}
+                            {lang === 'fa' ? 'واریز' : 'Deposit'}
                           </button>
                         </div>
                       </div>
@@ -1024,7 +1024,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                   ) : (
                     <div className="space-y-3">
                       <p className="text-xs text-slate-400 font-bold leading-relaxed">
-                        {lang === 'fa' ? 'Ø¨Ù‡ Ù¾Ù„ØªÙØ±Ù… AssetChain Ø®ÙˆØ´ Ø¢Ù…Ø¯ÛŒØ¯! Ø¨Ø±Ø§ÛŒ Ø´Ø±ÙˆØ¹ Ù…Ø¹Ø§Ù…Ù„Ù‡ Ùˆ Ø¯Ø³ØªØ±Ø³ÛŒ Ø¨Ù‡ Ú©ÛŒÙ Ù¾ÙˆÙ„ Ø®ÙˆØ¯ ÙˆØ§Ø±Ø¯ Ø´ÙˆÛŒØ¯.' : 'Welcome to AssetChain! Log in to access your account and selected Iranian shares.'}
+                        {lang === 'fa' ? 'به پلتفرم AssetChain خوش آمدید! برای شروع معامله و دسترسی به کیف پول خود وارد شوید.' : 'Welcome to AssetChain! Log in to access your account and selected Iranian shares.'}
                       </p>
                       <div className="grid grid-cols-2 gap-2">
                         <button
@@ -1107,7 +1107,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                     }`}
                   >
                     <Globe size={13} />
-                    <span>{lang === 'fa' ? 'English' : 'ÙØ§Ø±Ø³ÛŒ'}</span>
+                    <span>{lang === 'fa' ? 'English' : 'فارسی'}</span>
                   </button>
                 </div>
 
@@ -1125,7 +1125,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                   <span>{t.statusConnected}</span>
                   <span className="flex items-center gap-1.5">
                     <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                    <span className="text-[10px] text-emerald-500">{lang === 'fa' ? 'Ø¨Ø±Ø®Ø·' : 'Live'}</span>
+                    <span className="text-[10px] text-emerald-500">{lang === 'fa' ? 'برخط' : 'Live'}</span>
                   </span>
                 </div>
               </div>
@@ -1163,7 +1163,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                   <Search className="text-slate-400 transition-colors group-focus-within:text-blue-500 flex-shrink-0" size={18} />
                   <input
                     type="text"
-                    placeholder={lang === 'fa' ? 'Ø¬Ø³ØªØ¬ÙˆÛŒ Ù‡ÙˆØ´Ù…Ù†Ø¯ Ø¯Ø§Ø±Ø§ÛŒÛŒ...' : 'Smart search assets...'}
+                    placeholder={lang === 'fa' ? 'جستجوی هوشمند دارایی...' : 'Smart search assets...'}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className={`w-full bg-transparent border-none outline-none py-2 px-3 text-sm focus:ring-0 focus:outline-none placeholder-slate-400/80 ${
@@ -1212,7 +1212,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                   ${stats.tvl.toLocaleString()}
                 </p>
                 <span className="text-emerald-500 text-xs font-bold mt-1 inline-block">
-                  +14.2% {lang === 'fa' ? 'Ù†Ø³Ø¨Øª Ø¨Ù‡ Ù…Ø§Ù‡ Ù‚Ø¨Ù„' : 'vs last month'}
+                  +14.2% {lang === 'fa' ? 'نسبت به ماه قبل' : 'vs last month'}
                 </span>
               </div>
 
@@ -1227,7 +1227,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                   16.45%
                 </p>
                 <span className="text-blue-500 text-xs font-bold mt-1 inline-block italic">
-                  {lang === 'fa' ? 'ØªØ¶Ù…ÛŒÙ† Ø´Ø¯Ù‡ Ø¨Ø§ Ø¯Ø§Ø±Ø§ÛŒÛŒâ€ŒÙ‡Ø§ÛŒ ÙÛŒØ²ÛŒÚ©ÛŒ ÙˆØ§Ù‚Ø¹ÛŒ' : 'Backed by real physical reserves'}
+                  {lang === 'fa' ? 'تضمین شده با دارایی‌های فیزیکی واقعی' : 'Backed by real physical reserves'}
                 </span>
               </div>
 
@@ -1239,10 +1239,10 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                   <ShieldCheck size={16} className="text-purple-500" />
                 </div>
                 <p className={`text-2xl md:text-3xl font-extrabold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                  {stats.soldUnits.toLocaleString()} <span className="text-sm font-normal text-slate-500">{lang === 'fa' ? 'ØªÙˆÚ©Ù†' : 'Tokens'}</span>
+                  {stats.soldUnits.toLocaleString()} <span className="text-sm font-normal text-slate-500">{lang === 'fa' ? 'توکن' : 'Tokens'}</span>
                 </p>
                 <span className="text-purple-500 text-xs font-bold mt-1 inline-block">
-                  {lang === 'fa' ? 'Ø¯Ø± Û±Ûµ Ø·Ø¨Ù‚Ù‡ Ø¯Ø§Ø±Ø§ÛŒÛŒ Ù…Ø¹ØªØ¨Ø±' : 'Across 15 certified asset classes'}
+                  {lang === 'fa' ? 'در ۱۵ طبقه دارایی معتبر' : 'Across 15 certified asset classes'}
                 </span>
               </div>
             </div>
@@ -1267,7 +1267,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                 ${stats.tvl.toLocaleString()}
               </p>
               <span className="text-emerald-500 text-xs font-bold mt-1 inline-block">
-                +14.2% {lang === 'fa' ? 'Ù†Ø³Ø¨Øª Ø¨Ù‡ Ù…Ø§Ù‡ Ù‚Ø¨Ù„' : 'vs last month'}
+                +14.2% {lang === 'fa' ? 'نسبت به ماه قبل' : 'vs last month'}
               </span>
             </div>
 
@@ -1282,7 +1282,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                 16.45%
               </p>
               <span className="text-blue-500 text-xs font-bold mt-1 inline-block italic">
-                {lang === 'fa' ? 'ØªØ¶Ù…ÛŒÙ† Ø´Ø¯Ù‡ Ø¨Ø§ Ø¯Ø§Ø±Ø§ÛŒÛŒâ€ŒÙ‡Ø§ÛŒ ÙÛŒØ²ÛŒÚ©ÛŒ ÙˆØ§Ù‚Ø¹ÛŒ' : 'Backed by real physical reserves'}
+                {lang === 'fa' ? 'تضمین شده با دارایی‌های فیزیکی واقعی' : 'Backed by real physical reserves'}
               </span>
             </div>
 
@@ -1294,10 +1294,10 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                 <ShieldCheck size={16} className="text-purple-500" />
               </div>
               <p className={`text-2xl md:text-3xl font-extrabold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                {stats.soldUnits.toLocaleString()} <span className="text-sm font-normal text-slate-500">{lang === 'fa' ? 'ØªÙˆÚ©Ù†' : 'Tokens'}</span>
+                {stats.soldUnits.toLocaleString()} <span className="text-sm font-normal text-slate-500">{lang === 'fa' ? 'توکن' : 'Tokens'}</span>
               </p>
               <span className="text-purple-500 text-xs font-bold mt-1 inline-block">
-                {lang === 'fa' ? 'Ø¯Ø± Û±Ûµ Ø·Ø¨Ù‚Ù‡ Ø¯Ø§Ø±Ø§ÛŒÛŒ Ù…Ø¹ØªØ¨Ø±' : 'Across 15 certified asset classes'}
+                {lang === 'fa' ? 'در ۱۵ طبقه دارایی معتبر' : 'Across 15 certified asset classes'}
               </span>
             </div>
           </div>
@@ -1412,7 +1412,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                               {lang === 'fa' ? asset.faName : asset.enName}
                             </h3>
                             <p className="text-[10px] text-slate-400 mt-0.5">
-                              {lang === 'fa' ? 'Ù¾Ø´ØªÙˆØ§Ù†Ù‡ ØªÙˆØ²ÛŒØ¹â€ŒØ´Ø¯Ù‡ Ø¨Ø§ ØªØ¶Ù…ÛŒÙ† ÙÛŒØ²ÛŒÚ©ÛŒ' : 'TSETMC-linked Iranian share'}
+                              {lang === 'fa' ? 'پشتوانه توزیع‌شده با تضمین فیزیکی' : 'TSETMC-linked Iranian share'}
                             </p>
                           </div>
                         </div>
@@ -1461,7 +1461,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                               className="py-1.5 px-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/25 rounded-xl text-[11px] font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                             >
                               <Globe size={13} className="text-emerald-400" />
-                              <span>{lang === 'fa' ? `Ø§Ø·Ù„Ø§Ø¹Ø§Øª Ø¨ÙˆØ±Ø³ TSETMC (${asset.bourseSymbol || asset.faName})` : `TSETMC Stock (${asset.bourseSymbol || asset.id})`}</span>
+                              <span>{lang === 'fa' ? `اطلاعات بورس TSETMC (${asset.bourseSymbol || asset.faName})` : `TSETMC Stock (${asset.bourseSymbol || asset.id})`}</span>
                               <ExternalLink size={12} />
                             </a>
                           )}
@@ -1503,7 +1503,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                   <div className={`p-12 text-center rounded-2xl border ${
                     theme === 'dark' ? 'bg-slate-900/40 border-slate-800' : 'bg-slate-100 border-slate-200'
                   }`}>
-                    <p className="text-slate-400 text-sm">{lang === 'fa' ? 'Ù‡ÛŒÚ† Ø¯Ø§Ø±Ø§ÛŒÛŒ Ù¾ÛŒØ¯Ø§ Ù†Ø´Ø¯.' : 'No assets found matching your criteria.'}</p>
+                    <p className="text-slate-400 text-sm">{lang === 'fa' ? 'هیچ دارایی پیدا نشد.' : 'No assets found matching your criteria.'}</p>
                   </div>
                 )}
               </section>
@@ -1521,7 +1521,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                     </h1>
                     <p className="text-slate-400 text-xs mt-1">
                       {lang === 'fa'
-                        ? 'Ù†Ù…Ø§ÛŒ ÛŒÚ©Ù¾Ø§Ø±Ú†Ù‡ Ø¯Ø§Ø±Ø§ÛŒÛŒâ€ŒÙ‡Ø§ØŒ Ù…Ø¯ÛŒØ±ÛŒØª Ø³ÙØ§Ø±Ø´Ø§Øª Ù…Ø­Ø¯ÙˆØ¯ØŒ Ø³ÙˆØ¯ Ùˆ Ø²ÛŒØ§Ù† Ú©Ù„ Ùˆ Ú¯Ø²Ø§Ø±Ø´ Ø±ÛŒØ² ØªØ±Ø§Ú©Ù†Ø´â€ŒÙ‡Ø§'
+                        ? 'نمای یکپارچه دارایی‌ها، مدیریت سفارشات محدود، سود و زیان کل و گزارش ریز تراکنش‌ها'
                         : 'Unified dashboard of your holdings, limit orders, net metrics, and account activities'}
                     </p>
                   </div>
@@ -1537,12 +1537,12 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                   >
                     {showPortfolioChart ? <EyeOff size={14} /> : <Eye size={14} />}
                     {showPortfolioChart
-                      ? (lang === 'fa' ? 'Ù¾Ù†Ù‡Ø§Ù†â€ŒØ³Ø§Ø²ÛŒ Ù†Ù…ÙˆØ¯Ø§Ø± Ø¹Ù…Ù„Ú©Ø±Ø¯' : 'Hide Performance Chart')
-                      : (lang === 'fa' ? 'Ù†Ù…Ø§ÛŒØ´ Ù†Ù…ÙˆØ¯Ø§Ø± Ø¹Ù…Ù„Ú©Ø±Ø¯' : 'Show Performance Chart')}
+                      ? (lang === 'fa' ? 'پنهان‌سازی نمودار عملکرد' : 'Hide Performance Chart')
+                      : (lang === 'fa' ? 'نمایش نمودار عملکرد' : 'Show Performance Chart')}
                   </button>
                 </div>
 
-                {/* â”€â”€â”€ BENTO-STYLE KPI WIDGETS â”€â”€â”€ */}
+                {/* ─── BENTO-STYLE KPI WIDGETS ─── */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* KPI 1: Net Worth / Portfolio Value */}
                   <div className={`p-6 rounded-3xl border shadow-md flex flex-col justify-between relative overflow-hidden ${
@@ -1559,8 +1559,8 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                       </h2>
                     </div>
                     <div className="mt-4 pt-3 border-t border-slate-800/10 flex justify-between text-[10px] text-slate-500">
-                      <span>{lang === 'fa' ? 'Ø§Ø¹ØªØ¨Ø§Ø± Ù†Ù‚Ø¯ÛŒ:' : 'Free USDT:'} <strong className="text-slate-400 font-bold">{currentUser.usdtBalance.toLocaleString()} USDT</strong></span>
-                      <span>{lang === 'fa' ? 'Ø¯Ø§Ø±Ø§ÛŒÛŒâ€ŒÙ‡Ø§ÛŒ Ø¯ÛŒØ¬ÛŒØªØ§Ù„:' : 'Assets Val:'} <strong className="text-slate-400 font-bold">{totalSharesValue.toLocaleString()} USDT</strong></span>
+                      <span>{lang === 'fa' ? 'اعتبار نقدی:' : 'Free USDT:'} <strong className="text-slate-400 font-bold">{currentUser.usdtBalance.toLocaleString()} USDT</strong></span>
+                      <span>{lang === 'fa' ? 'دارایی‌های دیجیتال:' : 'Assets Val:'} <strong className="text-slate-400 font-bold">{totalSharesValue.toLocaleString()} USDT</strong></span>
                     </div>
                   </div>
 
@@ -1583,7 +1583,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                       </h2>
                     </div>
                     <div className="mt-4 pt-3 border-t border-slate-800/10 flex justify-between items-center text-[10px]">
-                      <span className="text-slate-500">{lang === 'fa' ? 'Ú©Ù„ Ø³ÙˆØ¯ Ù†Ø§Ø®Ø§Ù„Øµ:' : 'Net ROI (Month):'}</span>
+                      <span className="text-slate-500">{lang === 'fa' ? 'کل سود ناخالص:' : 'Net ROI (Month):'}</span>
                       <span className={`font-extrabold px-1.5 py-0.5 rounded-md ${
                         totalPnLCalculated >= 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'
                       }`}>
@@ -1599,22 +1599,22 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                     <div className="absolute -right-6 -bottom-6 w-16 h-16 rounded-full bg-purple-500/5 blur-xl"></div>
                     <div>
                       <div className="flex justify-between items-center text-slate-400 text-xs font-semibold">
-                        <span>{lang === 'fa' ? 'Ø³ÙØ§Ø±Ø´Ø§Øª Ù…Ø¹Ù„Ù‚ Ùˆ Ø§Ø¹ØªØ¨Ø§Ø±Ø§Øª Ù…Ø³Ø¯ÙˆØ¯' : 'Pending Orders & Holds'}</span>
+                        <span>{lang === 'fa' ? 'سفارشات معلق و اعتبارات مسدود' : 'Pending Orders & Holds'}</span>
                         <Clock size={14} className="text-purple-500" />
                       </div>
                       <h2 className={`text-2xl font-extrabold mt-2 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                        {limitOrders.filter(o => o.status === 'pending').length} <span className="text-xs font-semibold text-purple-500">{lang === 'fa' ? 'Ø³ÙØ§Ø±Ø´ ÙØ¹Ø§Ù„' : 'Active Orders'}</span>
+                        {limitOrders.filter(o => o.status === 'pending').length} <span className="text-xs font-semibold text-purple-500">{lang === 'fa' ? 'سفارش فعال' : 'Active Orders'}</span>
                       </h2>
                     </div>
                     <div className="mt-4 pt-3 border-t border-slate-800/10 flex justify-between text-[10px] text-slate-500">
                       <span>
-                        {lang === 'fa' ? 'ØªØªØ± Ù…Ø³Ø¯ÙˆØ¯ Ø´Ø¯Ù‡:' : 'Locked USDT:'}
+                        {lang === 'fa' ? 'تتر مسدود شده:' : 'Locked USDT:'}
                         <strong className="text-slate-400 font-bold ml-1">
                           {limitOrders.filter(o => o.status === 'pending' && o.type === 'buy').reduce((acc, curr) => acc + (curr.price * curr.amount), 0).toLocaleString()} USDT
                         </strong>
                       </span>
                       <span>
-                        {lang === 'fa' ? 'Ø¯Ø§Ø±Ø§ÛŒÛŒâ€ŒÙ‡Ø§ÛŒ Ù…Ø³Ø¯ÙˆØ¯:' : 'Locked Shares:'}
+                        {lang === 'fa' ? 'دارایی‌های مسدود:' : 'Locked Shares:'}
                         <strong className="text-slate-400 font-bold ml-1">
                           {limitOrders.filter(o => o.status === 'pending' && o.type === 'sell').reduce((acc, curr) => acc + curr.amount, 0).toLocaleString()} Shrs
                         </strong>
@@ -1645,7 +1645,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                   )}
                 </AnimatePresence>
 
-                {/* â”€â”€â”€ NEW STACKED FULL-WIDTH LAYOUT â”€â”€â”€ */}
+                {/* ─── NEW STACKED FULL-WIDTH LAYOUT ─── */}
                 <div className="space-y-8">
 
                   {/* Panel 1: Your Active Digital Holdings (Full Width) */}
@@ -1656,10 +1656,10 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                       <div>
                         <h2 className="text-lg font-extrabold tracking-tight flex items-center gap-2">
                           <CheckCircle size={18} className="text-blue-500" />
-                          {lang === 'fa' ? 'Ø³Ø¨Ø¯ Ø¯Ø§Ø±Ø§ÛŒÛŒâ€ŒÙ‡Ø§ÛŒ ØªØ­Øª Ù…Ø§Ù„Ú©ÛŒØª Ø´Ù…Ø§' : 'Your Share Holdings'}
+                          {lang === 'fa' ? 'سبد دارایی‌های تحت مالکیت شما' : 'Your Share Holdings'}
                         </h2>
                         <p className="text-slate-400 text-[11px] mt-1">
-                          {lang === 'fa' ? 'Ø±ØµØ¯ Ø§Ø±Ø²Ø´ Ù„Ø­Ø¸Ù‡â€ŒØ§ÛŒØŒ Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† Ø®Ø±ÛŒØ¯ Ùˆ Ø³ÙˆØ¯/Ø²ÛŒØ§Ù† Ù‡Ø± Ù…ÙˆÙ‚Ø¹ÛŒØª Ù…Ø¹Ø§Ù…Ù„Ø§ØªÛŒ' : 'Monitor holdings, average costs, and P&L for your selected Iranian shares'}
+                          {lang === 'fa' ? 'رصد ارزش لحظه‌ای، میانگین خرید و سود/زیان هر موقعیت معاملاتی' : 'Monitor holdings, average costs, and P&L for your selected Iranian shares'}
                         </p>
                       </div>
 
@@ -1675,7 +1675,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                               : 'text-slate-400 hover:text-slate-300'
                           }`}
                         >
-                          {lang === 'fa' ? 'Ù†Ù…Ø§ÛŒ Ú©Ù„ÛŒ Ø¯Ø§Ø±Ø§ÛŒÛŒâ€ŒÙ‡Ø§' : 'Aggregated View'}
+                          {lang === 'fa' ? 'نمای کلی دارایی‌ها' : 'Aggregated View'}
                         </button>
                         <button
                           onClick={() => setPortfolioViewMode('detailed')}
@@ -1685,7 +1685,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                               : 'text-slate-400 hover:text-slate-300'
                           }`}
                         >
-                          {lang === 'fa' ? 'Ø±ÛŒØ² Ù…Ø¹Ø§Ù…Ù„Ø§Øª Ùˆ Ø®Ø±ÛŒØ¯Ù‡Ø§' : 'Detailed Purchases'}
+                          {lang === 'fa' ? 'ریز معاملات و خریدها' : 'Detailed Purchases'}
                         </button>
                       </div>
                     </div>
@@ -1701,12 +1701,12 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                                 <tr className={`border-b text-[10px] font-bold uppercase tracking-wider ${
                                   theme === 'dark' ? 'border-slate-800 text-slate-400 bg-slate-900/20' : 'border-slate-100 text-slate-500 bg-slate-50'
                                 }`}>
-                                  <th className="py-3 px-4 text-start">{lang === 'fa' ? 'Ø¯Ø§Ø±Ø§ÛŒÛŒ / Ù†Ù…Ø§Ø¯' : 'Asset / Symbol'}</th>
-                                  <th className="py-3 px-4 text-center">{lang === 'fa' ? 'Ù…ÙˆØ¬ÙˆØ¯ÛŒ (Ø³Ù‡Ù…)' : 'Qty Owned'}</th>
-                                  <th className="py-3 px-4 text-end">{lang === 'fa' ? 'Ù‚ÛŒÙ…Øª Ø®Ø±ÛŒØ¯ / Ù‚ÛŒÙ…Øª ÙØ¹Ù„ÛŒ' : 'Avg Buy / Live Price'}</th>
-                                  <th className="py-3 px-4 text-end">{lang === 'fa' ? 'Ø§Ø±Ø²Ø´ Ø¨Ø§Ø²Ø§Ø± (USDT)' : 'Market Value'}</th>
-                                  <th className="py-3 px-4 text-end">{lang === 'fa' ? 'Ø³ÙˆØ¯ / Ø²ÛŒØ§Ù† (P&L)' : 'Unrealized P&L'}</th>
-                                  <th className="py-3 px-4 text-center">{lang === 'fa' ? 'Ø¹Ù…Ù„ÛŒØ§Øª Ø³Ø±ÛŒØ¹' : 'Quick Actions'}</th>
+                                  <th className="py-3 px-4 text-start">{lang === 'fa' ? 'دارایی / نماد' : 'Asset / Symbol'}</th>
+                                  <th className="py-3 px-4 text-center">{lang === 'fa' ? 'موجودی (سهم)' : 'Qty Owned'}</th>
+                                  <th className="py-3 px-4 text-end">{lang === 'fa' ? 'قیمت خرید / قیمت فعلی' : 'Avg Buy / Live Price'}</th>
+                                  <th className="py-3 px-4 text-end">{lang === 'fa' ? 'ارزش بازار (USDT)' : 'Market Value'}</th>
+                                  <th className="py-3 px-4 text-end">{lang === 'fa' ? 'سود / زیان (P&L)' : 'Unrealized P&L'}</th>
+                                  <th className="py-3 px-4 text-center">{lang === 'fa' ? 'عملیات سریع' : 'Quick Actions'}</th>
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-slate-800/10 text-xs font-semibold">
@@ -1741,7 +1741,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                                         <div className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
                                           {item.shares.toLocaleString()}
                                         </div>
-                                        <div className="text-[9px] text-slate-500 font-bold">{lang === 'fa' ? 'Ø³Ù‡Ù…' : 'Shares'}</div>
+                                        <div className="text-[9px] text-slate-500 font-bold">{lang === 'fa' ? 'سهم' : 'Shares'}</div>
                                       </td>
                                       <td className="py-3.5 px-4 text-end font-mono">
                                         <div className={theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}>{item.avgPrice.toLocaleString()} USDT</div>
@@ -1765,11 +1765,11 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                                         <div className="flex gap-1.5 justify-center">
                                           <button
                                             onClick={() => handleOpenAssetInfo(asset)}
-                                            title={lang === 'fa' ? 'Ø§Ø·Ù„Ø§Ø¹Ø§Øª Ùˆ Ù…Ø´Ø®ØµØ§Øª Ø¯Ø§Ø±Ø§ÛŒÛŒ' : 'Asset Specifications'}
+                                            title={lang === 'fa' ? 'اطلاعات و مشخصات دارایی' : 'Asset Specifications'}
                                             className="px-2 py-1 bg-slate-500/15 hover:bg-slate-500 hover:text-white text-slate-300 text-[10px] rounded-lg font-bold transition-all cursor-pointer flex items-center justify-center gap-1 border border-slate-500/20"
                                           >
                                             <Info size={11} />
-                                            <span>{lang === 'fa' ? 'Ø§Ø·Ù„Ø§Ø¹Ø§Øª' : 'Info'}</span>
+                                            <span>{lang === 'fa' ? 'اطلاعات' : 'Info'}</span>
                                           </button>
                                           <button
                                             onClick={() => {
@@ -1805,13 +1805,13 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                           theme === 'dark' ? 'bg-slate-900/40 border-slate-800' : 'bg-slate-50 border-slate-200'
                         }`}>
                           <p className="text-slate-400 text-xs font-semibold">
-                            {lang === 'fa' ? 'Ù‡ÛŒÚ† Ø¯Ø§Ø±Ø§ÛŒÛŒ Ø¯Ø± Ø³Ø¨Ø¯ Ø´Ù…Ø§ Ø«Ø¨Øª Ù†Ø´Ø¯Ù‡ Ø§Ø³Øª.' : 'Your portfolio currently has no digital holdings.'}
+                            {lang === 'fa' ? 'هیچ دارایی در سبد شما ثبت نشده است.' : 'Your portfolio currently has no digital holdings.'}
                           </p>
                           <button
                             onClick={() => setCurrentTab('market')}
                             className="mt-4 px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-xl cursor-pointer transition-all"
                           >
-                            {lang === 'fa' ? 'Ù…Ø´Ø§Ù‡Ø¯Ù‡ Ø¨Ø§Ø²Ø§Ø± Ùˆ Ø§ÙˆÙ„ÛŒÙ† Ø®Ø±ÛŒØ¯' : 'Browse Asset Marketplace'}
+                            {lang === 'fa' ? 'مشاهده بازار و اولین خرید' : 'Browse Asset Marketplace'}
                           </button>
                         </div>
                       )
@@ -1826,13 +1826,13 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                                 <tr className={`border-b text-[10px] font-bold uppercase tracking-wider ${
                                   theme === 'dark' ? 'border-slate-800 text-slate-400 bg-slate-900/20' : 'border-slate-100 text-slate-500 bg-slate-50'
                                 }`}>
-                                  <th className="py-3 px-4 text-start">{lang === 'fa' ? 'Ø¯Ø§Ø±Ø§ÛŒÛŒ / Ø²Ù…Ø§Ù† Ø®Ø±ÛŒØ¯' : 'Asset / Purchase Time'}</th>
-                                  <th className="py-3 px-4 text-center">{lang === 'fa' ? 'Ø­Ø¬Ù… Ø®Ø±ÛŒØ¯' : 'Buy Volume'}</th>
-                                  <th className="py-3 px-4 text-end">{lang === 'fa' ? 'Ù‚ÛŒÙ…Øª Ø®Ø±ÛŒØ¯' : 'Buy Price'}</th>
-                                  <th className="py-3 px-4 text-end">{lang === 'fa' ? 'Ú©Ù„ Ø³Ø±Ù…Ø§ÛŒÙ‡ (USDT)' : 'Total Invested'}</th>
-                                  <th className="py-3 px-4 text-end">{lang === 'fa' ? 'Ø§Ø±Ø²Ø´ ÙØ¹Ù„ÛŒ / Ù‚ÛŒÙ…Øª ÙØ¹Ù„ÛŒ' : 'Current Value / Live'}</th>
-                                  <th className="py-3 px-4 text-end">{lang === 'fa' ? 'Ø¨Ø§Ø²Ø¯Ù‡ÛŒ ØºÛŒØ±Ù…Ø­Ù‚Ù‚ Ø´Ø¯Ù‡' : 'Unrealized Return'}</th>
-                                  <th className="py-3 px-4 text-center">{lang === 'fa' ? 'Ø¹Ù…Ù„ÛŒØ§Øª' : 'Actions'}</th>
+                                  <th className="py-3 px-4 text-start">{lang === 'fa' ? 'دارایی / زمان خرید' : 'Asset / Purchase Time'}</th>
+                                  <th className="py-3 px-4 text-center">{lang === 'fa' ? 'حجم خرید' : 'Buy Volume'}</th>
+                                  <th className="py-3 px-4 text-end">{lang === 'fa' ? 'قیمت خرید' : 'Buy Price'}</th>
+                                  <th className="py-3 px-4 text-end">{lang === 'fa' ? 'کل سرمایه (USDT)' : 'Total Invested'}</th>
+                                  <th className="py-3 px-4 text-end">{lang === 'fa' ? 'ارزش فعلی / قیمت فعلی' : 'Current Value / Live'}</th>
+                                  <th className="py-3 px-4 text-end">{lang === 'fa' ? 'بازدهی غیرمحقق شده' : 'Unrealized Return'}</th>
+                                  <th className="py-3 px-4 text-center">{lang === 'fa' ? 'عملیات' : 'Actions'}</th>
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-slate-800/10 text-xs font-semibold">
@@ -1867,7 +1867,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                                         <div className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
                                           {lot.shares.toLocaleString()}
                                         </div>
-                                        <div className="text-[9px] text-slate-500 font-bold">{lang === 'fa' ? 'Ø³Ù‡Ù…' : 'Shares'}</div>
+                                        <div className="text-[9px] text-slate-500 font-bold">{lang === 'fa' ? 'سهم' : 'Shares'}</div>
                                       </td>
                                       <td className="py-3.5 px-4 text-end font-mono">
                                         <div className={theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}>
@@ -1904,7 +1904,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                                             }}
                                             className="px-2 py-1 bg-amber-600/10 hover:bg-amber-600 hover:text-white text-amber-500 text-[10px] rounded-lg font-bold transition-all cursor-pointer"
                                           >
-                                            {lang === 'fa' ? 'ÙØ±ÙˆØ´ Ø§ÛŒÙ† Ø®Ø±ÛŒØ¯' : 'Sell Lot'}
+                                            {lang === 'fa' ? 'فروش این خرید' : 'Sell Lot'}
                                           </button>
                                         </div>
                                       </td>
@@ -1920,7 +1920,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                           theme === 'dark' ? 'bg-slate-900/40 border-slate-800' : 'bg-slate-50 border-slate-200'
                         }`}>
                           <p className="text-slate-400 text-xs font-semibold">
-                            {lang === 'fa' ? 'Ù‡ÛŒÚ† ØªØ±Ø§Ú©Ù†Ø´ Ø®Ø±ÛŒØ¯ÛŒ Ø«Ø¨Øª Ù†Ø´Ø¯Ù‡ Ø§Ø³Øª.' : 'No purchase lots found.'}
+                            {lang === 'fa' ? 'هیچ تراکنش خریدی ثبت نشده است.' : 'No purchase lots found.'}
                           </p>
                         </div>
                       )
@@ -1934,10 +1934,10 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                     <div>
                       <h2 className="text-base font-extrabold tracking-tight flex items-center gap-2">
                         <Coins size={18} className="text-blue-500" />
-                        {lang === 'fa' ? 'Ù…ÛŒØ² Ø³ÙØ§Ø±Ø´Ø§Øª Ù…Ø­Ø¯ÙˆØ¯' : 'Limit Trading Desk'}
+                        {lang === 'fa' ? 'میز سفارشات محدود' : 'Limit Trading Desk'}
                       </h2>
                       <p className="text-slate-400 text-[10px] mt-0.5">
-                        {lang === 'fa' ? 'Ø«Ø¨Øª Ø³ÙØ§Ø±Ø´ Ø®Ø±ÛŒØ¯ ÛŒØ§ ÙØ±ÙˆØ´ Ø¨Ø§ ØªØ§Ø±Ú¯Øª Ù‚ÛŒÙ…ØªÛŒ Ø¯Ù„Ø®ÙˆØ§Ù‡ Ø´Ù…Ø§' : 'Set custom target triggers to execute trades automatically'}
+                        {lang === 'fa' ? 'ثبت سفارش خرید یا فروش با تارگت قیمتی دلخواه شما' : 'Set custom target triggers to execute trades automatically'}
                       </p>
                     </div>
 
@@ -1946,7 +1946,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                         {/* Select Asset */}
                         <div className="space-y-1.5">
                           <label className="text-[10px] text-slate-400 font-bold uppercase block">
-                            {lang === 'fa' ? 'Ø§Ù†ØªØ®Ø§Ø¨ Ø¯Ø§Ø±Ø§ÛŒÛŒ' : 'Select Share'}
+                            {lang === 'fa' ? 'انتخاب دارایی' : 'Select Share'}
                           </label>
                           <select
                             value={newOrderAssetId}
@@ -1966,7 +1966,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                         {/* Direction Type Switcher */}
                         <div className="space-y-1.5">
                           <label className="text-[10px] text-slate-400 font-bold uppercase block">
-                            {lang === 'fa' ? 'Ø¬Ù‡Øª Ø³ÙØ§Ø±Ø´ Ù…Ø¹Ø§Ù…Ù„Ù‡' : 'Order Direction'}
+                            {lang === 'fa' ? 'جهت سفارش معامله' : 'Order Direction'}
                           </label>
                           <div className={`flex p-1 rounded-xl ${
                             theme === 'dark' ? 'bg-slate-955 border border-slate-850' : 'bg-slate-100'
@@ -1980,7 +1980,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                                   : 'text-slate-400 hover:text-slate-600'
                               }`}
                             >
-                              {lang === 'fa' ? 'Ø®Ø±ÛŒØ¯ Ø¨Ø§ ØªØ§Ø±Ú¯Øª' : 'Buy Limit'}
+                              {lang === 'fa' ? 'خرید با تارگت' : 'Buy Limit'}
                             </button>
                             <button
                               type="button"
@@ -1991,7 +1991,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                                   : 'text-slate-400 hover:text-slate-600'
                               }`}
                             >
-                              {lang === 'fa' ? 'ÙØ±ÙˆØ´ Ø¨Ø§ ØªØ§Ø±Ú¯Øª' : 'Sell Limit'}
+                              {lang === 'fa' ? 'فروش با تارگت' : 'Sell Limit'}
                             </button>
                           </div>
                         </div>
@@ -2000,10 +2000,10 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                         <div className="space-y-1.5">
                           <div className="flex justify-between items-center text-[10px]">
                             <label className="text-slate-400 font-bold uppercase">
-                              {lang === 'fa' ? 'Ù‚ÛŒÙ…Øª Ù‡Ø¯Ù (USDT)' : 'Target Price (USDT)'}
+                              {lang === 'fa' ? 'قیمت هدف (USDT)' : 'Target Price (USDT)'}
                             </label>
                             <span className="text-blue-500 font-bold">
-                              {lang === 'fa' ? 'Ù‚ÛŒÙ…Øª ÙØ¹Ù„ÛŒ: ' : 'Live: '}
+                              {lang === 'fa' ? 'قیمت فعلی: ' : 'Live: '}
                               {assets.find(a => a.id === newOrderAssetId)?.price} USDT
                             </span>
                           </div>
@@ -2024,11 +2024,11 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                         <div className="space-y-1.5">
                           <div className="flex justify-between items-center text-[10px]">
                             <label className="text-slate-400 font-bold uppercase">
-                              {lang === 'fa' ? 'ØªØ¹Ø¯Ø§Ø¯ Ø³Ù‡Ù… Ù…Ø¹Ø§Ù…Ù„Ù‡' : 'Quantity (Shares)'}
+                              {lang === 'fa' ? 'تعداد سهم معامله' : 'Quantity (Shares)'}
                             </label>
                             {newOrderType === 'sell' && (
                               <span className="text-amber-500 font-bold">
-                                {lang === 'fa' ? 'Ù…ÙˆØ¬ÙˆØ¯ÛŒ Ø´Ù…Ø§: ' : 'Your shares: '}
+                                {lang === 'fa' ? 'موجودی شما: ' : 'Your shares: '}
                                 {myPortfolio.find(p => p.assetId === newOrderAssetId)?.shares || 0} Shrs
                               </span>
                             )}
@@ -2051,7 +2051,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                       <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4 border-t border-slate-800/10">
                         {parseFloat(newOrderPrice) > 0 && parseFloat(newOrderAmount) > 0 ? (
                           <div className="p-3 rounded-2xl bg-blue-500/5 border border-blue-500/10 text-[11px] min-w-[200px] text-center sm:text-start flex items-center justify-between gap-4">
-                            <span className="text-slate-400 font-bold">{lang === 'fa' ? 'Ø§Ø±Ø²Ø´ ØªØ®Ù…ÛŒÙ†ÛŒ Ø³ÙØ§Ø±Ø´:' : 'Estimated Total:'}</span>
+                            <span className="text-slate-400 font-bold">{lang === 'fa' ? 'ارزش تخمینی سفارش:' : 'Estimated Total:'}</span>
                             <strong className="text-blue-500 font-extrabold text-sm font-mono">
                               {(parseFloat(newOrderPrice) * parseFloat(newOrderAmount)).toLocaleString(undefined, { minimumFractionDigits: 2 })} USDT
                             </strong>
@@ -2069,8 +2069,8 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                           }`}
                         >
                           {newOrderType === 'buy'
-                            ? (lang === 'fa' ? 'Ø«Ø¨Øª Ø³ÙØ§Ø±Ø´ Ø®Ø±ÛŒØ¯ Ù‡Ø¯Ù' : 'Submit Buy Limit')
-                            : (lang === 'fa' ? 'Ø«Ø¨Øª Ø³ÙØ§Ø±Ø´ ÙØ±ÙˆØ´ Ù‡Ø¯Ù' : 'Submit Sell Limit')}
+                            ? (lang === 'fa' ? 'ثبت سفارش خرید هدف' : 'Submit Buy Limit')
+                            : (lang === 'fa' ? 'ثبت سفارش فروش هدف' : 'Submit Sell Limit')}
                         </button>
                       </div>
                     </form>
@@ -2084,10 +2084,10 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                           <div>
                             <h2 className="text-lg font-extrabold tracking-tight flex items-center gap-2">
                               <Clock size={18} className="text-blue-500" />
-                              {lang === 'fa' ? 'Ø³ÙØ§Ø±Ø´Ø§Øª Ù…Ø¹Ù„Ù‚ Ùˆ Ø¯ÙØªØ±Ú†Ù‡ Ú¯Ø²Ø§Ø±Ø´Ø§Øª' : 'Limit Orders & Activity logs'}
+                              {lang === 'fa' ? 'سفارشات معلق و دفترچه گزارشات' : 'Limit Orders & Activity logs'}
                             </h2>
                             <p className="text-slate-400 text-[11px] mt-1">
-                              {lang === 'fa' ? 'Ø±ØµØ¯ Ø³ÙØ§Ø±Ø´Ø§Øª ÙØ¹Ø§Ù„ Ø¨Ø§Ø²Ø§Ø± Ùˆ ØªØ§Ø±ÛŒØ®Ú†Ù‡ ØªÙ…Ø§Ù… ØªØ±Ø§Ú©Ù†Ø´â€ŒÙ‡Ø§ Ùˆ ÙØ¹Ø§Ù„ÛŒØªâ€ŒÙ‡Ø§' : 'Review active limit trades or access historical chronological logs'}
+                              {lang === 'fa' ? 'رصد سفارشات فعال بازار و تاریخچه تمام تراکنش‌ها و فعالیت‌ها' : 'Review active limit trades or access historical chronological logs'}
                             </p>
                           </div>
 
@@ -2103,7 +2103,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                                   : 'text-slate-400 hover:text-slate-300'
                               }`}
                             >
-                              {lang === 'fa' ? 'Ø³ÙØ§Ø±Ø´Ø§Øª Ù…Ø¹Ù„Ù‚' : 'Pending Orders'}
+                              {lang === 'fa' ? 'سفارشات معلق' : 'Pending Orders'}
                             </button>
                             <button
                               onClick={() => setPortfolioSubTab('activity')}
@@ -2113,7 +2113,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                                   : 'text-slate-400 hover:text-slate-300'
                               }`}
                             >
-                              {lang === 'fa' ? 'Ø¯ÙØªØ±Ú†Ù‡ ÙØ¹Ø§Ù„ÛŒØªâ€ŒÙ‡Ø§' : 'Activity Timeline'}
+                              {lang === 'fa' ? 'دفترچه فعالیت‌ها' : 'Activity Timeline'}
                             </button>
                           </div>
                         </div>
@@ -2130,12 +2130,12 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                                       <tr className={`border-b text-[10px] font-bold uppercase tracking-wider ${
                                         theme === 'dark' ? 'border-slate-800 text-slate-400 bg-slate-900/20' : 'border-slate-100 text-slate-500 bg-slate-50'
                                       }`}>
-                                        <th className="py-3 px-4 text-start">{lang === 'fa' ? 'Ø³ÙØ§Ø±Ø´ / ØªØ§Ø±ÛŒØ®' : 'Order ID / Date'}</th>
-                                        <th className="py-3 px-4 text-start">{lang === 'fa' ? 'Ø¯Ø§Ø±Ø§ÛŒÛŒ / Ù†ÙˆØ¹' : 'Asset / Direction'}</th>
-                                        <th className="py-3 px-4 text-end">{lang === 'fa' ? 'Ù‚ÛŒÙ…Øª Ù‡Ø¯Ù (USDT)' : 'Target Price'}</th>
-                                        <th className="py-3 px-4 text-end">{lang === 'fa' ? 'ØªØ¹Ø¯Ø§Ø¯ Ø³Ù‡Ù…' : 'Shares Qty'}</th>
-                                        <th className="py-3 px-4 text-end">{lang === 'fa' ? 'Ø§Ø±Ø²Ø´ Ø³ÙØ§Ø±Ø´' : 'Total Cost'}</th>
-                                        <th className="py-3 px-4 text-center">{lang === 'fa' ? 'ÙˆØ¶Ø¹ÛŒØª / Ø¹Ù…Ù„ÛŒØ§Øª Ø´Ø¨ÛŒÙ‡â€ŒØ³Ø§Ø²' : 'Status / Simulation'}</th>
+                                        <th className="py-3 px-4 text-start">{lang === 'fa' ? 'سفارش / تاریخ' : 'Order ID / Date'}</th>
+                                        <th className="py-3 px-4 text-start">{lang === 'fa' ? 'دارایی / نوع' : 'Asset / Direction'}</th>
+                                        <th className="py-3 px-4 text-end">{lang === 'fa' ? 'قیمت هدف (USDT)' : 'Target Price'}</th>
+                                        <th className="py-3 px-4 text-end">{lang === 'fa' ? 'تعداد سهم' : 'Shares Qty'}</th>
+                                        <th className="py-3 px-4 text-end">{lang === 'fa' ? 'ارزش سفارش' : 'Total Cost'}</th>
+                                        <th className="py-3 px-4 text-center">{lang === 'fa' ? 'وضعیت / عملیات شبیه‌ساز' : 'Status / Simulation'}</th>
                                       </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-800/10 text-xs font-semibold">
@@ -2160,19 +2160,19 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                                                     ? 'bg-emerald-500/10 text-emerald-500'
                                                     : 'bg-amber-500/10 text-amber-500'
                                                 }`}>
-                                                  {order.type === 'buy' ? (lang === 'fa' ? 'Ø®Ø±ÛŒØ¯ Ù…Ø­Ø¯ÙˆØ¯' : 'Buy Limit') : (lang === 'fa' ? 'ÙØ±ÙˆØ´ Ù…Ø­Ø¯ÙˆØ¯' : 'Sell Limit')}
+                                                  {order.type === 'buy' ? (lang === 'fa' ? 'خرید محدود' : 'Buy Limit') : (lang === 'fa' ? 'فروش محدود' : 'Sell Limit')}
                                                 </span>
                                               </div>
                                             </td>
                                             <td className="py-3 px-4 text-end font-mono">
                                               <div className={theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}>{order.price.toLocaleString()} USDT</div>
-                                              <div className="text-[9px] text-slate-500 mt-0.5">{lang === 'fa' ? 'Ù‚ÛŒÙ…Øª Ø¨Ø§Ø²Ø§Ø±: ' : 'Live: '}{asset?.price}</div>
+                                              <div className="text-[9px] text-slate-500 mt-0.5">{lang === 'fa' ? 'قیمت بازار: ' : 'Live: '}{asset?.price}</div>
                                             </td>
                                             <td className="py-3 px-4 text-end font-mono">
                                               <div className={theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}>
                                                 {order.amount.toLocaleString()}
                                               </div>
-                                              <span className="text-[9px] text-slate-500">{lang === 'fa' ? 'Ø³Ù‡Ù…' : 'Shares'}</span>
+                                              <span className="text-[9px] text-slate-500">{lang === 'fa' ? 'سهم' : 'Shares'}</span>
                                             </td>
                                             <td className="py-3 px-4 text-end font-mono">
                                               <div className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
@@ -2186,33 +2186,33 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                                                   <div className="space-y-1.5">
                                                     <span className="text-[9.5px] bg-slate-500/10 text-slate-400 px-2.5 py-0.5 rounded-full font-bold inline-flex items-center gap-1 justify-center w-full">
                                                       <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-pulse"></span>
-                                                      {lang === 'fa' ? 'ÙØ¹Ø§Ù„ / Ø¯Ø± Ù†ÙˆØ¨Øª' : 'Pending'}
+                                                      {lang === 'fa' ? 'فعال / در نوبت' : 'Pending'}
                                                     </span>
                                                     <div className="flex gap-1 justify-center">
                                                       <button
                                                         onClick={() => handleExecuteLimitOrder(order.id)}
                                                         className="px-2 py-0.5 bg-blue-600/20 hover:bg-blue-600 hover:text-white text-blue-400 text-[9.5px] rounded font-bold transition-all cursor-pointer"
-                                                        title={lang === 'fa' ? 'Ø´Ø¨ÛŒÙ‡â€ŒØ³Ø§Ø²ÛŒ Ø§Ø¬Ø±Ø§ÛŒ ÙÙˆØ±ÛŒ Ø³ÙØ§Ø±Ø´ Ø±ÙˆÛŒ Ø§ÛŒÙ† Ù‚ÛŒÙ…Øª' : 'Simulate execution of this limit target'}
+                                                        title={lang === 'fa' ? 'شبیه‌سازی اجرای فوری سفارش روی این قیمت' : 'Simulate execution of this limit target'}
                                                       >
-                                                        {lang === 'fa' ? 'Ø§Ø¬Ø±Ø§ÛŒ Ø³ÙØ§Ø±Ø´' : 'Exec'}
+                                                        {lang === 'fa' ? 'اجرای سفارش' : 'Exec'}
                                                       </button>
                                                       <button
                                                         onClick={() => handleCancelLimitOrder(order.id)}
                                                         className="px-2 py-0.5 bg-rose-600/20 hover:bg-rose-600 hover:text-white text-rose-400 text-[9.5px] rounded font-bold transition-all cursor-pointer"
                                                       >
-                                                        {lang === 'fa' ? 'Ù„ØºÙˆ Ø³ÙØ§Ø±Ø´' : 'Cancel'}
+                                                        {lang === 'fa' ? 'لغو سفارش' : 'Cancel'}
                                                       </button>
                                                     </div>
                                                   </div>
                                                 ) : order.status === 'executed' ? (
                                                   <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2.5 py-0.5 rounded-full font-bold inline-flex items-center gap-1">
                                                     <CheckCircle size={10} />
-                                                    {lang === 'fa' ? 'Ø§Ù†Ø¬Ø§Ù… Ø´Ø¯Ù‡' : 'Executed'}
+                                                    {lang === 'fa' ? 'انجام شده' : 'Executed'}
                                                   </span>
                                                 ) : (
                                                   <span className="text-[10px] bg-rose-500/10 text-rose-400 px-2.5 py-0.5 rounded-full font-bold inline-flex items-center gap-1">
                                                     <X size={10} className="shrink-0" />
-                                                    {lang === 'fa' ? 'Ù„ØºÙˆ Ø´Ø¯Ù‡' : 'Cancelled'}
+                                                    {lang === 'fa' ? 'لغو شده' : 'Cancelled'}
                                                   </span>
                                                 )}
                                               </div>
@@ -2228,7 +2228,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                               <div className={`p-8 text-center rounded-2xl border ${
                                 theme === 'dark' ? 'bg-slate-900/20 border-slate-800' : 'bg-slate-50 border-slate-200'
                               }`}>
-                                <p className="text-slate-400 text-xs font-semibold">{lang === 'fa' ? 'Ù‡ÛŒÚ† Ø³ÙØ§Ø±Ø´ Ù…Ø­Ø¯ÙˆØ¯ÛŒ Ø«Ø¨Øª Ù†Ø´Ø¯Ù‡ Ø§Ø³Øª.' : 'No active limit orders found.'}</p>
+                                <p className="text-slate-400 text-xs font-semibold">{lang === 'fa' ? 'هیچ سفارش محدودی ثبت نشده است.' : 'No active limit orders found.'}</p>
                               </div>
                             )}
 
@@ -2238,10 +2238,10 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                                 <h4 className={`text-xs font-black uppercase tracking-wider ${
                                   theme === 'dark' ? 'text-white' : 'text-slate-900'
                                 }`}>
-                                  {lang === 'fa' ? 'ðŸ”” Ù‡Ø´Ø¯Ø§Ø±Ù‡Ø§ÛŒ ÙØ¹Ø§Ù„ Ù‚ÛŒÙ…Øª' : 'ðŸ”” Active Price Alerts'}
+                                  {lang === 'fa' ? '🔔 هشدارهای فعال قیمت' : '🔔 Active Price Alerts'}
                                 </h4>
                                 <span className="text-[10px] bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded-md font-extrabold">
-                                  {priceAlerts.length} {lang === 'fa' ? 'Ù‡Ø´Ø¯Ø§Ø± ØªÙ†Ø¸ÛŒÙ… Ø´Ø¯Ù‡' : 'Alerts Set'}
+                                  {priceAlerts.length} {lang === 'fa' ? 'هشدار تنظیم شده' : 'Alerts Set'}
                                 </span>
                               </div>
 
@@ -2255,11 +2255,11 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                                         <tr className={`border-b text-[10px] font-bold uppercase tracking-wider ${
                                           theme === 'dark' ? 'border-slate-800 text-slate-400 bg-slate-900/20' : 'border-slate-100 text-slate-500 bg-slate-50'
                                         }`}>
-                                          <th className="py-3 px-4 text-start">{lang === 'fa' ? 'Ø´Ù†Ø§Ø³Ù‡ Ù‡Ø´Ø¯Ø§Ø± / ØªØ§Ø±ÛŒØ®' : 'Alert ID / Date'}</th>
-                                          <th className="py-3 px-4 text-start">{lang === 'fa' ? 'Ø¯Ø§Ø±Ø§ÛŒÛŒ' : 'Asset'}</th>
-                                          <th className="py-3 px-4 text-end">{lang === 'fa' ? 'Ø´Ø±Ø§ÛŒØ· ÙØ¹Ø§Ù„â€ŒØ³Ø§Ø²ÛŒ' : 'Trigger Condition'}</th>
-                                          <th className="py-3 px-4 text-end">{lang === 'fa' ? 'Ù‚ÛŒÙ…Øª Ù‡Ø¯Ù (USDT)' : 'Target Price'}</th>
-                                          <th className="py-3 px-4 text-center">{lang === 'fa' ? 'ÙˆØ¶Ø¹ÛŒØª / Ø¹Ù…Ù„ÛŒØ§Øª' : 'Status / Actions'}</th>
+                                          <th className="py-3 px-4 text-start">{lang === 'fa' ? 'شناسه هشدار / تاریخ' : 'Alert ID / Date'}</th>
+                                          <th className="py-3 px-4 text-start">{lang === 'fa' ? 'دارایی' : 'Asset'}</th>
+                                          <th className="py-3 px-4 text-end">{lang === 'fa' ? 'شرایط فعال‌سازی' : 'Trigger Condition'}</th>
+                                          <th className="py-3 px-4 text-end">{lang === 'fa' ? 'قیمت هدف (USDT)' : 'Target Price'}</th>
+                                          <th className="py-3 px-4 text-center">{lang === 'fa' ? 'وضعیت / عملیات' : 'Status / Actions'}</th>
                                         </tr>
                                       </thead>
                                       <tbody className="divide-y divide-slate-800/10 text-xs font-semibold">
@@ -2284,36 +2284,36 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                                                     : 'bg-amber-500/10 text-amber-500'
                                                 }`}>
                                                   {alert.condition === 'above'
-                                                    ? (lang === 'fa' ? 'Ø¨Ø§Ù„Ø§ÛŒ Ù‡Ø¯Ù (>=)' : 'Goes Above (>=)')
+                                                    ? (lang === 'fa' ? 'بالای هدف (>=)' : 'Goes Above (>=)')
                                                     : (lang === 'fa' ? 'Goes Below (<=)' : 'Goes Below (<=)')}
                                                 </span>
                                               </td>
                                               <td className="py-3 px-4 text-end font-mono">
                                                 <div className={theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}>{alert.targetPrice.toLocaleString()} USDT</div>
-                                                <div className="text-[9px] text-slate-500 mt-0.5">{lang === 'fa' ? 'Ù‚ÛŒÙ…Øª Ø¨Ø§Ø²Ø§Ø±: ' : 'Live: '}{asset?.price}</div>
+                                                <div className="text-[9px] text-slate-500 mt-0.5">{lang === 'fa' ? 'قیمت بازار: ' : 'Live: '}{asset?.price}</div>
                                               </td>
                                               <td className="py-3 px-4">
                                                 <div className="flex flex-col items-center justify-center gap-1.5">
                                                   {alert.isTriggered ? (
                                                     <span className="text-[9.5px] bg-emerald-500/10 text-emerald-400 px-2.5 py-0.5 rounded-full font-bold inline-flex items-center gap-1">
                                                       <CheckCircle size={10} />
-                                                      {lang === 'fa' ? 'Ø§Ø±Ø³Ø§Ù„ Ø´Ø¯Ù‡' : 'Triggered'}
+                                                      {lang === 'fa' ? 'ارسال شده' : 'Triggered'}
                                                     </span>
                                                   ) : (
                                                     <div className="flex flex-col items-center gap-1">
                                                       <span className="text-[9.5px] bg-slate-500/10 text-slate-400 px-2.5 py-0.5 rounded-full font-bold inline-flex items-center gap-1">
                                                         <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
-                                                        {lang === 'fa' ? 'ÙØ¹Ø§Ù„ / Ø¯Ø± Ø§Ù†ØªØ¸Ø§Ø±' : 'Watching'}
+                                                        {lang === 'fa' ? 'فعال / در انتظار' : 'Watching'}
                                                       </span>
                                                       <button
                                                         onClick={() => {
                                                           setPriceAlerts(prev => prev.filter(a => a.id !== alert.id));
-                                                          triggerAlert('success', lang === 'fa' ? 'Ù‡Ø´Ø¯Ø§Ø± Ù‚ÛŒÙ…Øª Ù„ØºÙˆ Ø´Ø¯.' : 'Price alert removed.');
-                                                          recordActivity('alert_cancel', `Cancelled price alert ${alert.id}`, `Ù„ØºÙˆ Ù‡Ø´Ø¯Ø§Ø± Ù‚ÛŒÙ…Øª ${alert.id}`);
+                                                          triggerAlert('success', lang === 'fa' ? 'هشدار قیمت لغو شد.' : 'Price alert removed.');
+                                                          recordActivity('alert_cancel', `Cancelled price alert ${alert.id}`, `لغو هشدار قیمت ${alert.id}`);
                                                         }}
                                                         className="px-2 py-0.5 bg-rose-600/20 hover:bg-rose-600 hover:text-white text-rose-400 text-[9.5px] rounded font-bold transition-all cursor-pointer"
                                                       >
-                                                        {lang === 'fa' ? 'Ø­Ø°Ù' : 'Remove'}
+                                                        {lang === 'fa' ? 'حذف' : 'Remove'}
                                                       </button>
                                                     </div>
                                                   )}
@@ -2330,7 +2330,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                                 <div className={`p-8 text-center rounded-2xl border ${
                                   theme === 'dark' ? 'bg-slate-900/20 border-slate-800' : 'bg-slate-50 border-slate-200'
                                 }`}>
-                                  <p className="text-slate-400 text-xs font-semibold">{lang === 'fa' ? 'Ù‡ÛŒÚ† Ù‡Ø´Ø¯Ø§Ø± Ù‚ÛŒÙ…ØªÛŒ ØªÙ†Ø¸ÛŒÙ… Ù†Ø´Ø¯Ù‡ Ø§Ø³Øª.' : 'No active price alerts found.'}</p>
+                                  <p className="text-slate-400 text-xs font-semibold">{lang === 'fa' ? 'هیچ هشدار قیمتی تنظیم نشده است.' : 'No active price alerts found.'}</p>
                                 </div>
                               )}
                             </div>
@@ -2406,7 +2406,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
               <section className="space-y-6">
                 <div>
                   <h1 className="text-2xl font-extrabold tracking-tight">{t.wallet}</h1>
-                  <p className="text-slate-400 text-xs mt-1">{lang === 'fa' ? 'Ø´Ø§Ø±Ú˜ Ø­Ø³Ø§Ø¨ ØªØªØ± ÛŒØ§ Ø¨Ø±Ø¯Ø§Ø´Øª Ø³Ø±ÛŒØ¹' : 'Deposit and withdraw USDT securely'}</p>
+                  <p className="text-slate-400 text-xs mt-1">{lang === 'fa' ? 'شارژ حساب تتر یا برداشت سریع' : 'Deposit and withdraw USDT securely'}</p>
                 </div>
 
                 <div className={`rounded-3xl border p-6 shadow-sm space-y-6 max-w-xl mx-auto ${
@@ -2490,9 +2490,9 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                         <div className="flex items-center justify-between gap-2">
                           <label className="text-xs font-bold text-slate-400 uppercase">{t.txidLabel}</label>
                           <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 shrink-0">
-                            {depositNetwork === 'trc20' && (lang === 'fa' ? 'Ø§Ù„Ú¯Ùˆ TRC20: Û¶Û´ Ú©Ø§Ø±Ø§Ú©ØªØ± Ù‡Ú¯Ø²' : 'TRC20: 64 Hex Chars')}
-                            {depositNetwork === 'erc20' && (lang === 'fa' ? 'Ø§Ù„Ú¯Ùˆ ERC20: Ø´Ø±ÙˆØ¹ Ø¨Ø§ 0x + Û¶Û´ Ú©Ø§Ø±Ø§Ú©ØªØ±' : 'ERC20: 0x + 64 Hex Chars')}
-                            {depositNetwork === 'bep20' && (lang === 'fa' ? 'Ø§Ù„Ú¯Ùˆ BEP20: Ø´Ø±ÙˆØ¹ Ø¨Ø§ 0x + Û¶Û´ Ú©Ø§Ø±Ø§Ú©ØªØ±' : 'BEP20: 0x + 64 Hex Chars')}
+                            {depositNetwork === 'trc20' && (lang === 'fa' ? 'الگو TRC20: ۶۴ کاراکتر هگز' : 'TRC20: 64 Hex Chars')}
+                            {depositNetwork === 'erc20' && (lang === 'fa' ? 'الگو ERC20: شروع با 0x + ۶۴ کاراکتر' : 'ERC20: 0x + 64 Hex Chars')}
+                            {depositNetwork === 'bep20' && (lang === 'fa' ? 'الگو BEP20: شروع با 0x + ۶۴ کاراکتر' : 'BEP20: 0x + 64 Hex Chars')}
                           </span>
                         </div>
 
@@ -2506,8 +2506,8 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                             }}
                             placeholder={
                               depositNetwork === 'trc20'
-                                ? (lang === 'fa' ? 'Ù…Ø«Ø§Ù„: e4399e5362bf6a9a0891d8e176b97621c8b32034e3e3b0bb3ef52c5a085b3765' : 'e.g., e4399e5362bf6a9a0891d8e176b97621c8b32034e3e3b0bb3ef52c5a085b3765')
-                                : (lang === 'fa' ? 'Ù…Ø«Ø§Ù„: 0x7b233a18a9028882b52ec87247d51ee2d7bf8107dd64cf63b9f3ee2bdfa67a03' : 'e.g., 0x7b233a18a9028882b52ec87247d51ee2d7bf8107dd64cf63b9f3ee2bdfa67a03')
+                                ? (lang === 'fa' ? 'مثال: e4399e5362bf6a9a0891d8e176b97621c8b32034e3e3b0bb3ef52c5a085b3765' : 'e.g., e4399e5362bf6a9a0891d8e176b97621c8b32034e3e3b0bb3ef52c5a085b3765')
+                                : (lang === 'fa' ? 'مثال: 0x7b233a18a9028882b52ec87247d51ee2d7bf8107dd64cf63b9f3ee2bdfa67a03' : 'e.g., 0x7b233a18a9028882b52ec87247d51ee2d7bf8107dd64cf63b9f3ee2bdfa67a03')
                             }
                             className={`w-full p-3 font-mono text-xs rounded-xl border focus:outline-none transition-all ${
                               txidError
@@ -2523,12 +2523,12 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                               {validateTxid(depositTxid, depositNetwork).valid ? (
                                 <span className="text-emerald-500 font-bold flex items-center gap-1 bg-emerald-500/10 px-1.5 py-0.5 rounded">
                                   <Check size={12} />
-                                  <span>{depositTxid.trim().length} {lang === 'fa' ? 'Ú©Ø§Ø±Ø§Ú©ØªØ±' : 'chars'}</span>
+                                  <span>{depositTxid.trim().length} {lang === 'fa' ? 'کاراکتر' : 'chars'}</span>
                                 </span>
                               ) : (
                                 <span className="text-amber-500 font-bold flex items-center gap-1 bg-amber-500/10 px-1.5 py-0.5 rounded">
                                   <AlertCircle size={12} />
-                                  <span>{depositTxid.trim().length} {lang === 'fa' ? 'Ú©Ø§Ø±Ø§Ú©ØªØ±' : 'chars'}</span>
+                                  <span>{depositTxid.trim().length} {lang === 'fa' ? 'کاراکتر' : 'chars'}</span>
                                 </span>
                               )}
                             </div>
@@ -2547,23 +2547,23 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                           theme === 'dark' ? 'bg-slate-950/60 border-slate-900 text-slate-400' : 'bg-slate-50 border-slate-200/80 text-slate-600'
                         }`}>
                           <div className="flex items-center justify-between font-bold text-slate-300">
-                            <span>{lang === 'fa' ? 'ÙØ±Ù…Øª Ù…Ø¬Ø§Ø² Ù‡Ø´ Ø¨Ø±Ø§ÛŒ Ø´Ø¨Ú©Ù‡ Ø§Ù†ØªØ®Ø§Ø¨â€ŒØ´Ø¯Ù‡:' : 'Valid Hash Rule for Selected Network:'}</span>
+                            <span>{lang === 'fa' ? 'فرمت مجاز هش برای شبکه انتخاب‌شده:' : 'Valid Hash Rule for Selected Network:'}</span>
                             <span className="text-blue-500 font-mono font-extrabold">{depositNetwork.toUpperCase()}</span>
                           </div>
                           <p className="text-[11px] leading-relaxed opacity-90">
                             {depositNetwork === 'trc20' && (
                               lang === 'fa'
-                                ? 'Ú©Ø¯ Ù‡Ø´ ØªØ±ÙˆÙ† (TronScan) Ø´Ø§Ù…Ù„ Ø¯Ù‚ÛŒÙ‚Ø§ Û¶Û´ Ú©Ø§Ø±Ø§Ú©ØªØ± Ù‡Ú¯Ø²Ø§Ø¯Ø³ÛŒÙ¾Ù…Ø§Ù„ Ø§Ø³Øª.'
+                                ? 'کد هش ترون (TronScan) شامل دقیقا ۶۴ کاراکتر هگزادسیپمال است.'
                                 : 'TRON TxID must be exactly 64 hex characters long.'
                             )}
                             {depositNetwork === 'erc20' && (
                               lang === 'fa'
-                                ? 'Ú©Ø¯ Ù‡Ø´ Ø§ØªØ±ÛŒÙˆÙ… (Etherscan) Ø´Ø§Ù…Ù„ Û¶Û¶ Ú©Ø§Ø±Ø§Ú©ØªØ± (Ø¨Ø§ Ù¾ÛŒØ´ÙˆÙ†Ø¯ 0x) Ø§Ø³Øª.'
+                                ? 'کد هش اتریوم (Etherscan) شامل ۶۶ کاراکتر (با پیشوند 0x) است.'
                                 : 'Ethereum TxID consists of 66 characters starting with 0x prefix.'
                             )}
                             {depositNetwork === 'bep20' && (
                               lang === 'fa'
-                                ? 'Ú©Ø¯ Ù‡Ø´ Ø¨Ø§ÛŒÙ†Ù†Ø³ Ø§Ø³Ù…Ø§Ø±Øª Ú†ÛŒÙ† (BscScan) Ø´Ø§Ù…Ù„ Û¶Û¶ Ú©Ø§Ø±Ø§Ú©ØªØ± (Ø¨Ø§ Ù¾ÛŒØ´ÙˆÙ†Ø¯ 0x) Ø§Ø³Øª.'
+                                ? 'کد هش بایننس اسمارت چین (BscScan) شامل ۶۶ کاراکتر (با پیشوند 0x) است.'
                                 : 'BSC TxID consists of 66 characters starting with 0x prefix.'
                             )}
                           </p>
@@ -2587,8 +2587,8 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                         <div className="flex items-center justify-between gap-2">
                           <label className="text-xs font-bold text-slate-400 uppercase">{t.destinationAddress}</label>
                           <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 shrink-0">
-                            {depositNetwork === 'trc20' && (lang === 'fa' ? 'Ø§Ù„Ú¯Ùˆ: Ø´Ø±ÙˆØ¹ Ø¨Ø§ T (Û³Û´ Ú©Ø§Ø±Ø§Ú©ØªØ±)' : 'Pattern: Starts with T (34 chars)')}
-                            {(depositNetwork === 'erc20' || depositNetwork === 'bep20') && (lang === 'fa' ? 'Ø§Ù„Ú¯Ùˆ: Ø´Ø±ÙˆØ¹ Ø¨Ø§ 0x (Û´Û² Ú©Ø§Ø±Ø§Ú©ØªØ±)' : 'Pattern: Starts with 0x (42 chars)')}
+                            {depositNetwork === 'trc20' && (lang === 'fa' ? 'الگو: شروع با T (۳۴ کاراکتر)' : 'Pattern: Starts with T (34 chars)')}
+                            {(depositNetwork === 'erc20' || depositNetwork === 'bep20') && (lang === 'fa' ? 'الگو: شروع با 0x (۴۲ کاراکتر)' : 'Pattern: Starts with 0x (42 chars)')}
                           </span>
                         </div>
 
@@ -2602,8 +2602,8 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                             }}
                             placeholder={
                               depositNetwork === 'trc20'
-                                ? (lang === 'fa' ? 'Ù…Ø«Ø§Ù„: TUtwXkXYZ123abcTRC20dummyAddressDepositActive' : 'e.g., TUtwXkXYZ123abcTRC20dummyAddressDepositActive')
-                                : (lang === 'fa' ? 'Ù…Ø«Ø§Ù„: ERC20_DEPOSITS_DISABLED' : 'e.g., ERC20_DEPOSITS_DISABLED')
+                                ? (lang === 'fa' ? 'مثال: TUtwXkXYZ123abcTRC20dummyAddressDepositActive' : 'e.g., TUtwXkXYZ123abcTRC20dummyAddressDepositActive')
+                                : (lang === 'fa' ? 'مثال: ERC20_DEPOSITS_DISABLED' : 'e.g., ERC20_DEPOSITS_DISABLED')
                             }
                             className={`w-full p-3 font-mono text-xs rounded-xl border focus:outline-none transition-all ${
                               withdrawAddrError
@@ -2619,12 +2619,12 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                               {validateWithdrawAddress(withdrawAddress, depositNetwork).valid ? (
                                 <span className="text-emerald-500 font-bold flex items-center gap-1 bg-emerald-500/10 px-1.5 py-0.5 rounded">
                                   <Check size={12} />
-                                  <span>{withdrawAddress.trim().length} {lang === 'fa' ? 'Ú©Ø§Ø±Ø§Ú©ØªØ±' : 'chars'}</span>
+                                  <span>{withdrawAddress.trim().length} {lang === 'fa' ? 'کاراکتر' : 'chars'}</span>
                                 </span>
                               ) : (
                                 <span className="text-amber-500 font-bold flex items-center gap-1 bg-amber-500/10 px-1.5 py-0.5 rounded">
                                   <AlertCircle size={12} />
-                                  <span>{withdrawAddress.trim().length} {lang === 'fa' ? 'Ú©Ø§Ø±Ø§Ú©ØªØ±' : 'chars'}</span>
+                                  <span>{withdrawAddress.trim().length} {lang === 'fa' ? 'کاراکتر' : 'chars'}</span>
                                 </span>
                               )}
                             </div>
@@ -2671,7 +2671,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
               <section className="space-y-6">
                 <div>
                   <h1 className="text-2xl font-extrabold tracking-tight">{t.transactionHistory}</h1>
-                  <p className="text-slate-400 text-xs mt-1">{lang === 'fa' ? 'Ø³ÙˆØ§Ø¨Ù‚ ÙˆØ§Ø±ÛŒØ²ØŒ Ø¨Ø±Ø¯Ø§Ø´Øª Ùˆ Ù…Ø¹Ø§Ù…Ù„Ø§Øª Ú¯Ø°Ø´ØªÙ‡ Ø´Ù…Ø§' : 'History of your deposits, withdrawals, and trades'}</p>
+                  <p className="text-slate-400 text-xs mt-1">{lang === 'fa' ? 'سوابق واریز، برداشت و معاملات گذشته شما' : 'History of your deposits, withdrawals, and trades'}</p>
                 </div>
 
                 <div className={`rounded-3xl border overflow-hidden shadow-sm ${
@@ -2730,7 +2730,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
               <section className="space-y-6">
                 <div>
                   <h1 className="text-2xl font-extrabold tracking-tight">{t.supportCenter}</h1>
-                  <p className="text-slate-400 text-xs mt-1">{lang === 'fa' ? 'Ù¾Ø§Ø³Ø®Ú¯ÙˆÛŒÛŒ ØªÛŒÚ©Øªâ€ŒÙ‡Ø§ÛŒ Ø´Ù…Ø§ Ø¯Ø± Ú©Ù…ØªØ± Ø§Ø² Û·Û² Ø³Ø§Ø¹Øª' : 'Get in touch with support agents'}</p>
+                  <p className="text-slate-400 text-xs mt-1">{lang === 'fa' ? 'پاسخگویی تیکت‌های شما در کمتر از ۷۲ ساعت' : 'Get in touch with support agents'}</p>
                 </div>
 
                 <div className={`rounded-3xl border p-6 shadow-sm max-w-xl mx-auto space-y-4 ${
@@ -2769,10 +2769,10 @@ const handleExecuteLimitOrder = (_orderId: string) => {
               <section className="space-y-6 animate-fade-in">
                 <div>
                   <h1 className="text-2xl font-extrabold tracking-tight">
-                    {lang === 'fa' ? 'Ø¯Ø±Ø¨Ø§Ø±Ù‡ AssetChain' : 'About AssetChain'}
+                    {lang === 'fa' ? 'درباره AssetChain' : 'About AssetChain'}
                   </h1>
                   <p className="text-slate-400 text-xs mt-1">
-                    {lang === 'fa' ? 'Ù†Ø³Ù„ Ø¨Ø¹Ø¯ÛŒ Ù…Ø§Ù„Ú©ÛŒØª Ø¯Ø§Ø±Ø§ÛŒÛŒâ€ŒÙ‡Ø§ÛŒ ÙˆØ§Ù‚Ø¹ÛŒ Ø±ÙˆÛŒ Ø²Ù†Ø¬ÛŒØ±Ù‡' : 'The next generation of real-world asset ownership'}
+                    {lang === 'fa' ? 'نسل بعدی مالکیت دارایی‌های واقعی روی زنجیره' : 'The next generation of real-world asset ownership'}
                   </p>
                 </div>
 
@@ -2784,11 +2784,11 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                       <ShieldCheck size={20} />
                     </div>
                     <h3 className={`text-base font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                      {lang === 'fa' ? 'Û±Û°Û°Ùª Ù¾Ø´ØªÙˆØ§Ù†Ù‡ ÙÛŒØ²ÛŒÚ©ÛŒ' : 'TSETMC Market Data'}
+                      {lang === 'fa' ? '۱۰۰٪ پشتوانه فیزیکی' : 'TSETMC Market Data'}
                     </h3>
                     <p className="text-xs text-slate-400 leading-relaxed">
                       {lang === 'fa'
-                        ? 'ØªÙ…Ø§Ù…ÛŒ ØªÙˆÚ©Ù†â€ŒÙ‡Ø§ Ø¯Ø§Ø±Ø§ÛŒ Ù¾Ø´ØªÙˆØ§Ù†Ù‡ Ø´Ù…Ø´â€ŒÙ‡Ø§ÛŒ Ø·Ù„Ø§ Ø¨Ø§ Ø¹ÛŒØ§Ø± Ø§Ø³ØªØ§Ù†Ø¯Ø§Ø±Ø¯ Ùˆ Ø§Ø³Ù†Ø§Ø¯ Ø±Ø³Ù…ÛŒ Ø§Ù…Ù„Ø§Ú© Ø«Ø¨Øª Ø´Ø¯Ù‡ Ø¯Ø± Ø³ÙˆØ¦ÛŒØ³ Ùˆ Ø§Ù…Ø§Ø±Ø§Øª Ù‡Ø³ØªÙ†Ø¯.'
+                        ? 'تمامی توکن‌ها دارای پشتوانه شمش‌های طلا با عیار استاندارد و اسناد رسمی املاک ثبت شده در سوئیس و امارات هستند.'
                         : 'Market prices are sourced from TSETMC and each share includes its official instrument link.'}
                     </p>
                   </div>
@@ -2800,11 +2800,11 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                       <CheckCircle size={20} />
                     </div>
                     <h3 className={`text-base font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                      {lang === 'fa' ? 'Ø­Ø³Ø§Ø¨â€ŒØ±Ø³ÛŒ Ùˆ Ø´ÙØ§ÙÛŒØª Ø¢Ù†ÛŒ' : 'Audited Proof of Reserves'}
+                      {lang === 'fa' ? 'حساب‌رسی و شفافیت آنی' : 'Audited Proof of Reserves'}
                     </h3>
                     <p className="text-xs text-slate-400 leading-relaxed">
                       {lang === 'fa'
-                        ? 'Ù…ÙˆØ³Ø³Ù‡ Ø¨ÛŒÙ†â€ŒØ§Ù„Ù…Ù„Ù„ÛŒ SGS Ø¨Ù‡ Ø¹Ù†ÙˆØ§Ù† Ø­Ø³Ø§Ø¨Ø±Ø³ Ù…Ø³ØªÙ‚Ù„ØŒ Ù…ÙˆØ¬ÙˆØ¯ÛŒ ÙÛŒØ²ÛŒÚ©ÛŒ Ø®Ø²Ø§Ù†Ù‡â€ŒÙ‡Ø§ Ø±Ø§ Ø¨Ù‡ ØµÙˆØ±Øª Ø¯ÙˆØ±Ù‡â€ŒØ§ÛŒ ØªØ§ÛŒÛŒØ¯ Ùˆ Ú¯Ø²Ø§Ø±Ø´ Ù…ÛŒâ€ŒÚ©Ù†Ø¯.'
+                        ? 'موسسه بین‌المللی SGS به عنوان حسابرس مستقل، موجودی فیزیکی خزانه‌ها را به صورت دوره‌ای تایید و گزارش می‌کند.'
                         : 'Market information for the selected shares is sourced from TSETMC and processed by the backend.'}
                     </p>
                   </div>
@@ -2816,11 +2816,11 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                       <Coins size={20} />
                     </div>
                     <h3 className={`text-base font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                      {lang === 'fa' ? 'Ø³Ø±Ù…Ø§ÛŒÙ‡â€ŒÚ¯Ø°Ø§Ø±ÛŒ Ø®Ø±Ø¯ Ø´Ø¯Ù‡' : 'Fractionalized & Inclusive'}
+                      {lang === 'fa' ? 'سرمایه‌گذاری خرد شده' : 'Fractionalized & Inclusive'}
                     </h3>
                     <p className="text-xs text-slate-400 leading-relaxed">
                       {lang === 'fa'
-                        ? 'Ù…Ø§ Ù…ÙˆØ§Ù†Ø¹ Ø³Ø±Ù…Ø§ÛŒÙ‡â€ŒÚ¯Ø°Ø§Ø±ÛŒ Ø±Ø§ Ø­Ø°Ù Ú©Ø±Ø¯Ù‡â€ŒØ§ÛŒÙ… ØªØ§ Ù‡Ø± Ø´Ø®Øµ Ø¨ØªÙˆØ§Ù†Ø¯ Ø¨Ø§ Ø­Ø¯Ø§Ù‚Ù„ Û± ØªØªØ±ØŒ Ù…Ø§Ù„Ú© Ø³Ù‡Ù…â€ŒÙ‡Ø§ÛŒ Ø§Ø±Ø²Ø´Ù…Ù†Ø¯ Ø¯Ø± Ú©Ù„Ø§Ø³â€ŒÙ‡Ø§ÛŒ Ø¯Ø§Ø±Ø§ÛŒÛŒ Ù„ÙˆÚ©Ø³ Ø´ÙˆØ¯.'
+                        ? 'ما موانع سرمایه‌گذاری را حذف کرده‌ایم تا هر شخص بتواند با حداقل ۱ تتر، مالک سهم‌های ارزشمند در کلاس‌های دارایی لوکس شود.'
                         : 'Review selected Iranian shares and their TSETMC market information.'}
                     </p>
                   </div>
@@ -2830,11 +2830,11 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                   theme === 'dark' ? 'bg-slate-900/40 border-slate-800' : 'bg-slate-100/50 border-slate-200'
                 }`}>
                   <h3 className={`text-lg font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                    {lang === 'fa' ? 'Ù…Ø§Ù…ÙˆØ±ÛŒØª AssetChain' : 'The AssetChain Mission'}
+                    {lang === 'fa' ? 'ماموریت AssetChain' : 'The AssetChain Mission'}
                   </h3>
                   <p className="text-xs text-slate-400 leading-relaxed">
                     {lang === 'fa'
-                      ? 'Ù‡Ø¯Ù Ù…Ø§ Ø§ÛŒØ¬Ø§Ø¯ Ø¨Ø³ØªØ±ÛŒ Ø§Ù…Ù† Ùˆ Ø¹Ø§Ø¯Ù„Ø§Ù†Ù‡ Ø¨Ø±Ø§ÛŒ Ø¯Ø³ØªØ±Ø³ÛŒ Ù‡Ù…Ú¯Ø§Ù†ÛŒ Ø¨Ù‡ Ø¯Ø§Ø±Ø§ÛŒÛŒâ€ŒÙ‡Ø§ÛŒ Ø¨Ø§Ø«Ø¨Ø§Øª Ø¬Ù‡Ø§Ù†ÛŒ Ø§Ø³Øª. Ù…Ø§ Ø¨Ø§ Ø§Ø¯ØºØ§Ù… ÙÙ†Ø§ÙˆØ±ÛŒ Ù¾ÛŒØ´Ø±ÙØªÙ‡ Ø¨Ù„Ø§Ú©Ú†ÛŒÙ† Ùˆ Ù‚ÙˆØ§Ù†ÛŒÙ† Ø´ÙØ§Ù Ù…Ø§Ù„ÛŒØŒ Ø¨Ø³ØªØ±ÛŒ Ø§ÛŒØ¬Ø§Ø¯ Ú©Ø±Ø¯Ù‡â€ŒØ§ÛŒÙ… ØªØ§ Ù†Ù‚Ø¯ÛŒÙ†Ú¯ÛŒ Ùˆ Ø§Ù…Ù†ÛŒØª Ø¯Ø± Ø¨Ø§Ù„Ø§ØªØ±ÛŒÙ† Ø³Ø·Ø­ Ù…Ù…Ú©Ù† Ø¯Ø± Ø§Ø®ØªÛŒØ§Ø± Ø³Ø±Ù…Ø§ÛŒÙ‡â€ŒÚ¯Ø°Ø§Ø±Ø§Ù† Ø®Ø±Ø¯ Ù‚Ø±Ø§Ø± Ú¯ÛŒØ±Ø¯.'
+                      ? 'هدف ما ایجاد بستری امن و عادلانه برای دسترسی همگانی به دارایی‌های باثبات جهانی است. ما با ادغام فناوری پیشرفته بلاکچین و قوانین شفاف مالی، بستری ایجاد کرده‌ایم تا نقدینگی و امنیت در بالاترین سطح ممکن در اختیار سرمایه‌گذاران خرد قرار گیرد.'
                       : 'Our mission is to democratize high-yield, secure investment classes. By combining state-of-the-art decentralized ledgers with compliant legal trust frameworks, we provide retail and institutional investors alike with unparalleled liquidity and audited physical backing.'}
                   </p>
                 </div>
@@ -2846,10 +2846,10 @@ const handleExecuteLimitOrder = (_orderId: string) => {
               <section className="space-y-6">
                 <div>
                   <h1 className="text-2xl font-extrabold tracking-tight">
-                    {lang === 'fa' ? 'Ø§Ø±ØªØ¨Ø§Ø· Ø¨Ø§ Ù…Ø§' : 'Contact Us'}
+                    {lang === 'fa' ? 'ارتباط با ما' : 'Contact Us'}
                   </h1>
                   <p className="text-slate-400 text-xs mt-1">
-                    {lang === 'fa' ? 'Ù¾Ø§Ø³Ø®Ú¯ÙˆÛŒÛŒ Ø³Ø±ÛŒØ¹ Ùˆ Ù¾Ø´ØªÛŒØ¨Ø§Ù†ÛŒ Û²Û´ Ø³Ø§Ø¹ØªÙ‡ Ø¯Ø± ØªÙ…Ø§Ù…ÛŒ Ø±ÙˆØ²Ù‡Ø§ÛŒ Ù‡ÙØªÙ‡' : '24/7 global coverage and secure ticket submission'}
+                    {lang === 'fa' ? 'پاسخگویی سریع و پشتیبانی ۲۴ ساعته در تمامی روزهای هفته' : '24/7 global coverage and secure ticket submission'}
                   </p>
                 </div>
 
@@ -2859,14 +2859,14 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                     theme === 'dark' ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200'
                   }`}>
                     <h3 className={`text-base font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                      {lang === 'fa' ? 'Ø§Ø±Ø³Ø§Ù„ Ù¾ÛŒØ§Ù… Ù…Ø³ØªÙ‚ÛŒÙ…' : 'Send a message'}
+                      {lang === 'fa' ? 'ارسال پیام مستقیم' : 'Send a message'}
                     </h3>
                     <form onSubmit={handleSupportSubmit} className="space-y-4">
                       <div className="space-y-1">
-                        <label className="text-xs font-semibold text-slate-400">{lang === 'fa' ? 'Ù…ÙˆØ¶ÙˆØ¹ Ù¾ÛŒØ§Ù…' : 'Subject'}</label>
+                        <label className="text-xs font-semibold text-slate-400">{lang === 'fa' ? 'موضوع پیام' : 'Subject'}</label>
                         <input
                           type="text"
-                          placeholder={lang === 'fa' ? 'Ù…Ø«Ø§Ù„: Ø³ÙˆØ§Ù„ Ø¯Ø± Ù…ÙˆØ±Ø¯ ÙˆØ§Ø±ÛŒØ² ØªØªØ±' : 'e.g. Deposit validation question'}
+                          placeholder={lang === 'fa' ? 'مثال: سوال در مورد واریز تتر' : 'e.g. Deposit validation question'}
                           className={`w-full p-3 rounded-xl border focus:outline-none focus:border-blue-500 text-xs ${
                             theme === 'dark' ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-200'
                           }`}
@@ -2891,7 +2891,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                         type="submit"
                         className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer"
                       >
-                        {lang === 'fa' ? 'Ø«Ø¨Øª Ùˆ Ø§Ø±Ø³Ø§Ù„ Ù¾ÛŒØ§Ù…' : 'Send Message'}
+                        {lang === 'fa' ? 'ثبت و ارسال پیام' : 'Send Message'}
                       </button>
                     </form>
                   </div>
@@ -2902,7 +2902,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                       theme === 'dark' ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200'
                     }`}>
                       <h3 className={`text-base font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                        {lang === 'fa' ? 'Ø¯ÙØ§ØªØ± Ø¨ÛŒÙ†â€ŒØ§Ù„Ù…Ù„Ù„ÛŒ AssetChain' : 'Global Registered Offices'}
+                        {lang === 'fa' ? 'دفاتر بین‌المللی AssetChain' : 'Global Registered Offices'}
                       </h3>
 
                       <div className="space-y-4 text-xs font-medium">
@@ -2910,10 +2910,10 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                           <MapPin size={16} className="text-blue-500 shrink-0 mt-0.5" />
                           <div>
                             <p className={theme === 'dark' ? 'text-slate-200 font-bold' : 'text-slate-800 font-bold'}>
-                              {lang === 'fa' ? 'Ø¯ÙØªØ± Ø¯Ø¨ÛŒ (Ø§Ù…Ø§Ø±Ø§Øª Ù…ØªØ­Ø¯Ù‡ Ø¹Ø±Ø¨ÛŒ)' : 'Dubai Corporate HQ (UAE)'}
+                              {lang === 'fa' ? 'دفتر دبی (امارات متحده عربی)' : 'Dubai Corporate HQ (UAE)'}
                             </p>
                             <p className="text-slate-400 mt-0.5">
-                              {lang === 'fa' ? 'Ø¨Ø±Ø¬ Ø®Ù„ÛŒÙÙ‡ØŒ Ø·Ø¨Ù‚Ù‡ Û´Û²ØŒ Ø¯Ø¨ÛŒØŒ Ø§Ù…Ø§Ø±Ø§Øª Ù…ØªØ­Ø¯Ù‡ Ø¹Ø±Ø¨ÛŒ' : 'Burj Khalifa, Floor 42, Downtown Dubai, UAE'}
+                              {lang === 'fa' ? 'برج خلیفه، طبقه ۴۲، دبی، امارات متحده عربی' : 'Burj Khalifa, Floor 42, Downtown Dubai, UAE'}
                             </p>
                           </div>
                         </div>
@@ -2922,10 +2922,10 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                           <MapPin size={16} className="text-blue-500 shrink-0 mt-0.5" />
                           <div>
                             <p className={theme === 'dark' ? 'text-slate-200 font-bold' : 'text-slate-800 font-bold'}>
-                              {lang === 'fa' ? 'Ø¯ÙØªØ± Ø³ÙˆØ¦ÛŒØ³ (Ø®Ø²Ø§Ù†Ù‡â€ŒØ¯Ø§Ø±ÛŒ)' : 'Market Data Operations'}
+                              {lang === 'fa' ? 'دفتر سوئیس (خزانه‌داری)' : 'Market Data Operations'}
                             </p>
                             <p className="text-slate-400 mt-0.5">
-                              {lang === 'fa' ? 'Ø®ÛŒØ§Ø¨Ø§Ù† Ø¨Ø§Ù‡Ù†ÙˆÙØŒ Ù¾Ù„Ø§Ú© Û±Û¸ØŒ Ø²ÙˆØ±ÛŒØ®ØŒ Ø³ÙˆØ¦ÛŒØ³' : 'TSETMC-linked market information'}
+                              {lang === 'fa' ? 'خیابان باهنوف، پلاک ۱۸، زوریخ، سوئیس' : 'TSETMC-linked market information'}
                             </p>
                           </div>
                         </div>
@@ -2934,10 +2934,10 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                           <Clock size={16} className="text-emerald-500 shrink-0 mt-0.5" />
                           <div>
                             <p className={theme === 'dark' ? 'text-slate-200 font-bold' : 'text-slate-800 font-bold'}>
-                              {lang === 'fa' ? 'Ø³Ø§Ø¹Ø§Øª Ú©Ø§Ø±ÛŒ Ù†Ø§Ø¸Ø±Ø§Ù† ÙÛŒØ²ÛŒÚ©ÛŒ' : 'Physical Custody Audit Hours'}
+                              {lang === 'fa' ? 'ساعات کاری ناظران فیزیکی' : 'Physical Custody Audit Hours'}
                             </p>
                             <p className="text-slate-400 mt-0.5">
-                              {lang === 'fa' ? 'Ø´Ù†Ø¨Ù‡ ØªØ§ Ú†Ù‡Ø§Ø±Ø´Ù†Ø¨Ù‡ - Û°Û¹:Û°Û° Ø§Ù„ÛŒ Û±Û·:Û°Û° Ø¨Ù‡ ÙˆÙ‚Øª Ø§Ø±ÙˆÙ¾Ø§ÛŒ Ù…Ø±Ú©Ø²ÛŒ' : 'Mon - Fri, 09:00 - 17:00 CET'}
+                              {lang === 'fa' ? 'شنبه تا چهارشنبه - ۰۹:۰۰ الی ۱۷:۰۰ به وقت اروپای مرکزی' : 'Mon - Fri, 09:00 - 17:00 CET'}
                             </p>
                           </div>
                         </div>
@@ -2947,9 +2947,9 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                     <div className={`p-6 rounded-3xl border shadow-sm space-y-2 text-xs font-semibold ${
                       theme === 'dark' ? 'bg-slate-900/30 border-slate-800/60' : 'bg-slate-100/60 border-slate-200'
                     }`}>
-                      <p className="text-slate-400">{lang === 'fa' ? 'Ø¢Ø¯Ø±Ø³ Ù¾Ø³Øª Ø§Ù„Ú©ØªØ±ÙˆÙ†ÛŒÚ©ÛŒ:' : 'Corporate Support Email:'}</p>
+                      <p className="text-slate-400">{lang === 'fa' ? 'آدرس پست الکترونیکی:' : 'Corporate Support Email:'}</p>
                       <p className="text-blue-500 font-bold font-mono">support@assetchain.app</p>
-                      <p className="text-slate-400 mt-2">{lang === 'fa' ? 'Ù¾Ø´ØªÛŒØ¨Ø§Ù†ÛŒ Ø¨Ø±Ø®Ø· ØªÙ„Ú¯Ø±Ø§Ù…:' : 'Direct Telegram Support Channel:'}</p>
+                      <p className="text-slate-400 mt-2">{lang === 'fa' ? 'پشتیبانی برخط تلگرام:' : 'Direct Telegram Support Channel:'}</p>
                       <p className="text-blue-500 font-bold font-mono">@AssetChain_Support</p>
                     </div>
                   </div>
@@ -2981,7 +2981,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                 {authMode === 'signIn' ? t.signIn : t.signUp}
               </h2>
               <p className="text-xs text-slate-400 mt-1">
-                {lang === 'fa' ? 'Ø³Ø±Ù…Ø§ÛŒÙ‡â€ŒÚ¯Ø°Ø§Ø±ÛŒ Ø±ÙˆÛŒ Ø¯Ø§Ø±Ø§ÛŒÛŒâ€ŒÙ‡Ø§ÛŒ Ø¯Ù†ÛŒØ§ÛŒ ÙˆØ§Ù‚Ø¹ÛŒ Ø¨Ø§ Ø§Ù…Ù†ÛŒØª Ø¨Ø§Ù„Ø§' : 'Access high-yield secured asset tokens'}
+                {lang === 'fa' ? 'سرمایه‌گذاری روی دارایی‌های دنیای واقعی با امنیت بالا' : 'Access high-yield secured asset tokens'}
               </p>
             </div>
 
@@ -2995,7 +2995,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                 {authMode === 'signUp' && (
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-400 uppercase">
-                      {lang === 'fa' ? 'Ù†Ø§Ù… Ú©Ø§Ù…Ù„' : 'Full name'}
+                      {lang === 'fa' ? 'نام کامل' : 'Full name'}
                     </label>
                     <input
                       type="text"
@@ -3013,7 +3013,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                   </div>
                 )}
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-400 uppercase">{lang === 'fa' ? 'Ø§ÛŒÙ…ÛŒÙ„' : 'Email'}</label>
+                <label className="text-xs font-bold text-slate-400 uppercase">{lang === 'fa' ? 'ایمیل' : 'Email'}</label>
                 <input
                   type="email"
                   value={authUsername}
@@ -3046,7 +3046,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                   disabled={isAuthLoading}
                 className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm rounded-xl transition-all shadow-md mt-2"
               >
-                {isAuthLoading ? (lang === 'fa' ? 'Ø¯Ø± Ø­Ø§Ù„ Ù¾Ø±Ø¯Ø§Ø²Ø´...' : 'Processing...') : (authMode === 'signIn' ? t.signIn : t.signUp)}
+                {isAuthLoading ? (lang === 'fa' ? 'در حال پردازش...' : 'Processing...') : (authMode === 'signIn' ? t.signIn : t.signUp)}
               </button>
             </form>
 
@@ -3080,7 +3080,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
 
             <div>
               <h2 className="text-lg font-bold tracking-tight">{t.confirmBuy}</h2>
-              <p className="text-xs text-slate-400 mt-0.5">{lang === 'fa' ? 'Ø³ÙØ§Ø±Ø´ Ø®Ø±ÛŒØ¯ Ø¯Ø§Ø±Ø§ÛŒÛŒ Iran Market' : 'Buy selected Iranian share'}</p>
+              <p className="text-xs text-slate-400 mt-0.5">{lang === 'fa' ? 'سفارش خرید دارایی Iran Market' : 'Buy selected Iranian share'}</p>
             </div>
 
             <div className={`p-4 rounded-xl flex items-center justify-between ${
@@ -3102,7 +3102,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
               className="w-full text-xs text-blue-400 hover:text-blue-300 font-bold flex items-center justify-center gap-1.5 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 rounded-xl transition-all cursor-pointer border border-blue-500/20"
             >
               <Info size={13} />
-              <span>{lang === 'fa' ? 'Ù…Ø´Ø§Ù‡Ø¯Ù‡ Ø´Ù†Ø§Ø³Ù†Ø§Ù…Ù‡ Ùˆ Ù¾Ø´ØªÙˆØ§Ù†Ù‡ ÙÛŒØ²ÛŒÚ©ÛŒ Ø¯Ø§Ø±Ø§ÛŒÛŒ' : 'View Asset Specs & Physical Backing'}</span>
+              <span>{lang === 'fa' ? 'مشاهده شناسنامه و پشتوانه فیزیکی دارایی' : 'View Asset Specs & Physical Backing'}</span>
             </button>
 
             {/* Modal Sub-Tabs: Instant / OTC / Alert */}
@@ -3118,7 +3118,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                     : 'text-slate-400 hover:text-slate-650'
                 }`}
               >
-                {lang === 'fa' ? 'Ø®Ø±ÛŒØ¯ ÙÙˆØ±ÛŒ' : 'Instant Buy'}
+                {lang === 'fa' ? 'خرید فوری' : 'Instant Buy'}
               </button>
               <button
                 type="button"
@@ -3132,7 +3132,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                     : 'text-slate-400 hover:text-slate-650'
                 }`}
               >
-                {lang === 'fa' ? 'Ø³ÙØ§Ø±Ø´ Ù…Ø­Ø¯ÙˆØ¯ / OTC' : 'OTC / Limit'}
+                {lang === 'fa' ? 'سفارش محدود / OTC' : 'OTC / Limit'}
               </button>
               <button
                 type="button"
@@ -3146,7 +3146,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                     : 'text-slate-400 hover:text-slate-650'
                 }`}
               >
-                {lang === 'fa' ? 'Ù‡Ø´Ø¯Ø§Ø± Ù‚ÛŒÙ…Øª' : 'Price Alert'}
+                {lang === 'fa' ? 'هشدار قیمت' : 'Price Alert'}
               </button>
             </div>
 
@@ -3172,7 +3172,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                     </div>
                     {currentUser && (
                       <p className="text-[10px] text-slate-400 mt-1">
-                        {lang === 'fa' ? 'Ù…ÙˆØ¬ÙˆØ¯ÛŒ Ø¢Ø²Ø§Ø¯:' : 'Available Balance:'} {currentUser.usdtBalance.toLocaleString()} USDT
+                        {lang === 'fa' ? 'موجودی آزاد:' : 'Available Balance:'} {currentUser.usdtBalance.toLocaleString()} USDT
                       </p>
                     )}
                   </div>
@@ -3210,7 +3210,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                 <div className="space-y-4">
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-400 uppercase">
-                      {lang === 'fa' ? 'Ù‚ÛŒÙ…Øª Ø®Ø±ÛŒØ¯ Ù‡Ø¯Ù (USDT)' : 'Target Buy Price (USDT)'}
+                      {lang === 'fa' ? 'قیمت خرید هدف (USDT)' : 'Target Buy Price (USDT)'}
                     </label>
                     <input
                       type="number"
@@ -3227,13 +3227,13 @@ const handleExecuteLimitOrder = (_orderId: string) => {
 
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-400 uppercase">
-                      {lang === 'fa' ? 'Ø­Ø¬Ù… Ø®Ø±ÛŒØ¯ (ØªØ¹Ø¯Ø§Ø¯ Ø³Ù‡Ù…)' : 'Buy Volume (Shares)'}
+                      {lang === 'fa' ? 'حجم خرید (تعداد سهم)' : 'Buy Volume (Shares)'}
                     </label>
                     <input
                       type="number"
                       value={buyLimitShares}
                       onChange={(e) => setBuyLimitShares(e.target.value)}
-                      placeholder={lang === 'fa' ? 'ØªØ¹Ø¯Ø§Ø¯ Ø³Ù‡Ù… Ù…ÙˆØ±Ø¯ Ù†Ø¸Ø± Ø¨Ø±Ø§ÛŒ Ø®Ø±ÛŒØ¯ Ø§ØªÙˆÙ…Ø§ØªÛŒÚ©' : 'Number of shares to buy automatically'}
+                      placeholder={lang === 'fa' ? 'تعداد سهم مورد نظر برای خرید اتوماتیک' : 'Number of shares to buy automatically'}
                       className={`w-full p-3 rounded-xl border focus:outline-none focus:border-blue-500 text-sm ${
                         theme === 'dark' ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-200'
                       }`}
@@ -3241,7 +3241,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                     />
                     {currentUser && (
                       <p className="text-[10px] text-slate-400 mt-1">
-                        {lang === 'fa' ? 'Ù…ÙˆØ¬ÙˆØ¯ÛŒ Ø¢Ø²Ø§Ø¯:' : 'Available Balance:'} {currentUser.usdtBalance.toLocaleString()} USDT
+                        {lang === 'fa' ? 'موجودی آزاد:' : 'Available Balance:'} {currentUser.usdtBalance.toLocaleString()} USDT
                       </p>
                     )}
                   </div>
@@ -3255,13 +3255,13 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                         theme === 'dark' ? 'bg-slate-950/40' : 'bg-slate-50'
                       }`}>
                         <div className="flex justify-between">
-                          <span className="text-slate-400">{lang === 'fa' ? 'Ø§Ø±Ø²Ø´ ØªØ®Ù…ÛŒÙ†ÛŒ Ú©Ù„ Ø³ÙØ§Ø±Ø´' : 'Estimated Order Total'}</span>
+                          <span className="text-slate-400">{lang === 'fa' ? 'ارزش تخمینی کل سفارش' : 'Estimated Order Total'}</span>
                           <span className="text-blue-500 font-bold">{totalCost.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT</span>
                         </div>
                         <p className="text-[9.5px] text-slate-400 leading-normal mt-1 font-semibold">
                           {lang === 'fa'
-                            ? 'ðŸ’¡ Ø³ÙØ§Ø±Ø´ OTC / Ù…Ø­Ø¯ÙˆØ¯ Ø´Ù…Ø§ Ø°Ø®ÛŒØ±Ù‡ Ø´Ø¯Ù‡ Ùˆ Ø¨Ø§ Ø±Ø³ÛŒØ¯Ù† Ù‚ÛŒÙ…Øª Ø²Ù†Ø¯Ù‡ Ø¯Ø§Ø±Ø§ÛŒÛŒ Ø¨Ù‡ Ù†Ø±Ø® ØªØ¹ÛŒÛŒÙ† Ø´Ø¯Ù‡ØŒ Ø¨Ù‡ ØµÙˆØ±Øª Ú©Ø§Ù…Ù„Ø§Ù‹ Ø®ÙˆØ¯Ú©Ø§Ø± Ù…Ø¹Ø§Ù…Ù„Ù‡ Ø§Ù†Ø¬Ø§Ù… Ù…ÛŒâ€ŒÚ¯Ø±Ø¯Ø¯.'
-                            : 'ðŸ’¡ Your OTC / Limit order will be stored and executed automatically as soon as the live asset price hits your target.'}
+                            ? '💡 سفارش OTC / محدود شما ذخیره شده و با رسیدن قیمت زنده دارایی به نرخ تعیین شده، به صورت کاملاً خودکار معامله انجام می‌گردد.'
+                            : '💡 Your OTC / Limit order will be stored and executed automatically as soon as the live asset price hits your target.'}
                         </p>
                       </div>
                     );
@@ -3273,7 +3273,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                 <div className="space-y-4">
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-400 uppercase">
-                      {lang === 'fa' ? 'Ù‚ÛŒÙ…Øª Ù‡Ø¯Ù Ø¨Ø±Ø§ÛŒ Ù‡Ø´Ø¯Ø§Ø± (USDT)' : 'Target Price for Alert (USDT)'}
+                      {lang === 'fa' ? 'قیمت هدف برای هشدار (USDT)' : 'Target Price for Alert (USDT)'}
                     </label>
                     <input
                       type="number"
@@ -3290,7 +3290,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
 
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-400 uppercase">
-                      {lang === 'fa' ? 'Ø´Ø±Ø§ÛŒØ· ÙØ¹Ø§Ù„ Ø´Ø¯Ù† Ù‡Ø´Ø¯Ø§Ø±' : 'Alert Condition'}
+                      {lang === 'fa' ? 'شرایط فعال شدن هشدار' : 'Alert Condition'}
                     </label>
                     <select
                       value={buyAlertCondition}
@@ -3300,10 +3300,10 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                       }`}
                     >
                       <option value="above">
-                        {lang === 'fa' ? 'Ù‚ÛŒÙ…Øª Ø¨Ù‡ Ø¨Ø§Ù„Ø§ÛŒ Ù‡Ø¯Ù Ø­Ø±Ú©Øª Ú©Ù†Ø¯ (>=)' : 'Price goes above target (>=)'}
+                        {lang === 'fa' ? 'قیمت به بالای هدف حرکت کند (>=)' : 'Price goes above target (>=)'}
                       </option>
                       <option value="below">
-                        {lang === 'fa' ? 'Ù‚ÛŒÙ…Øª Ø¨Ù‡ Ø²ÛŒØ± Ù‡Ø¯Ù Ø­Ø±Ú©Øª Ú©Ù†Ø¯ (<=)' : 'Price goes below target (<=)'}
+                        {lang === 'fa' ? 'قیمت به زیر هدف حرکت کند (<=)' : 'Price goes below target (<=)'}
                       </option>
                     </select>
                   </div>
@@ -3313,8 +3313,8 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                   }`}>
                     <p className="font-semibold">
                       {lang === 'fa'
-                        ? 'ðŸ’¡ Ù¾Ø³ Ø§Ø² Ø±Ø³ÛŒØ¯Ù† Ù‚ÛŒÙ…Øª Ø¨Ù‡ Ù‡Ø¯Ù ØªØ¹ÛŒÛŒÙ† Ø´Ø¯Ù‡ØŒ ÛŒÚ© Ù†ÙˆØªÛŒÙÛŒÚ©ÛŒØ´Ù† Ù‡Ø´Ø¯Ø§Ø± ÙÙˆØ±ÛŒ Ø±ÙˆÛŒ ØµÙØ­Ù‡ Ø¨Ø±Ø§ÛŒ Ø´Ù…Ø§ Ø§Ø±Ø³Ø§Ù„ Ø®ÙˆØ§Ù‡Ø¯ Ø´Ø¯.'
-                        : 'ðŸ’¡ Once the live asset price crosses your target threshold, an instant on-screen alert notification will be dispatched.'}
+                        ? '💡 پس از رسیدن قیمت به هدف تعیین شده، یک نوتیفیکیشن هشدار فوری روی صفحه برای شما ارسال خواهد شد.'
+                        : '💡 Once the live asset price crosses your target threshold, an instant on-screen alert notification will be dispatched.'}
                     </p>
                   </div>
                 </div>
@@ -3324,7 +3324,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                 type="submit"
                 className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm rounded-xl transition-all shadow-md mt-2"
               >
-                {buyModalTab === 'instant' ? t.confirmBuy : buyModalTab === 'limit' ? (lang === 'fa' ? 'Ø«Ø¨Øª Ø³ÙØ§Ø±Ø´ Ù…Ø­Ø¯ÙˆØ¯ / OTC' : 'Set OTC / Limit Order') : (lang === 'fa' ? 'ØªÙ†Ø¸ÛŒÙ… Ù‡Ø´Ø¯Ø§Ø± Ù‚ÛŒÙ…Øª' : 'Set Price Alert')}
+                {buyModalTab === 'instant' ? t.confirmBuy : buyModalTab === 'limit' ? (lang === 'fa' ? 'ثبت سفارش محدود / OTC' : 'Set OTC / Limit Order') : (lang === 'fa' ? 'تنظیم هشدار قیمت' : 'Set Price Alert')}
               </button>
             </form>
           </div>
@@ -3346,7 +3346,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
 
             <div>
               <h2 className="text-lg font-bold tracking-tight">{t.confirmSell}</h2>
-              <p className="text-xs text-slate-400 mt-0.5">{lang === 'fa' ? 'Ø³ÙØ§Ø±Ø´ ÙØ±ÙˆØ´ Ø³Ù‡Ù… Ø¯Ø§Ø±Ø§ÛŒÛŒ Iran Market' : 'Sell selected Iranian share'}</p>
+              <p className="text-xs text-slate-400 mt-0.5">{lang === 'fa' ? 'سفارش فروش سهم دارایی Iran Market' : 'Sell selected Iranian share'}</p>
             </div>
 
             <div className={`p-4 rounded-xl flex items-center justify-between ${
@@ -3382,7 +3382,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                     required
                   />
                   <span className="absolute right-3 top-3 text-xs font-bold text-slate-500">
-                    {lang === 'fa' ? 'Ø³Ù‡Ù…' : 'Shares'}
+                    {lang === 'fa' ? 'سهم' : 'Shares'}
                   </span>
                 </div>
               </div>
@@ -3501,7 +3501,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                 </h3>
                 <p className="text-xs md:text-sm leading-relaxed text-slate-300">
                   {(lang === 'fa' ? infoAsset.descriptionFa : infoAsset.descriptionEn) || (
-                    lang === 'fa' ? 'Ø§Ø·Ù„Ø§Ø¹Ø§Øª Ú©Ø§Ù…Ù„ Ùˆ Ø³Ø§Ø®ØªØ§Ø± Ø­Ù‚ÙˆÙ‚ÛŒ Ø§ÛŒÙ† Ø¯Ø§Ø±Ø§ÛŒÛŒ ØªØ­Øª Ù†Ø¸Ø§Ø±Øª Ù…ØªÙˆÙ„ÛŒØ§Ù† Ø¨ÛŒÙ†â€ŒØ§Ù„Ù…Ù„Ù„ÛŒ Ø«Ø¨Øª Ø´Ø¯Ù‡ Ø§Ø³Øª.' : 'Full asset structure and legal details recorded under international regulated trust.'
+                    lang === 'fa' ? 'اطلاعات کامل و ساختار حقوقی این دارایی تحت نظارت متولیان بین‌المللی ثبت شده است.' : 'Full asset structure and legal details recorded under international regulated trust.'
                   )}
                 </p>
               </div>
@@ -3516,7 +3516,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                 </h3>
                 <p className="text-xs md:text-sm leading-relaxed text-slate-300">
                   {(lang === 'fa' ? infoAsset.backingFa : infoAsset.backingEn) || (
-                    lang === 'fa' ? 'Ù¾Ø´ØªÙˆØ§Ù†Ù‡ ÙÛŒØ²ÛŒÚ©ÛŒ ÙˆØ§Ù‚Ø¹ÛŒ Ø¨Ø§ Ú¯ÙˆØ§Ù‡ÛŒ Ø§Ù†Ø¨Ø§Ø±Ø¯Ø§Ø±ÛŒ Ø­Ø³Ø§Ø¨Ø±Ø³ÛŒâ€ŒØ´Ø¯Ù‡.' : 'Verified physical backing with audited warehouse certificates.'
+                    lang === 'fa' ? 'پشتوانه فیزیکی واقعی با گواهی انبارداری حسابرسی‌شده.' : 'Verified physical backing with audited warehouse certificates.'
                   )}
                 </p>
 
@@ -3524,13 +3524,13 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                   <div>
                     <span className="text-[10px] text-slate-400 font-bold block uppercase">{t.custodianTitle}</span>
                     <span className="font-semibold text-slate-200 mt-0.5 block">
-                      {(lang === 'fa' ? infoAsset.custodianFa : infoAsset.custodianEn) || (lang === 'fa' ? 'Ø§Ù†Ø¨Ø§Ø± Ø±Ø³Ù…ÛŒ Ùˆ Ø®Ø²Ø§Ù†Ù‡ Ø§Ù…Ø§Ù†Øªâ€ŒØ¯Ø§Ø±ÛŒ' : 'Certified Custody Depository')}
+                      {(lang === 'fa' ? infoAsset.custodianFa : infoAsset.custodianEn) || (lang === 'fa' ? 'انبار رسمی و خزانه امانت‌داری' : 'Certified Custody Depository')}
                     </span>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 font-bold block uppercase">{t.payoutSchedule}</span>
                     <span className="font-semibold text-slate-200 mt-0.5 block">
-                      {(lang === 'fa' ? infoAsset.payoutIntervalFa : infoAsset.payoutIntervalEn) || (lang === 'fa' ? 'ØªÙˆØ²ÛŒØ¹ Ø¯ÙˆØ±Ù‡â€ŒØ§ÛŒ Ø³ÙˆØ¯' : 'Periodic Yield Distribution')}
+                      {(lang === 'fa' ? infoAsset.payoutIntervalFa : infoAsset.payoutIntervalEn) || (lang === 'fa' ? 'توزیع دوره‌ای سود' : 'Periodic Yield Distribution')}
                     </span>
                   </div>
                 </div>
@@ -3555,7 +3555,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                           </h3>
                           {infoAsset.bourseSymbol && (
                             <span className="text-[11px] font-black px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                              Ù†Ù…Ø§Ø¯ Ø¨ÙˆØ±Ø³: {infoAsset.bourseSymbol}
+                              نماد بورس: {infoAsset.bourseSymbol}
                             </span>
                           )}
                         </div>
@@ -3566,7 +3566,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                     </div>
 
                     <a
-                      href={infoAsset.tsetmcUrl || `https://www.google.com/search?q=${encodeURIComponent('Ø³Ø§ÛŒØª tsetmc Ù†Ù…Ø§Ø¯ ' + (infoAsset.bourseSymbol || infoAsset.faName))}`}
+                      href={infoAsset.tsetmcUrl || `https://www.google.com/search?q=${encodeURIComponent('سایت tsetmc نماد ' + (infoAsset.bourseSymbol || infoAsset.faName))}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl transition-all shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2 shrink-0 cursor-pointer w-full sm:w-auto"
@@ -3598,12 +3598,12 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                   </div>
 
                   <div className={`p-3 rounded-xl border ${theme === 'dark' ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-200'}`}>
-                    <span className="text-[10px] text-slate-400 font-bold block">{lang === 'fa' ? 'Ø§Ø³ØªØ§Ù†Ø¯Ø§Ø±Ø¯ ØªÙˆÚ©Ù†' : 'Token Standard'}</span>
+                    <span className="text-[10px] text-slate-400 font-bold block">{lang === 'fa' ? 'استاندارد توکن' : 'Token Standard'}</span>
                     <span className="font-mono text-xs font-bold text-slate-200 block mt-1">TSETMC</span>
                   </div>
 
                   <div className={`p-3 rounded-xl border ${theme === 'dark' ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-200'}`}>
-                    <span className="text-[10px] text-slate-400 font-bold block">{lang === 'fa' ? 'Ú©Ø§Ø±Ù…Ø²Ø¯ Ù…Ø¹Ø§Ù…Ù„Ù‡' : 'Trading Fee'}</span>
+                    <span className="text-[10px] text-slate-400 font-bold block">{lang === 'fa' ? '\u06a9\u0627\u0631\u0645\u0632\u062f \u0645\u0639\u0627\u0645\u0644\u0647' : 'Trading Fee'}</span>
                     <span className="font-mono text-xs font-bold text-slate-200 block mt-1">0.10% USDT</span>
                   </div>
                 </div>
@@ -3724,7 +3724,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
             {/* Column 2: Market Categories */}
             <div className="space-y-3 md:space-y-4 text-start">
               <h4 className={`text-[10px] md:text-xs font-black uppercase tracking-wider ${theme === 'dark' ? 'text-slate-200' : 'text-slate-900'}`}>
-                {lang === 'fa' ? 'Ø¨Ø§Ø²Ø§Ø±Ù‡Ø§ÛŒ Ø³Ø±Ù…Ø§ÛŒÙ‡â€ŒÚ¯Ø°Ø§Ø±ÛŒ Iran Market' : 'Market Sectors'}
+                {lang === 'fa' ? 'بازارهای سرمایه‌گذاری Iran Market' : 'Market Sectors'}
               </h4>
               <ul className="space-y-2 text-[11px] md:text-xs">
                 {[
@@ -3753,7 +3753,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
             {/* Column 3: Navigation & Platform */}
             <div className="space-y-3 md:space-y-4 text-start">
               <h4 className={`text-[10px] md:text-xs font-black uppercase tracking-wider ${theme === 'dark' ? 'text-slate-200' : 'text-slate-900'}`}>
-                {lang === 'fa' ? 'Ù†Ø§ÙˆØ¨Ø±ÛŒ Ùˆ Ù¾Ù„ØªÙØ±Ù…' : 'Platform Navigation'}
+                {lang === 'fa' ? 'ناوبری و پلتفرم' : 'Platform Navigation'}
               </h4>
               <ul className="space-y-2 text-[11px] md:text-xs">
                 {[
@@ -3786,14 +3786,14 @@ const handleExecuteLimitOrder = (_orderId: string) => {
             {/* Column 4: Location & Support Details */}
             <div className="space-y-3 md:space-y-4 text-start">
               <h4 className={`text-[10px] md:text-xs font-black uppercase tracking-wider ${theme === 'dark' ? 'text-slate-200' : 'text-slate-900'}`}>
-                {lang === 'fa' ? 'Ø§Ø·Ù„Ø§Ø¹Ø§Øª Ù¾Ø´ØªÛŒØ¨Ø§Ù†ÛŒ Ùˆ Ø¯ÙØªØ± Ù…Ø±Ú©Ø²ÛŒ' : 'Support & Legal Presence'}
+                {lang === 'fa' ? 'اطلاعات پشتیبانی و دفتر مرکزی' : 'Support & Legal Presence'}
               </h4>
               <div className="space-y-2.5 md:space-y-3.5 text-[11px] md:text-xs">
                 <div className="flex items-start gap-2">
                   <MapPin size={14} className="text-blue-500 shrink-0 mt-0.5" />
                   <p className="leading-relaxed">
                     {lang === 'fa'
-                      ? 'Ø¯ÙØªØ± Ù…Ø±Ú©Ø²ÛŒ: Ø¯Ø¨ÛŒØŒ Ø§Ù…Ø§Ø±Ø§ØªØŒ Ù…Ù†Ø·Ù‚Ù‡ Ø³ÛŒÙ„ÛŒÚ©ÙˆÙ† Ø§ÙˆØ¢Ø³ÛŒØ³ØŒ Ø¨Ø±Ø¬ ÙÙ†Ø§ÙˆØ±ÛŒ'
+                      ? 'دفتر مرکزی: دبی، امارات، منطقه سیلیکون اوآسیس، برج فناوری'
                       : 'HQ Presence: Silicon Oasis Tech Tower, Dubai, United Arab Emirates'}
                   </p>
                 </div>
@@ -3801,7 +3801,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                   <ShieldCheck size={14} className="text-blue-500 shrink-0 mt-0.5" />
                   <p className="leading-relaxed">
                     {lang === 'fa'
-                      ? 'Ø§Ù…Ø§Ù†Øªâ€ŒØ¯Ø§Ø±ÛŒ ÙÛŒØ²ÛŒÚ©ÛŒ: Ø²ÙˆØ±ÛŒØ®ØŒ Ø³ÙˆØ¦ÛŒØ³ØŒ ØµÙ†Ø¯ÙˆÙ‚ Ø§Ù…Ø§Ù†Ø§Øª Ø¨Ø§Ù†Ú© Ú©Ø§Ù†ØªÙˆÙ†Ø§Ù„'
+                      ? 'امانت‌داری فیزیکی: زوریخ، سوئیس، صندوق امانات بانک کانتونال'
                       : 'Market Data Source: TSETMC'}
                   </p>
                 </div>
@@ -3832,7 +3832,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
               : 'bg-slate-50 border-slate-100 text-slate-400'
           }`}>
             <p className="font-bold mb-1 uppercase text-[9px] md:text-[10px] text-blue-500 tracking-wider">
-              {lang === 'fa' ? 'Ø³Ù„Ø¨ Ù…Ø³Ø¦ÙˆÙ„ÛŒØª Ùˆ Ø´ÙØ§ÙÛŒØª Ù‚Ø§Ù†ÙˆÙ†ÛŒ' : 'REGULATORY NOTICE & RISK DISCLOSURE'}
+              {lang === 'fa' ? 'سلب مسئولیت و شفافیت قانونی' : 'REGULATORY NOTICE & RISK DISCLOSURE'}
             </p>
             <p>
               {lang === 'fa' ? '\u0633\u0644\u0628 \u0645\u0633\u0626\u0648\u0644\u06cc\u062a: \u0645\u0639\u0627\u0645\u0644\u0647 \u0633\u0647\u0627\u0645 \u0628\u0627 \u0631\u06cc\u0633\u06a9 \u0646\u0648\u0633\u0627\u0646 \u0642\u06cc\u0645\u062a \u0647\u0645\u0631\u0627\u0647 \u0627\u0633\u062a. \u0627\u0637\u0644\u0627\u0639\u0627\u062a \u0628\u0627\u0632\u0627\u0631 \u0627\u0632 TSETMC \u062f\u0631\u06cc\u0627\u0641\u062a \u0645\u06cc\u200c\u0634\u0648\u062f \u0648 \u0627\u06cc\u0646 \u067e\u0644\u062a\u0641\u0631\u0645 \u0645\u0634\u0627\u0648\u0631\u0647 \u0645\u0627\u0644\u06cc \u0627\u0631\u0627\u0626\u0647 \u0646\u0645\u06cc\u200c\u062f\u0647\u062f.' : 'Disclaimer: Share prices can fluctuate and investing involves market risk. Market information is sourced from TSETMC. AssetChain does not provide financial advice.'}
@@ -3842,20 +3842,20 @@ const handleExecuteLimitOrder = (_orderId: string) => {
           {/* Bottom Row */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6 text-[10px] md:text-[11px]">
             <div className="flex items-center gap-2 font-bold text-center md:text-start">
-              <span>Â© 2026 {t.appName}. {t.rightsReserved}</span>
+              <span>© 2026 {t.appName}. {t.rightsReserved}</span>
             </div>
 
             {/* Quick Links / Status indicators */}
             <div className="flex flex-wrap items-center justify-center md:justify-end gap-3 md:gap-6">
               <a href="#" className="hover:text-blue-500 transition-colors">{t.termsAndConditions}</a>
-              <span className="opacity-40">â€¢</span>
+              <span className="opacity-40">•</span>
               <button onClick={() => { setCurrentTab('support'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-blue-500 transition-colors cursor-pointer">
                 {t.onlineSupport}
               </button>
-              <span className="opacity-40">â€¢</span>
+              <span className="opacity-40">•</span>
               <div className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-                <span className="text-emerald-500 font-bold">{lang === 'fa' ? 'Ø´Ø¨Ú©Ù‡ Ø§ØµÙ„ÛŒ ÙØ¹Ø§Ù„' : 'Mainnet Connected'}</span>
+                <span className="text-emerald-500 font-bold">{lang === 'fa' ? 'شبکه اصلی فعال' : 'Mainnet Connected'}</span>
               </div>
             </div>
           </div>
@@ -3866,4 +3866,3 @@ const handleExecuteLimitOrder = (_orderId: string) => {
     </div>
   );
 }
-
