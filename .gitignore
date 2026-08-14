@@ -15,3 +15,5 @@ backend-php-archive/
 ts-errors*.txt
 APP_PATCH.md
 README_PATCH.md
+
+tsetmc-relay.mjs
