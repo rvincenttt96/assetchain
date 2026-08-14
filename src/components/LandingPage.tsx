@@ -174,6 +174,36 @@ export default function LandingPage({
 
   const featuredAssets: Asset[] = assets.slice(0, 5);
 
+  const fundedSharesByAssetId: Record<string, number> = {
+    KGOL: 33780,
+    KAVEH: 15750,
+    SHTRAN: 19450,
+    SHASTA: 35300,
+    DTMAD: 1781
+  };
+
+  const fundedAssets = featuredAssets
+    .map(asset => ({
+      asset,
+      fundedShares: fundedSharesByAssetId[asset.bourseSymbol || asset.id] ?? 0
+    }))
+    .filter(item => item.fundedShares > 0);
+
+  const totalFundedShares = fundedAssets.reduce(
+    (sum, item) => sum + item.fundedShares,
+    0
+  );
+
+  const totalFundedRial = fundedAssets.reduce(
+    (sum, item) => sum + item.fundedShares * (item.asset.lastPriceRial ?? 0),
+    0
+  );
+
+  const totalFundedUsdt = fundedAssets.reduce(
+    (sum, item) => sum + item.fundedShares * item.asset.price,
+    0
+  );
+
   const currentActiveStepData = pipelineSteps[activeStep];
 
   // Carousel Banner State & Slides Definition
@@ -241,7 +271,27 @@ export default function LandingPage({
     actionUrl: 'investment',
     bgImage: 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&w=1200&q=80'
   }
-];
+,
+  {
+    id: 3,
+    tagEn: 'BLOOMBERG • ODD LOTS',
+    tagFa: '\u0628\u0644\u0648\u0645\u0628\u0631\u06af \u2022 Odd Lots',
+    titleEn: 'How Investing in Tehran Is Like Bitcoin in 2010',
+    titleFa: '\u0633\u0631\u0645\u0627\u06cc\u0647\u200c\u06af\u0630\u0627\u0631\u06cc \u062f\u0631 \u062a\u0647\u0631\u0627\u0646\u061b \u0634\u0628\u06cc\u0647 \u0628\u06cc\u062a\u200c\u06a9\u0648\u06cc\u0646 \u062f\u0631 \u0633\u0627\u0644 \u06f2\u06f0\u06f1\u06f0',
+    descEn: 'Read the Bloomberg Odd Lots feature on investing in Tehran.',
+    descFa: '\u06af\u0632\u0627\u0631\u0634 \u0628\u0644\u0648\u0645\u0628\u0631\u06af \u062f\u0631\u0628\u0627\u0631\u0647 \u0633\u0631\u0645\u0627\u06cc\u0647\u200c\u06af\u0630\u0627\u0631\u06cc \u062f\u0631 \u062a\u0647\u0631\u0627\u0646.',
+    badgeEn: 'Bloomberg News',
+    badgeFa: '\u062e\u0628\u0631 \u0628\u0644\u0648\u0645\u0628\u0631\u06af',
+    buttonTextEn: 'Read on Bloomberg',
+    buttonTextFa: '\u0645\u0637\u0627\u0644\u0639\u0647 \u062f\u0631 \u0628\u0644\u0648\u0645\u0628\u0631\u06af',
+    icon: <Globe className="w-16 h-16 text-blue-500" />,
+    colorClass: 'text-blue-500',
+    tagColor: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+    gradient: 'from-blue-600/15 via-blue-500/5 to-transparent',
+    borderGlow: 'border-blue-500/25 shadow-blue-500/5',
+    actionUrl: 'https://www.bloomberg.com/news/newsletters/2025-06-27/how-investing-in-tehran-is-like-bitcoin-in-2010',
+    bgImage: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1200&q=80'
+  }];
 useEffect(() => {
     if (!carouselAutoPlay) return;
     const interval = setInterval(() => {
@@ -332,7 +382,7 @@ useEffect(() => {
             {/* Action Buttons */}
             <div className="pt-1 flex flex-wrap gap-2.5 md:gap-4 items-center">
               <button
-                onClick={() => onExplore(carouselSlides[currentSlide].actionUrl)}
+                onClick={() => carouselSlides[currentSlide].actionUrl.startsWith("http") ? window.open(carouselSlides[currentSlide].actionUrl, "_blank", "noopener,noreferrer") : onExplore(carouselSlides[currentSlide].actionUrl)}
                 className="px-4 md:px-8 py-2.5 md:py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[11px] md:text-xs font-black transition-all hover:scale-[1.01] flex items-center gap-1.5 md:gap-2 cursor-pointer shadow-md shadow-blue-500/10"
               >
                 <span>{isRtl ? carouselSlides[currentSlide].buttonTextFa : carouselSlides[currentSlide].buttonTextEn}</span>
@@ -412,6 +462,131 @@ useEffect(() => {
       {/* Inner page content wrapping the rest of the sections */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 space-y-12 md:space-y-24 mt-8 md:mt-16">
 
+      {/* Actual Funded Inventory Row */}
+      <section className="space-y-4 md:space-y-6">
+        <div>
+          <p className="text-[10px] md:text-xs font-black text-blue-500 uppercase tracking-widest">
+            {isRtl ? '\u0645\u0648\u062c\u0648\u062f\u06cc \u0648 \u062a\u0623\u0645\u06cc\u0646 \u0648\u0627\u0642\u0639\u06cc AssetChain' : 'AssetChain Funded Inventory'}
+          </p>
+          <h2 className={`text-xl md:text-3xl font-black mt-1 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+            {isRtl ? '\u0633\u0647\u0627\u0645 \u062a\u0623\u0645\u06cc\u0646\u200c\u0634\u062f\u0647' : 'Funded Iranian Shares'}
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
+          {fundedAssets.map(({ asset, fundedShares }) => {
+            const rialValue = fundedShares * (asset.lastPriceRial ?? 0);
+            const usdtValue = fundedShares * asset.price;
+
+            return (
+              <div
+                key={asset.id}
+                className={`rounded-2xl border p-4 ${
+                  theme === 'dark'
+                    ? 'bg-slate-900/60 border-slate-800'
+                    : 'bg-white border-slate-200'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-xs font-black font-mono text-blue-500">
+                      {asset.bourseSymbol || asset.id}
+                    </p>
+                    <h3 className={`text-sm font-bold mt-1 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                      {isRtl ? asset.faName : asset.enName}
+                    </h3>
+                  </div>
+
+                  <span className={`text-[10px] font-bold ${
+                    asset.change >= 0 ? 'text-emerald-500' : 'text-red-500'
+                  }`}>
+                    {asset.change >= 0 ? '+' : ''}{asset.change.toFixed(2)}%
+                  </span>
+                </div>
+
+                <div className="mt-4 space-y-2 text-[10px]">
+                  <div className="flex justify-between gap-2">
+                    <span className="text-slate-400">
+                      {isRtl ? '\u062a\u0639\u062f\u0627\u062f \u062a\u0623\u0645\u06cc\u0646' : 'Funded Shares'}
+                    </span>
+                    <strong>
+                      {fundedShares.toLocaleString()} {isRtl ? '\u0633\u0647\u0645' : 'shares'}
+                    </strong>
+                  </div>
+
+                  <div className="flex justify-between gap-2">
+                    <span className="text-slate-400">
+                      {isRtl ? '\u0642\u06cc\u0645\u062a \u0645\u0631\u062c\u0639' : 'Reference Price'}
+                    </span>
+                    <strong className="font-mono">
+                      {(asset.lastPriceRial ?? 0).toLocaleString()} IRR
+                    </strong>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-800/40">
+                    <p className="text-slate-400">
+                      {isRtl ? '\u0627\u0631\u0632\u0634 \u062a\u0623\u0645\u06cc\u0646' : 'Funded Value'}
+                    </p>
+                    <p className="font-black font-mono mt-1">
+                      {rialValue.toLocaleString()} IRR
+                    </p>
+                    <p className="font-bold font-mono text-blue-500 mt-0.5">
+                      {usdtValue.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Actual Funded Statistics */}
+      <section className={`rounded-2xl md:rounded-3xl border p-5 md:p-10 ${
+        theme === 'dark'
+          ? 'bg-slate-900/30 border-slate-800'
+          : 'bg-white border-slate-200'
+      }`}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 text-center">
+
+          <div>
+            <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-wider">
+              {isRtl ? '\u0627\u0631\u0632\u0634 \u06a9\u0644 \u062a\u0623\u0645\u06cc\u0646' : 'Total Funded Value'}
+            </p>
+            <p className={`text-2xl md:text-4xl font-black mt-2 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+              {totalFundedUsdt.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT
+            </p>
+            <span className="text-emerald-500 text-[10px] md:text-xs font-bold">
+              {totalFundedRial.toLocaleString()} IRR
+            </span>
+          </div>
+
+          <div>
+            <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-wider">
+              {isRtl ? '\u0645\u062c\u0645\u0648\u0639 \u0633\u0647\u0627\u0645 \u062a\u0623\u0645\u06cc\u0646\u200c\u0634\u062f\u0647' : 'Total Funded Shares'}
+            </p>
+            <p className={`text-2xl md:text-4xl font-black mt-2 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+              {totalFundedShares.toLocaleString()}
+            </p>
+            <span className="text-blue-500 text-[10px] md:text-xs font-bold">
+              {isRtl ? '\u0633\u0647\u0645' : 'shares'}
+            </span>
+          </div>
+
+          <div>
+            <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-wider">
+              {isRtl ? '\u0646\u0645\u0627\u062f\u0647\u0627\u06cc \u062a\u0623\u0645\u06cc\u0646\u200c\u0634\u062f\u0647' : 'Funded Symbols'}
+            </p>
+            <p className={`text-2xl md:text-4xl font-black mt-2 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+              {fundedAssets.length}
+            </p>
+            <span className="text-purple-500 text-[10px] md:text-xs font-bold">
+              KGOL • KAVEH • SHTRAN • SHASTA • DTMAD
+            </span>
+          </div>
+
+        </div>
+      </section>
       {/* 1. Hero Section & Interactive Principles Blueprint */}
       <section className="relative pt-4 md:pt-12 pb-6 md:pb-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12 items-start">
@@ -639,44 +814,6 @@ useEffect(() => {
             </div>
           </div>
 
-        </div>
-      </section>
-
-      {/* 2. Unified Key Statistics */}
-      <section className={`rounded-2xl md:rounded-3xl border p-5 md:p-12 transition-colors duration-300 ${
-        theme === 'dark' ? 'bg-slate-900/30 border-slate-850/80' : 'bg-white border-slate-200'
-      }`}>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 text-center divide-y md:divide-y-0 md:divide-x divide-slate-800/65">
-          <div className="pb-5 md:pb-0">
-            <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-wider">{t.statTvl}</p>
-
-            <p className={`text-2xl md:text-4xl font-black mt-1.5 md:mt-2 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-              ${stats.tvl.toLocaleString()}
-            </p>
-            <span className="text-emerald-500 text-[10px] md:text-xs font-bold mt-0.5 md:mt-1 inline-block">
-              +14.2% {isRtl ? 'رشد در ماه گذشته' : 'vs last month'}
-            </span>
-          </div>
-
-          <div className="py-5 md:py-0 md:px-4">
-            <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-wider">{t.statApy}</p>
-            <p className={`text-2xl md:text-4xl font-black mt-1.5 md:mt-2 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-              16.45%
-            </p>
-            <span className="text-blue-500 text-[10px] md:text-xs font-bold mt-0.5 md:mt-1 inline-block italic">
-              {isRtl ? 'پشتوانه درآمدی املاک و معادن واقعی' : 'Market data sourced from TSETMC'}
-            </span>
-          </div>
-
-          <div className="pt-5 md:pt-0">
-            <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-wider">{t.statSold}</p>
-            <p className={`text-2xl md:text-4xl font-black mt-1.5 md:mt-2 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-              {stats.soldUnits.toLocaleString()} <span className="text-xs md:text-sm font-normal text-slate-500">{isRtl ? 'توکن فعال' : 'Active Tokens'}</span>
-            </p>
-            <span className="text-purple-500 text-[10px] md:text-xs font-bold mt-0.5 md:mt-1 inline-block">
-              {isRtl ? 'بیش از ۱۵ دسته دارایی معتبر' : 'Across 15+ certified asset classes'}
-            </span>
-          </div>
         </div>
       </section>
 
