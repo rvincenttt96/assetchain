@@ -163,7 +163,7 @@ export default function LandingPage({
         partnerFa: '\u0641\u0631\u0627\u0646\u062a\u200c\u0627\u0646\u062f AssetChain',
         locationEn: 'Market Interface',
         locationFa: '\u0631\u0627\u0628\u0637 \u0628\u0627\u0632\u0627\u0631',
-        insuredValueEn: 'TSETMC prices in IRR',
+        insuredValueEn: 'Prices normalized to USDT',
         insuredValueFa: '\u0642\u06cc\u0645\u062a TSETMC \u0628\u0647 \u0631\u06cc\u0627\u0644',
         registryEn: 'Direct official page access',
         registryFa: '\u062f\u0633\u062a\u0631\u0633\u06cc \u0645\u0633\u062a\u0642\u06cc\u0645 \u0628\u0647 \u0635\u0641\u062d\u0647 \u0631\u0633\u0645\u06cc'
@@ -193,10 +193,6 @@ export default function LandingPage({
     0
   );
 
-  const totalFundedRial = fundedAssets.reduce(
-    (sum, item) => sum + item.fundedShares * (item.asset.lastPriceRial ?? 0),
-    0
-  );
 
   const totalFundedUsdt = fundedAssets.reduce(
     (sum, item) => sum + item.fundedShares * item.asset.price,
@@ -205,256 +201,44 @@ export default function LandingPage({
 
   const currentActiveStepData = pipelineSteps[activeStep];
 
-  // Carousel Banner State & Slides Definition
-  const [currentSlide, setCurrentSlide] = useState<number>(0);
-  const [carouselAutoPlay, setCarouselAutoPlay] = useState<boolean>(true);
-
-  const carouselSlides = [
-  {
-    id: 0,
-    tagEn: 'METALS & MINING',
-    tagFa: '\u0641\u0644\u0632\u0627\u062a \u0648 \u0645\u0639\u0627\u062f\u0646',
-    titleEn: 'Track Gol Gohar and Kaveh Steel',
-    titleFa: '\u0631\u0635\u062f \u06a9\u06af\u0644 \u0648 \u06a9\u0627\u0648\u0647',
-    descEn: 'Review selected Iranian metals and mining shares with market information sourced from TSETMC.',
-    descFa: '\u0628\u0631\u0631\u0633\u06cc \u0633\u0647\u0627\u0645 \u0645\u0646\u062a\u062e\u0628 \u0641\u0644\u0632\u06cc \u0648 \u0645\u0639\u062f\u0646\u06cc \u0628\u0627 \u0627\u0637\u0644\u0627\u0639\u0627\u062a \u0628\u0627\u0632\u0627\u0631 \u062f\u0631\u06cc\u0627\u0641\u062a\u200c\u0634\u062f\u0647 \u0627\u0632 TSETMC.',
-    badgeEn: 'TSETMC Market Data',
-    badgeFa: '\u062f\u0627\u062f\u0647\u200c\u0647\u0627\u06cc \u0628\u0627\u0632\u0627\u0631 TSETMC',
-    buttonTextEn: 'View Metals Shares',
-    buttonTextFa: '\u0645\u0634\u0627\u0647\u062f\u0647 \u0633\u0647\u0627\u0645 \u0641\u0644\u0632\u06cc',
-    icon: <Coins className="w-16 h-16 text-amber-500" />,
-    colorClass: 'text-amber-500',
-    tagColor: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
-    gradient: 'from-amber-600/15 via-amber-500/5 to-transparent',
-    borderGlow: 'border-amber-500/25 shadow-amber-500/5',
-    actionUrl: 'metals',
-    bgImage: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1200&q=80'
-  },
-  {
-    id: 1,
-    tagEn: 'PHARMA & REFINING',
-    tagFa: '\u062f\u0627\u0631\u0648\u06cc\u06cc \u0648 \u067e\u0627\u0644\u0627\u06cc\u0634\u06cc',
-    titleEn: 'Follow DTMAD and SHTRAN',
-    titleFa: '\u0631\u0635\u062f \u062f\u062a\u0645\u0627\u062f \u0648 \u0634\u062a\u0631\u0627\u0646',
-    descEn: 'Follow selected pharmaceutical and refining shares using their latest stored TSETMC market information.',
-    descFa: '\u0633\u0647\u0627\u0645 \u0645\u0646\u062a\u062e\u0628 \u062f\u0627\u0631\u0648\u06cc\u06cc \u0648 \u067e\u0627\u0644\u0627\u06cc\u0634\u06cc \u0631\u0627 \u0628\u0627 \u062f\u0627\u062f\u0647\u200c\u0647\u0627\u06cc TSETMC \u062f\u0646\u0628\u0627\u0644 \u06a9\u0646\u06cc\u062f.',
-    badgeEn: 'Official Instrument Links',
-    badgeFa: '\u0644\u06cc\u0646\u06a9 \u0631\u0633\u0645\u06cc \u0647\u0631 \u0646\u0645\u0627\u062f',
-    buttonTextEn: 'Explore Shares',
-    buttonTextFa: '\u0645\u0634\u0627\u0647\u062f\u0647 \u0633\u0647\u0627\u0645',
-    icon: <Building className="w-16 h-16 text-blue-500" />,
-    colorClass: 'text-blue-500',
-    tagColor: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-    gradient: 'from-blue-600/15 via-blue-500/5 to-transparent',
-    borderGlow: 'border-blue-500/25 shadow-blue-500/5',
-    actionUrl: 'pharma',
-    bgImage: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=1200&q=80'
-  },
-  {
-    id: 2,
-    tagEn: 'INVESTMENT',
-    tagFa: '\u0633\u0631\u0645\u0627\u06cc\u0647\u200c\u06af\u0630\u0627\u0631\u06cc',
-    titleEn: 'Monitor SHASTA Market Data',
-    titleFa: '\u0631\u0635\u062f \u0627\u0637\u0644\u0627\u0639\u0627\u062a \u0628\u0627\u0632\u0627\u0631 \u0634\u0633\u062a\u0627',
-    descEn: 'Access SHASTA alongside the other selected Iranian shares from one focused market interface.',
-    descFa: '\u0634\u0633\u062a\u0627 \u0648 \u0633\u0627\u06cc\u0631 \u0633\u0647\u0627\u0645 \u0645\u0646\u062a\u062e\u0628 \u0627\u06cc\u0631\u0627\u0646\u06cc \u0631\u0627 \u062f\u0631 \u06cc\u06a9 \u0645\u062d\u06cc\u0637 \u0628\u0627\u0632\u0627\u0631 \u0645\u062a\u0645\u0631\u06a9\u0632 \u0628\u0631\u0631\u0633\u06cc \u06a9\u0646\u06cc\u062f.',
-    badgeEn: 'Selected Iran Shares',
-    badgeFa: '\u0633\u0647\u0627\u0645 \u0645\u0646\u062a\u062e\u0628 \u0627\u06cc\u0631\u0627\u0646',
-    buttonTextEn: 'Open Market',
-    buttonTextFa: '\u0648\u0631\u0648\u062f \u0628\u0647 \u0628\u0627\u0632\u0627\u0631',
-    icon: <Globe2 className="w-16 h-16 text-purple-500" />,
-    colorClass: 'text-purple-500',
-    tagColor: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
-    gradient: 'from-purple-600/15 via-purple-500/5 to-transparent',
-    borderGlow: 'border-purple-500/25 shadow-purple-500/5',
-    actionUrl: 'investment',
-    bgImage: 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&w=1200&q=80'
-  }
-,
-  {
-    id: 3,
-    tagEn: 'BLOOMBERG • ODD LOTS',
-    tagFa: '\u0628\u0644\u0648\u0645\u0628\u0631\u06af \u2022 Odd Lots',
-    titleEn: 'How Investing in Tehran Is Like Bitcoin in 2010',
-    titleFa: '\u0633\u0631\u0645\u0627\u06cc\u0647\u200c\u06af\u0630\u0627\u0631\u06cc \u062f\u0631 \u062a\u0647\u0631\u0627\u0646\u061b \u0634\u0628\u06cc\u0647 \u0628\u06cc\u062a\u200c\u06a9\u0648\u06cc\u0646 \u062f\u0631 \u0633\u0627\u0644 \u06f2\u06f0\u06f1\u06f0',
-    descEn: 'Read the Bloomberg Odd Lots feature on investing in Tehran.',
-    descFa: '\u06af\u0632\u0627\u0631\u0634 \u0628\u0644\u0648\u0645\u0628\u0631\u06af \u062f\u0631\u0628\u0627\u0631\u0647 \u0633\u0631\u0645\u0627\u06cc\u0647\u200c\u06af\u0630\u0627\u0631\u06cc \u062f\u0631 \u062a\u0647\u0631\u0627\u0646.',
-    badgeEn: 'Bloomberg News',
-    badgeFa: '\u062e\u0628\u0631 \u0628\u0644\u0648\u0645\u0628\u0631\u06af',
-    buttonTextEn: 'Read on Bloomberg',
-    buttonTextFa: '\u0645\u0637\u0627\u0644\u0639\u0647 \u062f\u0631 \u0628\u0644\u0648\u0645\u0628\u0631\u06af',
-    icon: <Globe className="w-16 h-16 text-blue-500" />,
-    colorClass: 'text-blue-500',
-    tagColor: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-    gradient: 'from-blue-600/15 via-blue-500/5 to-transparent',
-    borderGlow: 'border-blue-500/25 shadow-blue-500/5',
-    actionUrl: 'https://www.bloomberg.com/news/newsletters/2025-06-27/how-investing-in-tehran-is-like-bitcoin-in-2010',
-    bgImage: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1200&q=80'
-  }];
-useEffect(() => {
-    if (!carouselAutoPlay) return;
-    const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % carouselSlides.length);
-    }, 6000);
-    return () => clearInterval(interval);
-  }, [carouselAutoPlay]);
 
   return (
     <div className="w-full pb-16 animate-fade-in">
 
-      {/* 0. Top Interactive Carousel Banner under Header - Full Width */}
-      <section
-        onMouseEnter={() => setCarouselAutoPlay(false)}
-        onMouseLeave={() => setCarouselAutoPlay(true)}
-        className={`relative w-full border-b md:min-h-[440px] flex flex-col justify-between overflow-hidden transition-all duration-500 shadow-lg ${
-          theme === 'dark'
-            ? `bg-slate-950 border-slate-900/50 ${carouselSlides[currentSlide].borderGlow}`
-            : `bg-slate-50 border-slate-100 ${carouselSlides[currentSlide].borderGlow}`
-        }`}
-      >
-        {/* Real-world asset background images with seamless transition & smooth zoom parallax */}
-        {carouselSlides.map((slide, idx) => (
-          <div
-            key={slide.id}
-            className={`absolute inset-0 transition-all duration-1000 ease-out ${
-              idx === currentSlide
-                ? 'opacity-100 scale-100'
-                : 'opacity-0 scale-105 pointer-events-none'
-            }`}
-          >
-            <img
-              src={slide.bgImage}
-              alt=""
-              referrerPolicy="no-referrer"
-              className="w-full h-full object-cover filter brightness-[0.72] contrast-[1.05]"
-            />
-            {/* Dynamic, directional responsive overlays for maximum text legibility */}
-            <div className={`absolute inset-0 transition-all duration-700 ${
-              theme === 'dark'
-                ? isRtl
-                  ? 'bg-gradient-to-l from-slate-950 via-slate-950/85 to-transparent'
-                  : 'bg-gradient-to-r from-slate-950 via-slate-950/85 to-transparent'
-                : isRtl
-                  ? 'bg-gradient-to-l from-white via-white/88 to-transparent'
-                  : 'bg-gradient-to-r from-white via-white/88 to-transparent'
-            }`} />
-          </div>
-        ))}
-
-        {/* Subtle grid overlay for high-tech digital aesthetic */}
-        <div className="absolute inset-0 opacity-5 pointer-events-none bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
-
-        {/* Content Wrapper aligned to max-w-7xl */}
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-16 w-full flex-1 flex flex-col justify-between relative z-10 gap-4 md:gap-8">
-
-          {/* Grid Container */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-8 items-center w-full flex-1">
-
-          {/* Slide Text Content */}
-          <div className="lg:col-span-12 space-y-3.5 md:space-y-6 text-start flex flex-col justify-center">
-
-            {/* Elegant Category Subtitle */}
-            <div className="flex items-center gap-2 md:gap-2.5 text-[10px] md:text-[11px] font-black uppercase tracking-widest">
-              <span className={theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}>
-                {isRtl ? carouselSlides[currentSlide].tagFa : carouselSlides[currentSlide].tagEn}
-              </span>
+      {/* Bloomberg News */}
+      <section className={`relative w-full border-b overflow-hidden shadow-lg ${theme === 'dark' ? 'bg-slate-950 border-slate-900/50' : 'bg-slate-50 border-slate-100'}`}>
+        <div className="absolute inset-0">
+          <img
+            src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1600&q=80"
+            alt=""
+            referrerPolicy="no-referrer"
+            className="w-full h-full object-cover brightness-[0.58]"
+          />
+          <div className={`absolute inset-0 ${theme === 'dark' ? 'bg-gradient-to-r from-slate-950 via-slate-950/90 to-slate-950/35' : 'bg-gradient-to-r from-white via-white/90 to-white/35'}`} />
+        </div>
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-10 md:py-16 relative z-10">
+          <div className="max-w-4xl space-y-4 text-start">
+            <div className="flex items-center gap-2 text-[10px] md:text-xs font-black uppercase tracking-widest">
+              <span className="text-blue-500">Bloomberg • Odd Lots</span>
               <span className="opacity-30">|</span>
-              <span className="text-emerald-500">
-                {isRtl ? carouselSlides[currentSlide].badgeFa : carouselSlides[currentSlide].badgeEn}
-              </span>
+              <span className="text-emerald-500">News</span>
             </div>
-
-            {/* Slide Title */}
-            <h2 className={`text-xl md:text-3xl lg:text-4xl font-black tracking-tight leading-snug md:leading-tight transition-all duration-500 max-w-4xl ${
-              theme === 'dark' ? 'text-white' : 'text-slate-900'
-            }`}>
-              {isRtl ? carouselSlides[currentSlide].titleFa : carouselSlides[currentSlide].titleEn}
+            <h2 className={`text-2xl md:text-4xl font-black leading-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+              How Investing in Tehran Is Like Bitcoin in 2010
             </h2>
-
-            {/* Slide Description */}
-            <p className={`text-[11px] md:text-sm leading-relaxed max-w-4xl transition-all duration-500 opacity-90 ${
-              theme === 'dark' ? 'text-slate-300' : 'text-slate-600'
-            }`}>
-              {isRtl ? carouselSlides[currentSlide].descFa : carouselSlides[currentSlide].descEn}
+            <p className={`text-xs md:text-sm leading-relaxed max-w-3xl ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
+              {isRtl ? 'گزارش Bloomberg Odd Lots درباره سرمایه‌گذاری در تهران و شرایط دسترسی به این بازار.' : 'Bloomberg Odd Lots looks at investing in Tehran and the unusual access dynamics around the market.'}
             </p>
-
-            {/* Action Buttons */}
-            <div className="pt-1 flex flex-wrap gap-2.5 md:gap-4 items-center">
-              <button
-                onClick={() => carouselSlides[currentSlide].actionUrl.startsWith("http") ? window.open(carouselSlides[currentSlide].actionUrl, "_blank", "noopener,noreferrer") : onExplore(carouselSlides[currentSlide].actionUrl)}
-                className="px-4 md:px-8 py-2.5 md:py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[11px] md:text-xs font-black transition-all hover:scale-[1.01] flex items-center gap-1.5 md:gap-2 cursor-pointer shadow-md shadow-blue-500/10"
-              >
-                <span>{isRtl ? carouselSlides[currentSlide].buttonTextFa : carouselSlides[currentSlide].buttonTextEn}</span>
-                {isRtl ? <ArrowLeft size={14} /> : <ArrowRight size={14} />}
-              </button>
-
-              <button
-                onClick={onSupport}
-                className={`px-3.5 md:px-5 py-2.5 md:py-3.5 rounded-xl text-[11px] md:text-xs font-bold transition-all border cursor-pointer ${
-                  theme === 'dark'
-                    ? 'border-slate-800 bg-slate-900/60 text-slate-300 hover:bg-slate-800'
-                    : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                {isRtl ? 'مشاوره رایگان Market' : 'Market Data Support'}
-              </button>
-            </div>
-          </div>
-
-        </div>
-
-        {/* Carousel Footer controls (Pagination dots & Nav buttons) */}
-        <div className="flex items-center justify-between mt-8 pt-4 border-t border-slate-800/10 dark:border-slate-100/10 relative z-10">
-
-          {/* Pagination Indicators (dots) */}
-          <div className="flex items-center gap-1.5">
-            {carouselSlides.map((slide, idx) => (
-              <button
-                key={slide.id}
-                onClick={() => {
-                  setCurrentSlide(idx);
-                  setCarouselAutoPlay(false);
-                }}
-                className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
-                  currentSlide === idx
-                    ? 'w-6 bg-blue-500'
-                    : 'w-1.5 bg-slate-600 hover:bg-slate-400'
-                }`}
-              />
-            ))}
-          </div>
-
-          {/* Nav Buttons */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                setCurrentSlide((prev) => (prev - 1 + carouselSlides.length) % carouselSlides.length);
-                setCarouselAutoPlay(false);
-              }}
-              className={`p-2 rounded-xl border transition-all cursor-pointer ${
-                theme === 'dark'
-                  ? 'border-slate-800 bg-slate-900/60 hover:bg-slate-800 text-slate-400 hover:text-white'
-                  : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-800'
-              }`}
+            <a
+              href="https://www.bloomberg.com/news/newsletters/2025-06-27/how-investing-in-tehran-is-like-bitcoin-in-2010"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-5 md:px-7 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black transition-all"
             >
-              {isRtl ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-            </button>
-            <button
-              onClick={() => {
-                setCurrentSlide((prev) => (prev + 1) % carouselSlides.length);
-                setCarouselAutoPlay(false);
-              }}
-              className={`p-2 rounded-xl border transition-all cursor-pointer ${
-                theme === 'dark'
-                  ? 'border-slate-800 bg-slate-900/60 hover:bg-slate-800 text-slate-400 hover:text-white'
-                  : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              {isRtl ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
-            </button>
+              <span>{isRtl ? 'مطالعه در Bloomberg' : 'Read on Bloomberg'}</span>
+              <ExternalLink size={14} />
+            </a>
           </div>
-
-        </div>
         </div>
       </section>
 
@@ -474,7 +258,6 @@ useEffect(() => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
           {fundedAssets.map(({ asset, fundedShares }) => {
-            const rialValue = fundedShares * (asset.lastPriceRial ?? 0);
             const usdtValue = fundedShares * asset.price;
 
             return (
@@ -489,10 +272,10 @@ useEffect(() => {
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <p className="text-xs font-black font-mono text-blue-500">
-                      {asset.bourseSymbol || asset.id}
+                      {asset.id}
                     </p>
                     <h3 className={`text-sm font-bold mt-1 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                      {isRtl ? asset.faName : asset.enName}
+                      {asset.enName}
                     </h3>
                   </div>
 
@@ -518,16 +301,13 @@ useEffect(() => {
                       {isRtl ? '\u0642\u06cc\u0645\u062a \u0645\u0631\u062c\u0639' : 'Reference Price'}
                     </span>
                     <strong className="font-mono">
-                      {(asset.lastPriceRial ?? 0).toLocaleString()} IRR
+                      {asset.price.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 6 })} USDT
                     </strong>
                   </div>
 
                   <div className="pt-2 border-t border-slate-800/40">
                     <p className="text-slate-400">
                       {isRtl ? '\u0627\u0631\u0632\u0634 \u062a\u0623\u0645\u06cc\u0646' : 'Funded Value'}
-                    </p>
-                    <p className="font-black font-mono mt-1">
-                      {rialValue.toLocaleString()} IRR
                     </p>
                     <p className="font-bold font-mono text-blue-500 mt-0.5">
                       {usdtValue.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT
@@ -555,9 +335,6 @@ useEffect(() => {
             <p className={`text-2xl md:text-4xl font-black mt-2 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
               {totalFundedUsdt.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT
             </p>
-            <span className="text-emerald-500 text-[10px] md:text-xs font-bold">
-              {totalFundedRial.toLocaleString()} IRR
-            </span>
           </div>
 
           <div>
@@ -908,7 +685,7 @@ useEffect(() => {
                   myPortfolio.map((item: any) => {
                     const asset = assets.find(a => a.id === item.assetId);
                     if (!asset) return null;
-                    const val = item.shares * (asset.lastPriceRial ?? 0);
+                    const val = item.shares * asset.price;
                     return (
                       <div
                         key={item.assetId}
@@ -922,7 +699,7 @@ useEffect(() => {
                           <span className="text-[10px] md:text-xs font-black text-blue-500 font-mono">#{asset.id}</span>
                           <div>
                             <h4 className={`text-[11px] md:text-xs font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                              {isRtl ? asset.faName : asset.enName}
+                              {asset.enName}
                             </h4>
                             <p className="text-[8px] md:text-[9px] text-slate-400 mt-0.5">
                               {item.shares.toLocaleString()} {isRtl ? 'سهم توکنایز شده' : 'Shares'}
@@ -931,7 +708,7 @@ useEffect(() => {
                         </div>
                         <div className="text-right">
                           <p className={`text-[11px] md:text-xs font-black font-mono ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
-                            {val.toLocaleString()} IRR
+                            {val.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT
                           </p>
                           <p className="text-[8px] md:text-[9px] text-emerald-500 font-bold mt-0.5">
                             {asset.change >= 0 ? '+' : ''}{asset.change}%
@@ -950,11 +727,11 @@ useEffect(() => {
                     >
                       <div className="flex items-center gap-2 md:gap-3">
                         <span className="text-[10px] md:text-xs font-black text-blue-500 font-mono">
-                          #{asset.bourseSymbol || asset.id}
+                          #{asset.id}
                         </span>
                         <div>
                           <h4 className={`text-[11px] md:text-xs font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                            {isRtl ? asset.faName : asset.enName}
+                            {asset.enName}
                           </h4>
                           <p className="text-[8px] md:text-[9px] text-slate-400 mt-0.5">
                             {isRtl ? '\u062f\u0627\u062f\u0647 \u0628\u0627\u0632\u0627\u0631 TSETMC' : 'TSETMC market data'}
@@ -963,7 +740,7 @@ useEffect(() => {
                       </div>
                       <div className="text-right">
                         <p className={`text-[11px] md:text-xs font-black font-mono ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
-                          {typeof asset.lastPriceRial === 'number' ? asset.lastPriceRial.toLocaleString() : '—'} {isRtl ? '\u0631\u06cc\u0627\u0644' : 'IRR'}
+                          {asset.price.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 6 })} USDT
                         </p>
                         <p className={`text-[8px] md:text-[9px] font-bold mt-0.5 ${asset.change >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                           {asset.change >= 0 ? '+' : ''}{asset.change.toFixed(2)}%
@@ -1097,13 +874,13 @@ useEffect(() => {
                       className="rounded-[2px]"
                       referrerPolicy="no-referrer"
                     />
-                    <span>{isRtl ? asset.locationFa : asset.locationEn}</span>
+                    <span>{asset.locationEn}</span>
                   </div>
                   <span className="text-[9px] md:text-[10px] font-mono font-bold text-slate-500">#{asset.id}</span>
                 </div>
 
                 <h3 className={`text-sm md:text-base font-bold tracking-tight z-10 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                  {isRtl ? asset.faName : asset.enName}
+                  {asset.enName}
                 </h3>
               </div>
 
@@ -1112,7 +889,7 @@ useEffect(() => {
                 <div className="grid grid-cols-2 gap-2 text-[11px] md:text-xs">
                   <div>
                     <span className="text-slate-400 text-[9px] md:text-[10px] block font-bold uppercase">{t.tokenPrice}</span>
-                    <span className={`text-sm md:text-base font-black ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{typeof asset.lastPriceRial === 'number' ? asset.lastPriceRial.toLocaleString() : '—'} {isRtl ? '\u0631\u06cc\u0627\u0644' : 'IRR'}</span>
+                    <span className={`text-sm md:text-base font-black ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{asset.price.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 6 })} USDT</span>
                   </div>
                   <div className="text-end">
                     <span className="text-slate-400 text-[9px] md:text-[10px] block font-bold uppercase">{t.expectedYield}</span>
@@ -1123,15 +900,9 @@ useEffect(() => {
                   </div>
                 </div>
 
-                {/* Progress bar */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-[9px] md:text-[10px] font-medium text-slate-400">
-                    <span>{t.saleProgress}</span>
-                    <span>{asset.progress}%</span>
-                  </div>
-                  <div className={`h-1 rounded-full overflow-hidden ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-100'}`}>
-                    <div className="h-full bg-blue-500" style={{ width: `${asset.progress}%` }}></div>
-                  </div>
+                <div className="flex items-center justify-between rounded-xl border border-slate-800/40 px-3 py-2 text-[10px] md:text-xs">
+                  <span className="text-slate-400">Supply</span>
+                  <span className="font-black text-blue-500">{(fundedSharesByAssetId[asset.id] ?? 0).toLocaleString()} shares</span>
                 </div>
 
                 {asset.tsetmcUrl && (
@@ -1143,7 +914,7 @@ useEffect(() => {
                     className="py-1.5 px-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/25 rounded-lg text-[11px] font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <Globe size={13} className="text-emerald-400 shrink-0" />
-                    <span className="truncate">{isRtl ? `اطلاعات بورس TSETMC (${asset.bourseSymbol || asset.faName})` : `TSETMC Stock (${asset.bourseSymbol || asset.id})`}</span>
+                    <span className="truncate">{`Stock Reference (${asset.id})`}</span>
                     <ExternalLink size={12} className="shrink-0" />
                   </a>
                 )}

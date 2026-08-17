@@ -145,10 +145,6 @@ const platformFundedShares = platformFundedAssets.reduce(
   0
 );
 
-const platformFundedRial = platformFundedAssets.reduce(
-  (sum, item) => sum + item.shares * (item.asset.lastPriceRial ?? 0),
-  0
-);
 
 const platformFundedUsdt = platformFundedAssets.reduce(
   (sum, item) => sum + item.shares * item.asset.price,
@@ -323,7 +319,7 @@ const platformFundedUsdt = platformFundedAssets.reduce(
             if (triggerAlertNotify) {
               // Trigger the notification alert and mark alert as triggered
               setTimeout(() => {
-                const nameStr = lang === 'fa' ? liveAsset.faName : liveAsset.enName;
+                const nameStr = liveAsset.enName;
                 triggerAlert('success', lang === 'fa'
                   ? `🔔 هشدار: قیمت دارایی ${nameStr} به هدف ${alert.targetPrice} تتر رسید! (قیمت فعلی: ${liveAsset.price} تتر)`
                   : `🔔 Alert: ${liveAsset.enName} has reached target of ${alert.targetPrice} USDT! (Current: ${liveAsset.price} USDT)`
@@ -408,8 +404,8 @@ const platformFundedUsdt = platformFundedAssets.reduce(
     if (selectedAsset.price <= 0) {
       alert(
         lang === "fa"
-          ? "\u0645\u0639\u0627\u0645\u0644\u0647 \u0641\u0639\u0644\u0627\u064b \u063a\u06cc\u0631\u0641\u0639\u0627\u0644 \u0627\u0633\u062a \u062a\u0627 \u0646\u0631\u062e \u0645\u0639\u062a\u0628\u0631 IRR/USDT \u062f\u0631 \u0628\u06a9\u200c\u0627\u0646\u062f \u062a\u0646\u0638\u06cc\u0645 \u0634\u0648\u062f."
-          : "Trading is temporarily unavailable until a valid IRR/USDT conversion price is configured."
+          ? "\u0645\u0639\u0627\u0645\u0644\u0647 \u0641\u0639\u0644\u0627\u064b \u063a\u06cc\u0631\u0641\u0639\u0627\u0644 \u0627\u0633\u062a \u062a\u0627 \u0642\u06cc\u0645\u062a \u0645\u0639\u062a\u0628\u0631 USDT \u062f\u0631 \u0628\u06a9\u200c\u0627\u0646\u062f \u062f\u0631 \u062f\u0633\u062a\u0631\u0633 \u0628\u0627\u0634\u062f."
+          : "Trading is temporarily unavailable until a valid market conversion price is available."
       );
       return;
     }
@@ -430,6 +426,9 @@ const platformFundedUsdt = platformFundedAssets.reduce(
   }
 
   const purchasedShares = Math.floor(investAmount / selectedAsset.price);
+  const grossUsdt = purchasedShares * selectedAsset.price;
+  const feeUsdt = grossUsdt * 0.035;
+  const totalUsdt = grossUsdt + feeUsdt;
 
   if (purchasedShares < 1) {
     triggerAlert(
@@ -438,6 +437,11 @@ const platformFundedUsdt = platformFundedAssets.reduce(
         ? 'مبلغ سرمایه‌گذاری برای خرید یک سهم کافی نیست.'
         : 'The investment amount is too low to buy one share.'
     );
+    return;
+  }
+
+  if (totalUsdt > currentUser.usdtBalance + 1e-9) {
+    triggerAlert('error', t.insufficientBalance);
     return;
   }
 
@@ -492,8 +496,8 @@ const platformFundedUsdt = platformFundedAssets.reduce(
     if (selectedAsset.price <= 0) {
       alert(
         lang === "fa"
-          ? "\u0645\u0639\u0627\u0645\u0644\u0647 \u0641\u0639\u0644\u0627\u064b \u063a\u06cc\u0631\u0641\u0639\u0627\u0644 \u0627\u0633\u062a \u062a\u0627 \u0646\u0631\u062e \u0645\u0639\u062a\u0628\u0631 IRR/USDT \u062f\u0631 \u0628\u06a9\u200c\u0627\u0646\u062f \u062a\u0646\u0638\u06cc\u0645 \u0634\u0648\u062f."
-          : "Trading is temporarily unavailable until a valid IRR/USDT conversion price is configured."
+          ? "\u0645\u0639\u0627\u0645\u0644\u0647 \u0641\u0639\u0644\u0627\u064b \u063a\u06cc\u0631\u0641\u0639\u0627\u0644 \u0627\u0633\u062a \u062a\u0627 \u0642\u06cc\u0645\u062a \u0645\u0639\u062a\u0628\u0631 USDT \u062f\u0631 \u0628\u06a9\u200c\u0627\u0646\u062f \u062f\u0631 \u062f\u0633\u062a\u0631\u0633 \u0628\u0627\u0634\u062f."
+          : "Trading is temporarily unavailable until a valid market conversion price is available."
       );
       return;
     }
@@ -718,7 +722,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
 
       {/* Alert Banner / Notification Feed */}
       {alertMessage && (
-        <div className={`fixed bottom-6 right-6 left-6 md:left-auto md:w-96 z-50 p-4 rounded-xl shadow-2xl flex items-center gap-3 animate-bounce border ${
+        <div className={`fixed bottom-6 right-6 left-6 md:left-auto md:w-96 z-[80] p-4 rounded-xl shadow-2xl flex items-center gap-3 animate-bounce border ${
           alertMessage.type === 'success'
             ? 'bg-emerald-950/90 text-emerald-200 border-emerald-500/50'
             : 'bg-rose-950/90 text-rose-200 border-rose-500/50'
@@ -1236,7 +1240,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                   {platformFundedUsdt.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT
                 </p>
                 <span className="text-emerald-500 text-xs font-bold mt-1 inline-block">
-                  +14.2% {lang === 'fa' ? 'نسبت به ماه قبل' : 'vs last month'}
+                  {lang === 'fa' ? 'بر اساس Supply تأمین‌شده' : 'Based on funded supply'}
                 </span>
               </div>
 
@@ -1291,7 +1295,7 @@ const handleExecuteLimitOrder = (_orderId: string) => {
                 {platformFundedUsdt.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT
               </p>
               <span className="text-emerald-500 text-xs font-bold mt-1 inline-block">
-                +14.2% {lang === 'fa' ? 'نسبت به ماه قبل' : 'vs last month'}
+                {lang === 'fa' ? 'بر اساس Supply تأمین‌شده' : 'Based on funded supply'}
               </span>
             </div>
 
@@ -1434,10 +1438,10 @@ portfolioPnlUsdt={totalPnLCalculated}
 
                           <div className="z-10">
                             <h3 className={`text-lg font-bold tracking-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                              {lang === 'fa' ? asset.faName : asset.enName}
+                              {asset.enName}
                             </h3>
-                            <p className="text-[10px] text-slate-400 mt-0.5">
-                              {lang === 'fa' ? 'پشتوانه توزیع‌شده با تضمین فیزیکی' : 'TSETMC-linked Iranian share'}
+                            <p className="text-[10px] text-slate-400 mt-0.5 line-clamp-2">
+                              {asset.descriptionEn || 'Selected Iranian listed company.'}
                             </p>
                           </div>
                         </div>
@@ -1462,18 +1466,9 @@ portfolioPnlUsdt={totalPnLCalculated}
                             </div>
                           </div>
 
-                          {/* Progress Line */}
-                          <div className="space-y-1">
-                            <div className="flex justify-between text-xs font-medium">
-                              <span className="text-slate-400">{t.saleProgress}</span>
-                              <span className={theme === 'dark' ? 'text-white' : 'text-slate-900'}>{asset.progress}%</span>
-                            </div>
-                            <div className={`h-1.5 rounded-full overflow-hidden ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-100'}`}>
-                              <div
-                                className={`h-full rounded-full bg-blue-500 transition-all duration-1000`}
-                                style={{ width: `${asset.progress}%` }}
-                              ></div>
-                            </div>
+                          <div className="flex items-center justify-between rounded-xl border border-slate-800/40 px-3 py-2 text-xs">
+                            <span className="text-slate-400">Supply</span>
+                            <span className="font-black text-blue-500">{(platformFundedSharesByAssetId[asset.id] ?? 0).toLocaleString()} shares</span>
                           </div>
 
                           {/* TSETMC Bourse Badge/Link if applicable */}
@@ -1486,7 +1481,7 @@ portfolioPnlUsdt={totalPnLCalculated}
                               className="py-1.5 px-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/25 rounded-xl text-[11px] font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                             >
                               <Globe size={13} className="text-emerald-400" />
-                              <span>{lang === 'fa' ? `اطلاعات بورس TSETMC (${asset.bourseSymbol || asset.faName})` : `TSETMC Stock (${asset.bourseSymbol || asset.id})`}</span>
+                              <span>{`Stock Reference (${asset.id})`}</span>
                               <ExternalLink size={12} />
                             </a>
                           )}
@@ -1756,7 +1751,7 @@ portfolioPnlUsdt={totalPnLCalculated}
                                           />
                                           <div>
                                             <div className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-950'}`}>
-                                              {lang === 'fa' ? asset.faName : asset.enName}
+                                              {asset.enName}
                                             </div>
                                             <div className="text-[9px] font-mono font-bold text-slate-500 mt-0.5">#{asset.id}</div>
                                           </div>
@@ -1882,7 +1877,7 @@ portfolioPnlUsdt={totalPnLCalculated}
                                           />
                                           <div>
                                             <div className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-950'}`}>
-                                              {lang === 'fa' ? asset.faName : asset.enName}
+                                              {asset.enName}
                                             </div>
                                             <div className="text-[9px] text-slate-500 font-bold mt-0.5">{lot.date}</div>
                                           </div>
@@ -1982,7 +1977,7 @@ portfolioPnlUsdt={totalPnLCalculated}
                           >
                             {assets.map(asset => (
                               <option key={asset.id} value={asset.id}>
-                                {lang === 'fa' ? asset.faName : asset.enName} ({asset.id})
+                                {asset.enName} ({asset.id})
                               </option>
                             ))}
                           </select>
@@ -2177,7 +2172,7 @@ portfolioPnlUsdt={totalPnLCalculated}
                                             </td>
                                             <td className="py-3 px-4">
                                               <div className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                                                {asset ? (lang === 'fa' ? asset.faName : asset.enName) : order.assetId}
+                                                {asset ? (asset.enName) : order.assetId}
                                               </div>
                                               <div className="mt-1">
                                                 <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-extrabold uppercase ${
@@ -2299,7 +2294,7 @@ portfolioPnlUsdt={totalPnLCalculated}
                                                 <div className="text-[9px] text-slate-500 mt-0.5">{alert.date}</div>
                                               </td>
                                               <td className="py-3 px-4 font-bold">
-                                                {asset ? (lang === 'fa' ? asset.faName : asset.enName) : alert.assetId}
+                                                {asset ? (asset.enName) : alert.assetId}
                                                 <span className="text-[10px] font-mono font-bold text-slate-500 block">#{alert.assetId}</span>
                                               </td>
                                               <td className="py-3 px-4 text-end">
@@ -2809,12 +2804,12 @@ portfolioPnlUsdt={totalPnLCalculated}
                       <ShieldCheck size={20} />
                     </div>
                     <h3 className={`text-base font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                      {lang === 'fa' ? '۱۰۰٪ پشتوانه فیزیکی' : 'TSETMC Market Data'}
+                      {lang === 'fa' ? 'قیمت‌گذاری USDT' : 'USDT Pricing'}
                     </h3>
                     <p className="text-xs text-slate-400 leading-relaxed">
                       {lang === 'fa'
-                        ? 'تمامی توکن‌ها دارای پشتوانه شمش‌های طلا با عیار استاندارد و اسناد رسمی املاک ثبت شده در سوئیس و امارات هستند.'
-                        : 'Market prices are sourced from TSETMC and each share includes its official instrument link.'}
+                        ? 'قیمت‌های قابل مشاهده برای کاربر به USDT نمایش داده می‌شوند و هر سهم دارای Stock Reference است.'
+                        : 'User-facing prices are displayed in USDT and each selected share includes a Stock Reference link.'}
                     </p>
                   </div>
 
@@ -2825,12 +2820,12 @@ portfolioPnlUsdt={totalPnLCalculated}
                       <CheckCircle size={20} />
                     </div>
                     <h3 className={`text-base font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                      {lang === 'fa' ? 'حساب‌رسی و شفافیت آنی' : 'Audited Proof of Reserves'}
+                      {lang === 'fa' ? 'Supply شفاف' : 'Transparent Supply'}
                     </h3>
                     <p className="text-xs text-slate-400 leading-relaxed">
                       {lang === 'fa'
-                        ? 'موسسه بین‌المللی SGS به عنوان حسابرس مستقل، موجودی فیزیکی خزانه‌ها را به صورت دوره‌ای تایید و گزارش می‌کند.'
-                        : 'Market information for the selected shares is sourced from TSETMC and processed by the backend.'}
+                        ? 'مقدار Supply تأمین‌شده برای هر یک از پنج سهم به‌صورت شفاف در رابط کاربری نمایش داده می‌شود.'
+                        : 'The funded supply for each of the five selected shares is displayed directly in the interface.'}
                     </p>
                   </div>
 
@@ -2845,8 +2840,8 @@ portfolioPnlUsdt={totalPnLCalculated}
                     </h3>
                     <p className="text-xs text-slate-400 leading-relaxed">
                       {lang === 'fa'
-                        ? 'ما موانع سرمایه‌گذاری را حذف کرده‌ایم تا هر شخص بتواند با حداقل ۱ تتر، مالک سهم‌های ارزشمند در کلاس‌های دارایی لوکس شود.'
-                        : 'Review selected Iranian shares and their TSETMC market information.'}
+                        ? 'پنج سهم منتخب را همراه با معرفی شرکت، Supply و قیمت USDT بررسی کنید.'
+                        : 'Review five selected Iranian shares with company information, funded supply, and USDT pricing.'}
                     </p>
                   </div>
                 </div>
@@ -3113,7 +3108,7 @@ portfolioPnlUsdt={totalPnLCalculated}
             }`}>
               <div>
                 <span className="text-xs text-slate-400 font-bold uppercase font-mono">#{selectedAsset.id}</span>
-                <p className="text-sm font-bold">{lang === 'fa' ? selectedAsset.faName : selectedAsset.enName}</p>
+                <p className="text-sm font-bold">{selectedAsset.enName}</p>
               </div>
               <div className="text-end">
                 <span className="text-xs text-slate-400">{t.tokenPrice}</span>
@@ -3204,9 +3199,11 @@ portfolioPnlUsdt={totalPnLCalculated}
 
                   {(() => {
                     const val = parseFloat(buyAmount) || 0;
-                    const fee = val * 0.035;
                     const shares = Math.floor(val / selectedAsset.price) || 0;
-                    const total = val + fee;
+                    const gross = shares * selectedAsset.price;
+                    const fee = gross * 0.035;
+                    const total = gross + fee;
+                    const insufficient = total > currentUser.usdtBalance + 1e-9;
 
                     return (
                       <div className={`p-4 rounded-xl text-xs space-y-2 font-medium ${
@@ -3220,6 +3217,9 @@ portfolioPnlUsdt={totalPnLCalculated}
                           <span className="text-slate-400">{t.fee}</span>
                           <span className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{fee.toFixed(2)} USDT</span>
                         </div>
+                        {insufficient && (
+                          <p className="text-rose-400 font-bold text-[10px]">{t.insufficientBalance}</p>
+                        )}
                         <hr className="border-slate-800/80 my-2" />
                         <div className="flex justify-between text-sm font-extrabold">
                           <span className="text-slate-400">{t.totalToPay}</span>
@@ -3379,7 +3379,7 @@ portfolioPnlUsdt={totalPnLCalculated}
             }`}>
               <div>
                 <span className="text-xs text-slate-400 font-bold uppercase font-mono">#{selectedAsset.id}</span>
-                <p className="text-sm font-bold">{lang === 'fa' ? selectedAsset.faName : selectedAsset.enName}</p>
+                <p className="text-sm font-bold">{selectedAsset.enName}</p>
               </div>
               <div className="text-end">
                 <span className="text-xs text-slate-400">{t.tokenPrice}</span>
@@ -3489,7 +3489,7 @@ portfolioPnlUsdt={totalPnLCalculated}
                     </span>
                   </div>
                   <h2 className="text-xl md:text-2xl font-black tracking-tight mt-1">
-                    {lang === 'fa' ? infoAsset.faName : infoAsset.enName}
+                    {infoAsset.enName}
                   </h2>
                   <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
                     <MapPin size={13} className="text-slate-500" />
@@ -3525,9 +3525,7 @@ portfolioPnlUsdt={totalPnLCalculated}
                   <span>{t.assetOverview}</span>
                 </h3>
                 <p className="text-xs md:text-sm leading-relaxed text-slate-300">
-                  {(lang === 'fa' ? infoAsset.descriptionFa : infoAsset.descriptionEn) || (
-                    lang === 'fa' ? 'اطلاعات کامل و ساختار حقوقی این دارایی تحت نظارت متولیان بین‌المللی ثبت شده است.' : 'Full asset structure and legal details recorded under international regulated trust.'
-                  )}
+                  {infoAsset.descriptionEn || 'Selected Iranian listed company.'}
                 </p>
               </div>
 
@@ -3540,22 +3538,20 @@ portfolioPnlUsdt={totalPnLCalculated}
                   <span>{t.physicalBacking}</span>
                 </h3>
                 <p className="text-xs md:text-sm leading-relaxed text-slate-300">
-                  {(lang === 'fa' ? infoAsset.backingFa : infoAsset.backingEn) || (
-                    lang === 'fa' ? 'پشتوانه فیزیکی واقعی با گواهی انبارداری حسابرسی‌شده.' : 'Verified physical backing with audited warehouse certificates.'
-                  )}
+                  {lang === 'fa' ? 'قیمت قابل مشاهده در AssetChain به USDT نمایش داده می‌شود. برای مشاهده مرجع سهم پایه از Stock Reference استفاده کنید.' : 'AssetChain displays the user-facing price in USDT. Use Stock Reference to review the underlying listed share.'}
                 </p>
 
                 <div className="pt-2 border-t border-slate-800/40 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div>
                     <span className="text-[10px] text-slate-400 font-bold block uppercase">{t.custodianTitle}</span>
                     <span className="font-semibold text-slate-200 mt-0.5 block">
-                      {(lang === 'fa' ? infoAsset.custodianFa : infoAsset.custodianEn) || (lang === 'fa' ? 'انبار رسمی و خزانه امانت‌داری' : 'Certified Custody Depository')}
+                      {lang === 'fa' ? 'پردازش قیمت در بک‌اند AssetChain' : 'AssetChain backend price processing'}
                     </span>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 font-bold block uppercase">{t.payoutSchedule}</span>
                     <span className="font-semibold text-slate-200 mt-0.5 block">
-                      {(lang === 'fa' ? infoAsset.payoutIntervalFa : infoAsset.payoutIntervalEn) || (lang === 'fa' ? 'توزیع دوره‌ای سود' : 'Periodic Yield Distribution')}
+                      USDT
                     </span>
                   </div>
                 </div>
@@ -3580,7 +3576,7 @@ portfolioPnlUsdt={totalPnLCalculated}
                           </h3>
                           {infoAsset.bourseSymbol && (
                             <span className="text-[11px] font-black px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                              نماد بورس: {infoAsset.bourseSymbol}
+                              Symbol: {infoAsset.id}
                             </span>
                           )}
                         </div>
@@ -3591,7 +3587,7 @@ portfolioPnlUsdt={totalPnLCalculated}
                     </div>
 
                     <a
-                      href={infoAsset.tsetmcUrl || `https://www.google.com/search?q=${encodeURIComponent('سایت tsetmc نماد ' + (infoAsset.bourseSymbol || infoAsset.faName))}`}
+                      href={infoAsset.tsetmcUrl || `https://www.google.com/search?q=${encodeURIComponent(infoAsset.enName + ' ' + infoAsset.id + ' stock reference')}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl transition-all shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2 shrink-0 cursor-pointer w-full sm:w-auto"
@@ -3623,25 +3619,19 @@ portfolioPnlUsdt={totalPnLCalculated}
                   </div>
 
                   <div className={`p-3 rounded-xl border ${theme === 'dark' ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-200'}`}>
-                    <span className="text-[10px] text-slate-400 font-bold block">{lang === 'fa' ? 'استاندارد توکن' : 'Token Standard'}</span>
-                    <span className="font-mono text-xs font-bold text-slate-200 block mt-1">TSETMC</span>
+                    <span className="text-[10px] text-slate-400 font-bold block">{lang === 'fa' ? 'واحد قیمت' : 'Price Unit'}</span>
+                    <span className="font-mono text-xs font-bold text-slate-200 block mt-1">USDT</span>
                   </div>
 
                   <div className={`p-3 rounded-xl border ${theme === 'dark' ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-200'}`}>
                     <span className="text-[10px] text-slate-400 font-bold block">{lang === 'fa' ? '\u06a9\u0627\u0631\u0645\u0632\u062f \u0645\u0639\u0627\u0645\u0644\u0647' : 'Trading Fee'}</span>
-                    <span className="font-mono text-xs font-bold text-slate-200 block mt-1">0.10% USDT</span>
+                    <span className="font-mono text-xs font-bold text-slate-200 block mt-1">3.5%</span>
                   </div>
                 </div>
 
-                {/* Sale Progress */}
-                <div className="space-y-1.5 pt-2">
-                  <div className="flex justify-between text-xs font-semibold">
-                    <span className="text-slate-400">{t.saleProgress}</span>
-                    <span className="text-blue-400 font-bold">{infoAsset.progress}%</span>
-                  </div>
-                  <div className={`h-2 rounded-full overflow-hidden ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-200'}`}>
-                    <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500" style={{ width: `${infoAsset.progress}%` }}></div>
-                  </div>
+                <div className="flex items-center justify-between rounded-xl border border-slate-800/40 px-3 py-2 text-xs">
+                  <span className="text-slate-400">Supply</span>
+                  <span className="font-black text-blue-400">{(platformFundedSharesByAssetId[infoAsset.id] ?? 0).toLocaleString()} shares</span>
                 </div>
               </div>
             </div>
@@ -3827,7 +3817,7 @@ portfolioPnlUsdt={totalPnLCalculated}
                   <p className="leading-relaxed">
                     {lang === 'fa'
                       ? 'امانت‌داری فیزیکی: زوریخ، سوئیس، صندوق امانات بانک کانتونال'
-                      : 'Market Data Source: TSETMC'}
+                      : 'Pricing Unit: USDT'}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
