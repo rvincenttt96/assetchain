@@ -1340,11 +1340,17 @@ const handleExecuteLimitOrder = (_orderId: string) => {
             lang={lang}
             t={t}
 isLoggedIn={isLoggedIn}
-            onLoginClick={() => { setAuthMode('signIn'); setIsAuthModalOpen(true); }}
-            myPortfolio={myPortfolio}
+            onLoginClick={() => {
+              setAuthMode('signIn');
+              setIsAuthModalOpen(true);
+            }}
+            onQuickBuy={(asset) => {
+              setSelectedAsset(asset);
+              setBuyAmount('');
+              setBuyModalTab('instant');
+              setIsBuyModalOpen(true);
+            }}
             assets={assets}
-portfolioBalanceUsdt={totalBalanceCalculated}
-portfolioPnlUsdt={totalPnLCalculated}
             onOpenInfo={handleOpenAssetInfo}
             onExplore={(category?: string) => {
               setCurrentTab('market');
@@ -1461,7 +1467,7 @@ portfolioPnlUsdt={totalPnLCalculated}
                                 asset.change >= 0 ? 'text-emerald-500' : 'text-rose-500'
                               }`}>
                                 {asset.change >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-                                <span>{asset.change >= 0 ? '+' : ''}{asset.change}%</span>
+                                <span>{asset.change >= 0 ? '+' : ''}{asset.change.toFixed(2)}%</span>
                               </p>
                             </div>
                           </div>
