@@ -196,6 +196,62 @@ export default function LandingPage({
       }`}
       dir={isRtl ? 'rtl' : 'ltr'}
     >
+
+      <section className="max-w-7xl mx-auto px-4 md:px-8 -mt-1 pt-8 md:pt-12">
+        <div className="relative rounded-[30px] p-[1px] overflow-hidden bg-gradient-to-r from-blue-500/40 via-indigo-500/15 to-blue-500/40 shadow-xl shadow-blue-950/10">
+          <div className="absolute -top-24 right-1/4 w-64 h-64 rounded-full bg-blue-500/15 blur-[90px] pointer-events-none" />
+          <div
+            className={`relative rounded-[29px] overflow-hidden border ${
+              isDark ? 'border-slate-800 bg-slate-950' : 'border-white bg-white'
+            }`}
+          >
+            <div className="absolute inset-0 pointer-events-none opacity-20">
+              <img
+                src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1600&q=80"
+                alt=""
+                referrerPolicy="no-referrer"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className={`absolute inset-0 pointer-events-none ${isDark ? 'bg-gradient-to-r from-slate-950 via-slate-950/95 to-slate-950/70' : 'bg-gradient-to-r from-white via-white/95 to-white/75'}`} />
+
+            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 p-6 md:p-10 items-center">
+              <div className="lg:col-span-9 space-y-4 text-start">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-blue-400">
+                    Bloomberg • Odd Lots
+                  </span>
+                  <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-emerald-400">
+                    Featured Coverage
+                  </span>
+                </div>
+                <h2 className={`text-2xl md:text-4xl font-black leading-tight ${isDark ? 'text-white' : 'text-slate-950'}`}>
+                  How Investing in Tehran Is Like Bitcoin in 2010
+                </h2>
+                <p className={`max-w-3xl text-xs md:text-sm leading-6 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                  {isRtl
+                    ? 'گزارش Bloomberg Odd Lots درباره بازار تهران و دشواری‌های دسترسی سرمایه‌گذاران به این بازار.'
+                    : 'Bloomberg Odd Lots examines the Tehran market and the unusual access dynamics surrounding investment there.'}
+                </p>
+              </div>
+
+              <div className="lg:col-span-3 flex lg:justify-end">
+                <a
+                  href="https://www.bloomberg.com/news/newsletters/2025-06-27/how-investing-in-tehran-is-like-bitcoin-in-2010"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group inline-flex w-full lg:w-auto items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3.5 text-xs font-black text-slate-950 shadow-xl transition-all hover:-translate-y-0.5 hover:bg-blue-50"
+                >
+                  <span>{isRtl ? 'مطالعه در Bloomberg' : 'Read on Bloomberg'}</span>
+                  <ExternalLink size={14} className="text-blue-600 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
       {/* Premium Hero */}
       <section className="relative border-b border-slate-800/40 overflow-hidden">
         <div
@@ -390,59 +446,7 @@ export default function LandingPage({
       </section>
 
       {/* Bloomberg Feature */}
-      <section className="max-w-7xl mx-auto px-4 md:px-8 -mt-1 pt-8 md:pt-12">
-        <div className="relative rounded-[30px] p-[1px] overflow-hidden bg-gradient-to-r from-blue-500/40 via-indigo-500/15 to-blue-500/40 shadow-xl shadow-blue-950/10">
-          <div className="absolute -top-24 right-1/4 w-64 h-64 rounded-full bg-blue-500/15 blur-[90px] pointer-events-none" />
-          <div
-            className={`relative rounded-[29px] overflow-hidden border ${
-              isDark ? 'border-slate-800 bg-slate-950' : 'border-white bg-white'
-            }`}
-          >
-            <div className="absolute inset-0 pointer-events-none opacity-20">
-              <img
-                src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1600&q=80"
-                alt=""
-                referrerPolicy="no-referrer"
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className={`absolute inset-0 pointer-events-none ${isDark ? 'bg-gradient-to-r from-slate-950 via-slate-950/95 to-slate-950/70' : 'bg-gradient-to-r from-white via-white/95 to-white/75'}`} />
-
-            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 p-6 md:p-10 items-center">
-              <div className="lg:col-span-9 space-y-4 text-start">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-blue-400">
-                    Bloomberg • Odd Lots
-                  </span>
-                  <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-emerald-400">
-                    Featured Coverage
-                  </span>
-                </div>
-                <h2 className={`text-2xl md:text-4xl font-black leading-tight ${isDark ? 'text-white' : 'text-slate-950'}`}>
-                  How Investing in Tehran Is Like Bitcoin in 2010
-                </h2>
-                <p className={`max-w-3xl text-xs md:text-sm leading-6 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                  {isRtl
-                    ? 'گزارش Bloomberg Odd Lots درباره بازار تهران و دشواری‌های دسترسی سرمایه‌گذاران به این بازار.'
-                    : 'Bloomberg Odd Lots examines the Tehran market and the unusual access dynamics surrounding investment there.'}
-                </p>
-              </div>
-
-              <div className="lg:col-span-3 flex lg:justify-end">
-                <a
-                  href="https://www.bloomberg.com/news/newsletters/2025-06-27/how-investing-in-tehran-is-like-bitcoin-in-2010"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group inline-flex w-full lg:w-auto items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3.5 text-xs font-black text-slate-950 shadow-xl transition-all hover:-translate-y-0.5 hover:bg-blue-50"
-                >
-                  <span>{isRtl ? 'مطالعه در Bloomberg' : 'Read on Bloomberg'}</span>
-                  <ExternalLink size={14} className="text-blue-600 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      
 
       <div className="max-w-7xl mx-auto px-4 md:px-8 space-y-14 md:space-y-24 mt-14 md:mt-20">
         {/* Funded Inventory */}
