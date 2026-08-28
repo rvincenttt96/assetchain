@@ -89,11 +89,11 @@ function createSessionToken(userId: string, email: string): string {
   });
 }
 
-function requireAuth(
+async function requireAuth(
   req: AuthRequest,
   _res: Response,
   next: NextFunction
-): void {
+): Promise<void> {
   try {
     const token = req.cookies?.[SESSION_COOKIE];
 
@@ -114,9 +114,18 @@ function requireAuth(
       throw new HttpError(401, "INVALID_SESSION", "Invalid session.");
     }
 
+    const user = await prisma.user.findUnique({
+      where: { id: payload.sub },
+      select: { id: true, email: true, isActive: true }
+    });
+
+    if (!user || !user.isActive) {
+      throw new HttpError(403, "ACCOUNT_INACTIVE", "This account is inactive.");
+    }
+
     req.auth = {
-      userId: payload.sub,
-      email: String((payload as JwtPayload).email)
+      userId: user.id,
+      email: user.email
     };
 
     next();
@@ -400,6 +409,8 @@ async function getProfile(userId: string) {
     email: user.email,
     usdtBalance: fromMicros(user.account.usdtBalanceMicros),
     tomanBalance: Number(user.account.tomanBalance),
+    role: user.role,
+    isActive: user.isActive,
     portfolio: user.holdings.map((holding) => ({
       assetId: holding.assetId,
       shares: holding.shares,
@@ -450,6 +461,52 @@ const tradeSchema = z.object({
   idempotencyKey: z.string().uuid()
 });
 
+
+const adminStatusSchema = z.object({
+  isActive: z.boolean()
+});
+
+const adminRoleSchema = z.object({
+  role: z.enum(["USER", "SUPER_ADMIN", "FINANCE_ADMIN", "ASSET_ADMIN", "SUPPORT_ADMIN"])
+});
+
+async function requireSuperAdminUser(userId: string): Promise<void> {
+  const admin = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true, isActive: true }
+  });
+
+  if (!admin || !admin.isActive || admin.role !== "SUPER_ADMIN") {
+    throw new HttpError(403, "SUPER_ADMIN_REQUIRED", "Super admin access required.");
+  }
+}
+
+async function writeAdminAudit(input: {
+  req: AuthRequest;
+  action: string;
+  entityType: string;
+  entityId?: string;
+  targetUserId?: string;
+  description: string;
+  beforeJson?: string;
+  afterJson?: string;
+}): Promise<void> {
+  await prisma.adminAuditLog.create({
+    data: {
+      adminUserId: input.req.auth!.userId,
+      action: input.action,
+      entityType: input.entityType,
+      entityId: input.entityId,
+      targetUserId: input.targetUserId,
+      description: input.description,
+      beforeJson: input.beforeJson,
+      afterJson: input.afterJson,
+      ipAddress: input.req.ip,
+      userAgent: input.req.get("user-agent") ?? undefined
+    }
+  });
+}
+
 async function startServer() {
   const app = express();
 if (isProduction) app.set("trust proxy", 1);
@@ -481,7 +538,7 @@ if (isProduction) app.set("trust proxy", 1);
     res.json({
       success: true,
       status: "ok",
-      appName: "AssetChain API",
+      appName: "RWA API",
       demoMode: isDemoMode,
       timestamp: new Date().toISOString()
     });
@@ -611,6 +668,10 @@ if (isProduction) app.set("trust proxy", 1);
           "INVALID_CREDENTIALS",
           "Email or password is incorrect."
         );
+      }
+
+      if (!user.isActive) {
+        throw new HttpError(403, "ACCOUNT_INACTIVE", "This account is inactive.");
       }
 
       await prisma.activity.create({
@@ -960,6 +1021,207 @@ if (isProduction) app.set("trust proxy", 1);
         success: true,
         profile: await getProfile(userId)
       });
+    })
+  );
+
+  app.get(
+    "/api/admin/overview",
+    requireAuth,
+    requireAdmin,
+    asyncRoute(async (_req, res) => {
+      const [users, activeUsers, trades, assets, accounts, buyAgg, sellAgg, feeAgg] = await Promise.all([
+        prisma.user.count(),
+        prisma.user.count({ where: { isActive: true } }),
+        prisma.trade.count(),
+        prisma.asset.count(),
+        prisma.account.findMany({ select: { usdtBalanceMicros: true } }),
+        prisma.trade.aggregate({ where: { type: "BUY" }, _sum: { grossMicros: true } }),
+        prisma.trade.aggregate({ where: { type: "SELL" }, _sum: { grossMicros: true } }),
+        prisma.trade.aggregate({ _sum: { feeMicros: true } })
+      ]);
+
+      const userBalanceMicros = accounts.reduce((sum, account) => sum + account.usdtBalanceMicros, 0n);
+
+      res.json({
+        success: true,
+        overview: {
+          totals: {
+            users,
+            activeUsers,
+            trades,
+            assets,
+            userBalancesUsdt: fromMicros(userBalanceMicros),
+            buyVolumeUsdt: fromMicros(buyAgg._sum.grossMicros ?? 0n),
+            sellVolumeUsdt: fromMicros(sellAgg._sum.grossMicros ?? 0n),
+            feesUsdt: fromMicros(feeAgg._sum.feeMicros ?? 0n)
+          }
+        }
+      });
+    })
+  );
+
+  app.get(
+    "/api/admin/users",
+    requireAuth,
+    requireAdmin,
+    asyncRoute(async (_req, res) => {
+      const users = await prisma.user.findMany({
+        include: { account: true },
+        orderBy: { createdAt: "desc" },
+        take: 250
+      });
+
+      res.json({
+        success: true,
+        users: users.map((user) => ({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          isActive: user.isActive,
+          usdtBalance: fromMicros(user.account?.usdtBalanceMicros ?? 0n),
+          createdAt: user.createdAt.toISOString()
+        }))
+      });
+    })
+  );
+
+  app.get(
+    "/api/admin/trades",
+    requireAuth,
+    requireAdmin,
+    asyncRoute(async (_req, res) => {
+      const trades = await prisma.trade.findMany({
+        include: { user: { select: { name: true, email: true } } },
+        orderBy: { createdAt: "desc" },
+        take: 250
+      });
+
+      res.json({
+        success: true,
+        trades: trades.map((trade) => ({
+          id: trade.id,
+          userName: trade.user.name,
+          userEmail: trade.user.email,
+          assetId: trade.assetId,
+          type: trade.type,
+          shares: trade.shares,
+          priceUsdt: fromMicros(trade.priceMicros),
+          grossUsdt: fromMicros(trade.grossMicros),
+          feeUsdt: fromMicros(trade.feeMicros),
+          netUsdt: fromMicros(trade.netMicros),
+          createdAt: trade.createdAt.toISOString()
+        }))
+      });
+    })
+  );
+
+  app.get(
+    "/api/admin/assets",
+    requireAuth,
+    requireAdmin,
+    asyncRoute(async (_req, res) => {
+      const assets = await prisma.asset.findMany({ orderBy: { id: "asc" } });
+      res.json({
+        success: true,
+        assets: assets.map((asset) => ({
+          id: asset.id,
+          enName: asset.enName,
+          price: fromMicros(asset.priceMicros),
+          change: asset.change,
+          marketUpdatedAt: asset.marketUpdatedAt?.toISOString()
+        }))
+      });
+    })
+  );
+
+  app.get(
+    "/api/admin/audit",
+    requireAuth,
+    requireAdmin,
+    asyncRoute(async (_req, res) => {
+      const audit = await prisma.adminAuditLog.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 250
+      });
+
+      res.json({
+        success: true,
+        audit: audit.map((item) => ({
+          id: item.id,
+          adminUserId: item.adminUserId,
+          action: item.action,
+          entityType: item.entityType,
+          entityId: item.entityId ?? undefined,
+          targetUserId: item.targetUserId ?? undefined,
+          description: item.description,
+          createdAt: item.createdAt.toISOString()
+        }))
+      });
+    })
+  );
+
+  app.patch(
+    "/api/admin/users/:id/status",
+    requireAuth,
+    requireAdmin,
+    asyncRoute(async (req, res) => {
+      await requireSuperAdminUser(req.auth!.userId);
+      const input = adminStatusSchema.parse(req.body);
+      const targetId = String(req.params.id);
+
+      if (targetId === req.auth!.userId) {
+        throw new HttpError(400, "SELF_STATUS_CHANGE_BLOCKED", "You cannot deactivate your own admin account.");
+      }
+
+      const before = await prisma.user.findUnique({ where: { id: targetId }, select: { id: true, email: true, isActive: true } });
+      if (!before) throw new HttpError(404, "USER_NOT_FOUND", "User not found.");
+
+      await prisma.user.update({ where: { id: targetId }, data: { isActive: input.isActive } });
+      await writeAdminAudit({
+        req,
+        action: "USER_STATUS_UPDATE",
+        entityType: "User",
+        entityId: targetId,
+        targetUserId: targetId,
+        description: `Changed ${before.email} active status to ${input.isActive}.`,
+        beforeJson: JSON.stringify({ isActive: before.isActive }),
+        afterJson: JSON.stringify({ isActive: input.isActive })
+      });
+
+      res.json({ success: true });
+    })
+  );
+
+  app.patch(
+    "/api/admin/users/:id/role",
+    requireAuth,
+    requireAdmin,
+    asyncRoute(async (req, res) => {
+      await requireSuperAdminUser(req.auth!.userId);
+      const input = adminRoleSchema.parse(req.body);
+      const targetId = String(req.params.id);
+
+      if (targetId === req.auth!.userId) {
+        throw new HttpError(400, "SELF_ROLE_CHANGE_BLOCKED", "You cannot change your own admin role.");
+      }
+
+      const before = await prisma.user.findUnique({ where: { id: targetId }, select: { id: true, email: true, role: true } });
+      if (!before) throw new HttpError(404, "USER_NOT_FOUND", "User not found.");
+
+      await prisma.user.update({ where: { id: targetId }, data: { role: input.role } });
+      await writeAdminAudit({
+        req,
+        action: "USER_ROLE_UPDATE",
+        entityType: "User",
+        entityId: targetId,
+        targetUserId: targetId,
+        description: `Changed ${before.email} role from ${before.role} to ${input.role}.`,
+        beforeJson: JSON.stringify({ role: before.role }),
+        afterJson: JSON.stringify({ role: input.role })
+      });
+
+      res.json({ success: true });
     })
   );
 

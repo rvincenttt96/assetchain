@@ -130,9 +130,9 @@ export default function LandingPage({
       metricEn: '5 instruments',
       metricFa: '۵ نماد',
       descEn:
-        'Each supported company is mapped to its exchange instrument and reference page before it is shown inside AssetChain.',
+        'Each supported company is mapped to its exchange instrument and reference page before it is shown inside RWA.',
       descFa:
-        'هر شرکت پشتیبانی‌شده پیش از نمایش در AssetChain به نماد بورسی و صفحه مرجع رسمی خود متصل می‌شود.'
+        'هر شرکت پشتیبانی‌شده پیش از نمایش در RWA به نماد بورسی و صفحه مرجع رسمی خود متصل می‌شود.'
     },
     {
       id: 1,
@@ -154,9 +154,9 @@ export default function LandingPage({
       metricEn: `${totalFundedShares.toLocaleString()} shares`,
       metricFa: `${totalFundedShares.toLocaleString()} سهم`,
       descEn:
-        'Funded supply is surfaced per company so users can see the inventory available behind the AssetChain market experience.',
+        'Funded supply is surfaced per company so users can see the inventory available behind the RWA market experience.',
       descFa:
-        'ساپلای تأمین‌شده هر شرکت به‌صورت شفاف نمایش داده می‌شود تا موجودی پشت بازار AssetChain برای کاربر مشخص باشد.'
+        'ساپلای تأمین‌شده هر شرکت به‌صورت شفاف نمایش داده می‌شود تا موجودی پشت بازار RWA برای کاربر مشخص باشد.'
     },
     {
       id: 3,
@@ -276,7 +276,7 @@ export default function LandingPage({
                   <span className="absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-60 animate-ping" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-500" />
                 </span>
-                <span>AssetChain • Funded Stock Access</span>
+                <span>RWA • Funded Stock Access</span>
               </div>
 
               <div className="space-y-4">
@@ -316,7 +316,7 @@ export default function LandingPage({
                   }`}
                 >
                   <Layers size={16} className="text-blue-500" />
-                  <span>{isRtl ? 'مشاهده ساپلای' : 'Quick Buy'}</span>
+                  <span>Buy</span>
                 </button>
               </div>
 
@@ -455,7 +455,7 @@ export default function LandingPage({
             <div>
               <div className="inline-flex items-center gap-2 text-[10px] md:text-xs font-black uppercase tracking-[0.16em] text-blue-500">
                 <Layers size={14} />
-                <span>{isRtl ? 'موجودی تأمین‌شده AssetChain' : 'AssetChain Funded Inventory'}</span>
+                <span>{isRtl ? 'موجودی تأمین‌شده RWA' : 'RWA Funded Inventory'}</span>
               </div>
               <h2 className={`mt-2 text-2xl md:text-4xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-950'}`}>
                 {isRtl ? 'پنج سهم تأمین‌شده، آماده بررسی' : 'Five funded stocks, ready to explore.'}
@@ -463,7 +463,7 @@ export default function LandingPage({
               <p className="mt-2 max-w-2xl text-xs md:text-sm leading-6 text-slate-500">
                 {isRtl
                   ? 'قیمت، ساپلای و ارزش تأمین هر سهم در یک کارت واحد نمایش داده می‌شود. خرید سریع برای کاربر واردشده مستقیماً به فرم سفارش می‌رود.'
-                  : 'Price, funded supply and funded value are surfaced together. Quick Buy opens the order flow for signed-in users and routes guests to sign in.'}
+                  : 'Price, funded supply and funded value are surfaced together. Buy opens the order flow for signed-in users and routes guests to sign in.'}
               </p>
             </div>
 
@@ -561,7 +561,7 @@ export default function LandingPage({
                           : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/15 hover:shadow-blue-600/25'
                       }`}
                     >
-                      <span>{isRtl ? 'خرید سریع' : 'Quick Buy'}</span>
+                      <span>Buy</span>
                       {isRtl ? (
                         <ArrowLeft size={13} className="transition-transform group-hover/buy:-translate-x-0.5" />
                       ) : (
@@ -631,8 +631,8 @@ export default function LandingPage({
             </h2>
             <p className="mt-3 text-xs md:text-sm leading-6 text-slate-500">
               {isRtl
-                ? 'چهار لایه اصلی تجربه AssetChain را تشکیل می‌دهند؛ هر مرحله روی داده و کنترل واقعی سیستم تکیه دارد.'
-                : 'Four layers shape the AssetChain flow. Each step reflects an actual data or validation layer in the product.'}
+                ? 'چهار لایه اصلی تجربه RWA را تشکیل می‌دهند؛ هر مرحله روی داده و کنترل واقعی سیستم تکیه دارد.'
+                : 'Four layers shape the RWA flow. Each step reflects an actual data or validation layer in the product.'}
             </p>
           </div>
 
@@ -698,7 +698,7 @@ export default function LandingPage({
         {/* Bento */}
         <section className="space-y-7 md:space-y-9">
           <div className="text-center max-w-2xl mx-auto">
-            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-blue-500">WHY ASSETCHAIN</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-blue-500">WHY RWA</p>
             <h2 className={`mt-2 text-2xl md:text-4xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-950'}`}>
               {isRtl ? 'کمتر نمایش، داده مهم‌تر.' : 'Less noise. More decision-grade context.'}
             </h2>
@@ -780,7 +780,7 @@ export default function LandingPage({
           />
           <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-8 text-start">
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-blue-100/80">ASSETCHAIN</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-blue-100/80">RWA</p>
               <h2 className="mt-2 text-2xl md:text-4xl font-black tracking-tight">
                 {isRtl ? 'پنج سهم را بررسی کن. با USDT تصمیم بگیر.' : 'Explore five stocks. Make the decision in USDT.'}
               </h2>

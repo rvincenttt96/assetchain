@@ -14,6 +14,8 @@ export interface BackendProfile {
   email: string;
   usdtBalance: number;
   tomanBalance: number;
+  role: string;
+  isActive: boolean;
   portfolio: PortfolioItem[];
   purchaseLots: PurchaseLot[];
   transactions: Transaction[];
@@ -158,4 +160,100 @@ export async function executeSellOrder(
   });
 
   return result.profile;
+}
+
+
+export interface AdminOverview {
+  totals: {
+    users: number;
+    activeUsers: number;
+    trades: number;
+    assets: number;
+    userBalancesUsdt: number;
+    buyVolumeUsdt: number;
+    sellVolumeUsdt: number;
+    feesUsdt: number;
+  };
+}
+
+export interface AdminUserRow {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  isActive: boolean;
+  usdtBalance: number;
+  createdAt: string;
+}
+
+export interface AdminTradeRow {
+  id: string;
+  userName: string;
+  userEmail: string;
+  assetId: string;
+  type: string;
+  shares: number;
+  priceUsdt: number;
+  grossUsdt: number;
+  feeUsdt: number;
+  netUsdt: number;
+  createdAt: string;
+}
+
+export interface AdminAssetRow {
+  id: string;
+  enName: string;
+  price: number;
+  change: number;
+  marketUpdatedAt?: string;
+}
+
+export interface AdminAuditRow {
+  id: string;
+  adminUserId: string;
+  action: string;
+  entityType: string;
+  entityId?: string;
+  targetUserId?: string;
+  description: string;
+  createdAt: string;
+}
+
+export async function fetchAdminOverview(): Promise<AdminOverview> {
+  const result = await request<{ overview: AdminOverview }>("/admin/overview", { method: "GET" });
+  return result.overview;
+}
+
+export async function fetchAdminUsers(): Promise<AdminUserRow[]> {
+  const result = await request<{ users: AdminUserRow[] }>("/admin/users", { method: "GET" });
+  return result.users;
+}
+
+export async function fetchAdminTrades(): Promise<AdminTradeRow[]> {
+  const result = await request<{ trades: AdminTradeRow[] }>("/admin/trades", { method: "GET" });
+  return result.trades;
+}
+
+export async function fetchAdminAssets(): Promise<AdminAssetRow[]> {
+  const result = await request<{ assets: AdminAssetRow[] }>("/admin/assets", { method: "GET" });
+  return result.assets;
+}
+
+export async function fetchAdminAudit(): Promise<AdminAuditRow[]> {
+  const result = await request<{ audit: AdminAuditRow[] }>("/admin/audit", { method: "GET" });
+  return result.audit;
+}
+
+export async function setAdminUserStatus(userId: string, isActive: boolean): Promise<void> {
+  await request<Record<string, never>>(`/admin/users/${encodeURIComponent(userId)}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ isActive })
+  });
+}
+
+export async function setAdminUserRole(userId: string, role: string): Promise<void> {
+  await request<Record<string, never>>(`/admin/users/${encodeURIComponent(userId)}/role`, {
+    method: "PATCH",
+    body: JSON.stringify({ role })
+  });
 }
