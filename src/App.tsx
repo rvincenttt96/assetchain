@@ -49,6 +49,8 @@ import {
   type BackendProfile
 } from './lib/api';
 
+const getFlagSrc = (flag?: string) => `/flags/${(flag || 'ir').toLowerCase()}.svg`;
+
 export default function App() {
   // Theme & Language State
   const [theme, setTheme] = useState<Theme>('dark');
@@ -648,7 +650,6 @@ const handleWithdrawSubmit = (e: React.FormEvent) => {
             <span className={`text-xl font-extrabold tracking-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
               {t.appName}
             </span>
-            <span className="text-lg leading-none" role="img" aria-label="Iran" title="Iran">🇮🇷</span>
           </div>
 
           {/* Desktop Nav Tabs */}
@@ -1302,8 +1303,8 @@ isLoggedIn={isLoggedIn}
                               theme === 'dark' ? 'bg-slate-800 text-slate-300' : 'bg-white text-slate-600 border'
                             }`}>
                               <img
-                                src={`https://flagcdn.com/16x12/${asset.flag}.png`}
-                                alt={asset.flag}
+                                src={getFlagSrc(asset.flag)}
+                                alt=""
                                 className="rounded-[2px] shadow-sm"
                                 referrerPolicy="no-referrer"
                               />
@@ -1616,8 +1617,8 @@ isLoggedIn={isLoggedIn}
                                       <td className="py-3.5 px-4">
                                         <div className="flex items-center gap-2.5">
                                           <img
-                                            src={`https://flagcdn.com/20x15/${asset.flag}.png`}
-                                            alt={asset.flag}
+                                            src={getFlagSrc(asset.flag)}
+                                            alt=""
                                             className="rounded shadow-xs shrink-0"
                                             referrerPolicy="no-referrer"
                                           />
@@ -1742,8 +1743,8 @@ isLoggedIn={isLoggedIn}
                                       <td className="py-3.5 px-4">
                                         <div className="flex items-center gap-2.5">
                                           <img
-                                            src={`https://flagcdn.com/20x15/${asset.flag}.png`}
-                                            alt={asset.flag}
+                                            src={getFlagSrc(asset.flag)}
+                                            alt=""
                                             className="rounded shadow-xs shrink-0"
                                             referrerPolicy="no-referrer"
                                           />
@@ -2530,7 +2531,7 @@ isLoggedIn={isLoggedIn}
             }`}>
               <div className="flex items-center gap-3">
                 <img
-                  src={`https://flagcdn.com/24x18/${selectedAsset.flag}.png`}
+                  src={getFlagSrc(selectedAsset.flag)}
                   alt="Iran"
                   className="rounded-sm"
                   referrerPolicy="no-referrer"
@@ -2726,8 +2727,8 @@ isLoggedIn={isLoggedIn}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-800/20">
               <div className="flex items-center gap-3">
                 <img
-                  src={`https://flagcdn.com/32x24/${infoAsset.flag}.png`}
-                  alt={infoAsset.flag}
+                  src={getFlagSrc(infoAsset.flag)}
+                  alt=""
                   className="rounded shadow-sm shrink-0"
                   referrerPolicy="no-referrer"
                 />
