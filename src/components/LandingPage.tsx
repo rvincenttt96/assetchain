@@ -251,6 +251,133 @@ export default function LandingPage({
         </div>
       </section>
 
+      <div className="max-w-7xl mx-auto px-4 md:px-8 mt-8 md:mt-12">
+        <section id="funded-inventory" className="scroll-mt-24 space-y-6 md:space-y-8">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 text-start">
+            <div>
+              <div className="inline-flex items-center gap-2 text-[10px] md:text-xs font-black uppercase tracking-[0.16em] text-blue-500">
+                <Layers size={14} />
+                <span>{isRtl ? 'موجودی تأمین‌شده RWA' : 'RWA Funded Inventory'}</span>
+              </div>
+              <h2 className={`mt-2 text-2xl md:text-4xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-950'}`}>
+                {isRtl ? 'پنج سهم تأمین‌شده، آماده بررسی' : 'Five funded stocks, ready to explore.'}
+              </h2>
+              <p className="mt-2 max-w-2xl text-xs md:text-sm leading-6 text-slate-500">
+                {isRtl
+                  ? 'قیمت، ساپلای و ارزش تأمین هر سهم در یک کارت واحد نمایش داده می‌شود. خرید سریع برای کاربر واردشده مستقیماً به فرم سفارش می‌رود.'
+                  : 'Price, funded supply and funded value are surfaced together. Buy opens the order flow for signed-in users and routes guests to sign in.'}
+              </p>
+            </div>
+
+            <div className={`rounded-2xl border px-4 py-3 text-start ${isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-200 bg-white'}`}>
+              <p className="text-[9px] uppercase tracking-wider font-bold text-slate-500">
+                {isRtl ? 'ساپلای کل تأمین‌شده' : 'Total Funded Supply'}
+              </p>
+              <p className={`mt-1 text-lg font-black font-mono ${isDark ? 'text-white' : 'text-slate-950'}`}>
+                {totalFundedShares.toLocaleString()} {isRtl ? 'سهم' : 'shares'}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+            {fundedAssets.map(({ asset, fundedShares }, index) => {
+              const usdtValue = fundedShares * asset.price;
+              const positive = asset.change >= 0;
+
+              return (
+                <article
+                  key={asset.id}
+                  className={`group relative overflow-hidden rounded-[26px] border p-4 flex flex-col min-h-[330px] transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl ${
+                    isDark
+                      ? 'border-slate-800 bg-slate-900/55 hover:border-blue-500/35 hover:shadow-blue-950/20'
+                      : 'border-slate-200 bg-white hover:border-blue-300 hover:shadow-slate-300/50'
+                  }`}
+                >
+                  <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-500/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="absolute -right-14 -top-14 h-32 w-32 rounded-full bg-blue-500/10 blur-2xl transition-transform duration-500 group-hover:scale-150" />
+
+                  <div className="relative z-10 flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs font-black text-blue-500">{asset.id}</span>
+                        <span className="rounded-full border border-slate-700/50 px-2 py-0.5 text-[8px] font-black uppercase tracking-wider text-slate-500">
+                          #{index + 1}
+                        </span>
+                      </div>
+                      <h3 className={`mt-3 min-h-[42px] text-sm font-black leading-5 ${isDark ? 'text-white' : 'text-slate-950'}`}>
+                        {asset.enName}
+                      </h3>
+                    </div>
+
+                    <span className={`shrink-0 text-[10px] font-black ${positive ? 'text-emerald-500' : 'text-rose-500'}`}>
+                      {positive ? '+' : ''}{asset.change.toFixed(2)}%
+                    </span>
+                  </div>
+
+                  <div className="relative z-10 mt-5 space-y-3 flex-1">
+                    <div className={`rounded-2xl border p-3 ${isDark ? 'border-slate-800 bg-slate-950/55' : 'border-slate-200 bg-slate-50'}`}>
+                      <p className="text-[9px] uppercase tracking-wider font-bold text-slate-500">
+                        {isRtl ? 'قیمت مرجع' : 'Reference Price'}
+                      </p>
+                      <p className={`mt-1 text-lg font-black font-mono ${isDark ? 'text-white' : 'text-slate-950'}`}>
+                        {formatPrice(asset.price)} <span className="text-[10px] text-blue-500">USDT</span>
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className={`rounded-xl border p-2.5 ${isDark ? 'border-slate-800/80 bg-slate-950/35' : 'border-slate-200 bg-slate-50'}`}>
+                        <p className="text-[8px] uppercase font-bold text-slate-500">{isRtl ? 'ساپلای' : 'Supply'}</p>
+                        <p className={`mt-1 text-[11px] font-black font-mono ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                          {fundedShares.toLocaleString()}
+                        </p>
+                      </div>
+                      <div className={`rounded-xl border p-2.5 ${isDark ? 'border-slate-800/80 bg-slate-950/35' : 'border-slate-200 bg-slate-50'}`}>
+                        <p className="text-[8px] uppercase font-bold text-slate-500">{isRtl ? 'ارزش تأمین' : 'Funded Value'}</p>
+                        <p className="mt-1 text-[11px] font-black font-mono text-blue-500">
+                          {usdtValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="relative z-10 mt-4 grid grid-cols-[42px_1fr] gap-2">
+                    <button
+                      type="button"
+                      onClick={() => (onOpenInfo ? onOpenInfo(asset) : onExplore())}
+                      aria-label={`${asset.id} details`}
+                      className={`h-11 rounded-xl border flex items-center justify-center transition-all ${
+                        isDark
+                          ? 'border-slate-700 bg-slate-950/60 text-slate-300 hover:border-blue-500/40 hover:text-blue-400'
+                          : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-blue-300 hover:text-blue-600'
+                      }`}
+                    >
+                      <Info size={15} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleQuickBuy(asset)}
+                      disabled={isLoggedIn && asset.price <= 0}
+                      className={`group/buy h-11 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+                        isLoggedIn && asset.price <= 0
+                          ? 'bg-slate-700/40 text-slate-500 cursor-not-allowed'
+                          : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/15 hover:shadow-blue-600/25'
+                      }`}
+                    >
+                      <span>Buy</span>
+                      {isRtl ? (
+                        <ArrowLeft size={13} className="transition-transform group-hover/buy:-translate-x-0.5" />
+                      ) : (
+                        <ArrowRight size={13} className="transition-transform group-hover/buy:translate-x-0.5" />
+                      )}
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      </div>
+
 
       {/* Premium Hero */}
       <section className="relative border-b border-slate-800/40 overflow-hidden">
@@ -445,136 +572,7 @@ export default function LandingPage({
         </div>
       </section>
 
-      {/* Bloomberg Feature */}
-      
-
       <div className="max-w-7xl mx-auto px-4 md:px-8 space-y-14 md:space-y-24 mt-14 md:mt-20">
-        {/* Funded Inventory */}
-        <section id="funded-inventory" className="scroll-mt-24 space-y-6 md:space-y-8">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 text-start">
-            <div>
-              <div className="inline-flex items-center gap-2 text-[10px] md:text-xs font-black uppercase tracking-[0.16em] text-blue-500">
-                <Layers size={14} />
-                <span>{isRtl ? 'موجودی تأمین‌شده RWA' : 'RWA Funded Inventory'}</span>
-              </div>
-              <h2 className={`mt-2 text-2xl md:text-4xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-950'}`}>
-                {isRtl ? 'پنج سهم تأمین‌شده، آماده بررسی' : 'Five funded stocks, ready to explore.'}
-              </h2>
-              <p className="mt-2 max-w-2xl text-xs md:text-sm leading-6 text-slate-500">
-                {isRtl
-                  ? 'قیمت، ساپلای و ارزش تأمین هر سهم در یک کارت واحد نمایش داده می‌شود. خرید سریع برای کاربر واردشده مستقیماً به فرم سفارش می‌رود.'
-                  : 'Price, funded supply and funded value are surfaced together. Buy opens the order flow for signed-in users and routes guests to sign in.'}
-              </p>
-            </div>
-
-            <div className={`rounded-2xl border px-4 py-3 text-start ${isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-200 bg-white'}`}>
-              <p className="text-[9px] uppercase tracking-wider font-bold text-slate-500">
-                {isRtl ? 'ساپلای کل تأمین‌شده' : 'Total Funded Supply'}
-              </p>
-              <p className={`mt-1 text-lg font-black font-mono ${isDark ? 'text-white' : 'text-slate-950'}`}>
-                {totalFundedShares.toLocaleString()} {isRtl ? 'سهم' : 'shares'}
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
-            {fundedAssets.map(({ asset, fundedShares }, index) => {
-              const usdtValue = fundedShares * asset.price;
-              const positive = asset.change >= 0;
-
-              return (
-                <article
-                  key={asset.id}
-                  className={`group relative overflow-hidden rounded-[26px] border p-4 flex flex-col min-h-[330px] transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl ${
-                    isDark
-                      ? 'border-slate-800 bg-slate-900/55 hover:border-blue-500/35 hover:shadow-blue-950/20'
-                      : 'border-slate-200 bg-white hover:border-blue-300 hover:shadow-slate-300/50'
-                  }`}
-                >
-                  <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-500/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <div className="absolute -right-14 -top-14 h-32 w-32 rounded-full bg-blue-500/10 blur-2xl transition-transform duration-500 group-hover:scale-150" />
-
-                  <div className="relative z-10 flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-black text-blue-500">{asset.id}</span>
-                        <span className="rounded-full border border-slate-700/50 px-2 py-0.5 text-[8px] font-black uppercase tracking-wider text-slate-500">
-                          #{index + 1}
-                        </span>
-                      </div>
-                      <h3 className={`mt-3 min-h-[42px] text-sm font-black leading-5 ${isDark ? 'text-white' : 'text-slate-950'}`}>
-                        {asset.enName}
-                      </h3>
-                    </div>
-
-                    <span className={`shrink-0 text-[10px] font-black ${positive ? 'text-emerald-500' : 'text-rose-500'}`}>
-                      {positive ? '+' : ''}{asset.change.toFixed(2)}%
-                    </span>
-                  </div>
-
-                  <div className="relative z-10 mt-5 space-y-3 flex-1">
-                    <div className={`rounded-2xl border p-3 ${isDark ? 'border-slate-800 bg-slate-950/55' : 'border-slate-200 bg-slate-50'}`}>
-                      <p className="text-[9px] uppercase tracking-wider font-bold text-slate-500">
-                        {isRtl ? 'قیمت مرجع' : 'Reference Price'}
-                      </p>
-                      <p className={`mt-1 text-lg font-black font-mono ${isDark ? 'text-white' : 'text-slate-950'}`}>
-                        {formatPrice(asset.price)} <span className="text-[10px] text-blue-500">USDT</span>
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className={`rounded-xl border p-2.5 ${isDark ? 'border-slate-800/80 bg-slate-950/35' : 'border-slate-200 bg-slate-50'}`}>
-                        <p className="text-[8px] uppercase font-bold text-slate-500">{isRtl ? 'ساپلای' : 'Supply'}</p>
-                        <p className={`mt-1 text-[11px] font-black font-mono ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
-                          {fundedShares.toLocaleString()}
-                        </p>
-                      </div>
-                      <div className={`rounded-xl border p-2.5 ${isDark ? 'border-slate-800/80 bg-slate-950/35' : 'border-slate-200 bg-slate-50'}`}>
-                        <p className="text-[8px] uppercase font-bold text-slate-500">{isRtl ? 'ارزش تأمین' : 'Funded Value'}</p>
-                        <p className="mt-1 text-[11px] font-black font-mono text-blue-500">
-                          {usdtValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="relative z-10 mt-4 grid grid-cols-[42px_1fr] gap-2">
-                    <button
-                      type="button"
-                      onClick={() => (onOpenInfo ? onOpenInfo(asset) : onExplore())}
-                      aria-label={`${asset.id} details`}
-                      className={`h-11 rounded-xl border flex items-center justify-center transition-all ${
-                        isDark
-                          ? 'border-slate-700 bg-slate-950/60 text-slate-300 hover:border-blue-500/40 hover:text-blue-400'
-                          : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-blue-300 hover:text-blue-600'
-                      }`}
-                    >
-                      <Info size={15} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleQuickBuy(asset)}
-                      disabled={isLoggedIn && asset.price <= 0}
-                      className={`group/buy h-11 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
-                        isLoggedIn && asset.price <= 0
-                          ? 'bg-slate-700/40 text-slate-500 cursor-not-allowed'
-                          : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/15 hover:shadow-blue-600/25'
-                      }`}
-                    >
-                      <span>Buy</span>
-                      {isRtl ? (
-                        <ArrowLeft size={13} className="transition-transform group-hover/buy:-translate-x-0.5" />
-                      ) : (
-                        <ArrowRight size={13} className="transition-transform group-hover/buy:translate-x-0.5" />
-                      )}
-                    </button>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        </section>
-
         {/* Animated Stats */}
         <section className="relative overflow-hidden rounded-[30px] border border-blue-500/15 bg-gradient-to-br from-blue-600/10 via-transparent to-indigo-600/10 p-5 md:p-8">
           <div className="absolute -left-20 -top-20 h-52 w-52 rounded-full bg-blue-500/10 blur-3xl" />
