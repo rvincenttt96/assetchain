@@ -612,11 +612,11 @@ const handleWithdrawSubmit = (e: React.FormEvent) => {
       theme === 'dark' ? 'bg-[#020617] text-slate-100' : 'bg-slate-50 text-slate-900'
     }`} dir="ltr">
       <div className="site-atmosphere" aria-hidden="true">
+        <div className="site-atmosphere__aurora" />
+        <div className="site-atmosphere__particles" />
+        <div className="site-atmosphere__rings" />
+        <div className="site-atmosphere__beam" />
         <div className="site-atmosphere__grid" />
-        <div className="site-atmosphere__orb site-atmosphere__orb--a" />
-        <div className="site-atmosphere__orb site-atmosphere__orb--b" />
-        <div className="site-atmosphere__orb site-atmosphere__orb--c" />
-        <div className="site-atmosphere__sheen" />
       </div>
 
       <div className="relative z-10 min-h-screen flex flex-col justify-between">
