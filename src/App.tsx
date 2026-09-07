@@ -51,6 +51,12 @@ import {
 
 const getFlagSrc = (flag?: string) => `/flags/${(flag || 'ir').toLowerCase()}.svg`;
 
+const DEPOSIT_ADDRESSES = {
+  trc20: 'TYoPGPhMxuWGxF59FWYmsoGUTTwCnPEcpf',
+  erc20: '0x85c1B3748204Ee174e4883A78190F75419551697',
+  bep20: '0x85c1B3748204Ee174e4883A78190F75419551697'
+} as const;
+
 export default function App() {
   // Theme & Language State
   const [theme, setTheme] = useState<Theme>('dark');
@@ -1948,11 +1954,7 @@ isLoggedIn={isLoggedIn}
                         <div className={`p-4 rounded-xl border text-center break-all font-mono text-sm relative group ${
                           theme === 'dark' ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'
                         }`}>
-                          <span>
-                            {depositNetwork === 'trc20' && 'TUtwXkXYZ123abcTRC20dummyAddressDepositActive'}
-                            {depositNetwork === 'erc20' && 'ERC20_DEPOSITS_DISABLED'}
-                            {depositNetwork === 'bep20' && '0x789BEP20SmartChainDepositSecuredEngine'}
-                          </span>
+                          <span>{DEPOSIT_ADDRESSES[depositNetwork]}</span>
                         </div>
                       </div>
 
@@ -2073,8 +2075,8 @@ isLoggedIn={isLoggedIn}
                             }}
                             placeholder={
                               depositNetwork === 'trc20'
-                                ? (lang === 'fa' ? 'مثال: TUtwXkXYZ123abcTRC20dummyAddressDepositActive' : 'e.g., TUtwXkXYZ123abcTRC20dummyAddressDepositActive')
-                                : (lang === 'fa' ? 'مثال: ERC20_DEPOSITS_DISABLED' : 'e.g., ERC20_DEPOSITS_DISABLED')
+                                ? (lang === 'fa' ? 'مثال: TYoPGPhMxuWGxF59FWYmsoGUTTwCnPEcpf' : 'e.g., TYoPGPhMxuWGxF59FWYmsoGUTTwCnPEcpf')
+                                : (lang === 'fa' ? 'مثال: 0x85c1B3748204Ee174e4883A78190F75419551697' : 'e.g., 0x85c1B3748204Ee174e4883A78190F75419551697')
                             }
                             className={`w-full p-3 font-mono text-xs rounded-xl border focus:outline-none transition-all ${
                               withdrawAddrError
