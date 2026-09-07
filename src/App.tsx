@@ -602,9 +602,18 @@ const handleWithdrawSubmit = (e: React.FormEvent) => {
   });
 
   return (
-    <div className={`min-h-screen flex flex-col justify-between transition-colors duration-300 ${
+    <div className={`min-h-screen relative overflow-x-hidden transition-colors duration-300 ${
       theme === 'dark' ? 'bg-[#020617] text-slate-100' : 'bg-slate-50 text-slate-900'
     }`} dir="ltr">
+      <div className="site-atmosphere" aria-hidden="true">
+        <div className="site-atmosphere__grid" />
+        <div className="site-atmosphere__orb site-atmosphere__orb--a" />
+        <div className="site-atmosphere__orb site-atmosphere__orb--b" />
+        <div className="site-atmosphere__orb site-atmosphere__orb--c" />
+        <div className="site-atmosphere__sheen" />
+      </div>
+
+      <div className="relative z-10 min-h-screen flex flex-col justify-between">
 
       {/* Alert Banner / Notification Feed */}
       {alertMessage && (
@@ -3103,6 +3112,7 @@ isLoggedIn={isLoggedIn}
         </div>
       </footer>
 
+      </div>
     </div>
   );
 }

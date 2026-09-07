@@ -192,7 +192,7 @@ export default function LandingPage({
   return (
     <div
       className={`w-full overflow-hidden pb-20 ${
-        isDark ? 'bg-[#020617] text-slate-100' : 'bg-slate-50 text-slate-900'
+        isDark ? 'text-slate-100' : 'text-slate-900'
       }`}
       dir={isRtl ? 'rtl' : 'ltr'}
     >
@@ -280,7 +280,7 @@ export default function LandingPage({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
-            {fundedAssets.map(({ asset, fundedShares }, index) => {
+            {fundedAssets.map(({ asset, fundedShares }) => {
               const usdtValue = fundedShares * asset.price;
               const positive = asset.change >= 0;
 
@@ -300,8 +300,13 @@ export default function LandingPage({
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-xs font-black text-blue-500">{asset.id}</span>
-                        <span className="rounded-full border border-slate-700/50 px-2 py-0.5 text-[8px] font-black uppercase tracking-wider text-slate-500">
-                          #{index + 1}
+                        <span className="inline-flex h-4 w-6 shrink-0 items-center overflow-hidden rounded-[3px] border border-white/15 shadow-[0_0_0_1px_rgba(15,23,42,0.35)]">
+                          <img
+                            src="/flags/ir.svg"
+                            alt="Iran"
+                            className="h-4 w-6 object-cover"
+                            referrerPolicy="no-referrer"
+                          />
                         </span>
                       </div>
                       <h3 className={`mt-3 min-h-[42px] text-sm font-black leading-5 ${isDark ? 'text-white' : 'text-slate-950'}`}>
