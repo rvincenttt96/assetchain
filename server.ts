@@ -260,15 +260,14 @@ const TSETMC_FETCH_TIMEOUT_MS = 8_000;
 let lastTsetmcSyncFailedAt = 0;
 
 function tsetmcClosingPriceUrl(insCode: string): string {
-  const directBase = env.TSETMC_CLOSING_PRICE_BASE_URL.replace(/\/$/, "");
+  const officialPath = "/api/ClosingPrice/GetClosingPriceInfo";
   const proxyBase = env.TSETMC_PROXY_BASE_URL.trim().replace(/\/$/, "");
 
-  if (!proxyBase) {
-    return `${directBase}/${insCode}`;
+  if (proxyBase) {
+    return `${proxyBase}${officialPath}/${insCode}`;
   }
 
-  const path = new URL(directBase).pathname.replace(/\/$/, "");
-  return `${proxyBase}${path}/${insCode}`;
+  return `${env.TSETMC_CLOSING_PRICE_BASE_URL.replace(/\/$/, "")}/${insCode}`;
 }
 
 function tsetmcFetchHeaders(): Record<string, string> {
@@ -407,8 +406,12 @@ async function syncTsetmcMarketData(): Promise<void> {
     }
 
     if (failed.length > 0) {
+      const first = failed[0];
+      const reason =
+        first.status === "rejected" ? first.reason : "unknown";
       console.warn(
-        `TSETMC sync completed with ${failed.length} failed instrument(s).`
+        `TSETMC sync completed with ${failed.length} failed instrument(s).`,
+        reason
       );
       if (succeeded.length === 0) {
         lastTsetmcSyncFailedAt = Date.now();
