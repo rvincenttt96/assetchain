@@ -226,7 +226,7 @@ export default function LandingPage({
                   </span>
                 </div>
                 <h2 className={`text-2xl md:text-4xl font-black leading-tight ${isDark ? 'text-white' : 'text-slate-950'}`}>
-                  How Investing in Tehran Is Like Bitcoin in 2010
+                  How Investing in Tehran(Stocks) Is Like Bitcoin in 2010
                 </h2>
                 <p className={`max-w-3xl text-xs md:text-sm leading-6 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                   {isRtl
