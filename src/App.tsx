@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Coins,
   Wallet,
@@ -76,6 +76,8 @@ export default function App() {
   const [currentTab, setCurrentTab] = useState<'home' | 'market' | 'portfolio' | 'wallet' | 'history' | 'support' | 'about' | 'contact' | 'admin'>('home');
   const [marketFilter, setMarketFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const pendingSearchFocus = useRef(false);
 
   // Modals & Panels State
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
@@ -253,6 +255,55 @@ const platformFundedUsdt = platformFundedAssets.reduce(
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    const refreshAssets = async () => {
+      try {
+        const backendAssets = await fetchAssetsFromBackend();
+        setAssets(backendAssets);
+      } catch (error) {
+        console.error('Could not refresh market assets:', error);
+      }
+    };
+
+    const interval = window.setInterval(() => {
+      void refreshAssets();
+    }, 60_000);
+
+    return () => window.clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'k') {
+        return;
+      }
+
+      event.preventDefault();
+
+      if (currentTab !== 'market') {
+        pendingSearchFocus.current = true;
+        setCurrentTab('market');
+        return;
+      }
+
+      searchInputRef.current?.focus();
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [currentTab]);
+
+  useEffect(() => {
+    if (currentTab !== 'market' || !pendingSearchFocus.current) {
+      return;
+    }
+
+    pendingSearchFocus.current = false;
+    window.requestAnimationFrame(() => {
+      searchInputRef.current?.focus();
+    });
+  }, [currentTab]);
 
   // Optional browser-only price animation for local demo builds.
   useEffect(() => {
@@ -1081,7 +1132,8 @@ const handleWithdrawSubmit = (e: React.FormEvent) => {
                 }`}>
                   <Search className="text-slate-400 transition-colors group-focus-within:text-blue-500 flex-shrink-0" size={18} />
                   <input
-                    type="text"
+                    ref={searchInputRef}
+                    type="search"
                     placeholder={lang === 'fa' ? 'جستجوی هوشمند دارایی...' : 'Smart search assets...'}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -1112,7 +1164,7 @@ const handleWithdrawSubmit = (e: React.FormEvent) => {
 
           {/* 2. YieldChart Price Graph directly below the search header */}
           <div className="max-w-7xl mx-auto px-4 md:px-8 pt-6">
-            <YieldChart theme={theme} lang={lang} assets={assets} />
+            <YieldChart theme={theme} lang={lang} assets={filteredAssets} />
           </div>
 
           {/* 3. Top Stats Banner directly below the YieldChart */}
@@ -1269,7 +1321,7 @@ isLoggedIn={isLoggedIn}
 
                 {/* Filter Tags */}
                 <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
-                  {['all', 'metals', 'auto', 'petro', 'bank', 'real_estate', 'commodities', 'global'].map(cat => (
+                  {['all', 'metals', 'pharma', 'petro', 'investment'].map(cat => (
                     <button
                       key={cat}
                       onClick={() => setMarketFilter(cat)}
@@ -1283,12 +1335,9 @@ isLoggedIn={isLoggedIn}
                     >
                       {cat === 'all' && t.allMarkets}
                       {cat === 'metals' && t.categoryMetals}
-                      {cat === 'auto' && t.categoryAuto}
+                      {cat === 'pharma' && t.categoryAuto}
                       {cat === 'petro' && t.categoryPetro}
-                      {cat === 'bank' && t.categoryBank}
-                      {cat === 'real_estate' && t.categoryRealEstate}
-                      {cat === 'commodities' && t.categoryCommodities}
-                      {cat === 'global' && t.categoryGlobal}
+                      {cat === 'investment' && t.categoryBank}
                     </button>
                   ))}
                 </div>
@@ -2151,6 +2200,18 @@ isLoggedIn={isLoggedIn}
                   theme === 'dark' ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200'
                 }`}>
                   <div className="overflow-x-auto">
+                    {transactions.length === 0 ? (
+                      <div className="p-10 text-center space-y-2">
+                        <p className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                          {lang === 'fa' ? 'هنوز تراکنشی ثبت نشده است' : 'No transactions yet'}
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          {lang === 'fa'
+                            ? 'واریز، برداشت و معاملات شما بعد از انجام، در این صفحه دیده می‌شوند.'
+                            : 'Deposits, withdrawals, and trades will appear here after you complete them.'}
+                        </p>
+                      </div>
+                    ) : (
                     <table className="w-full border-collapse text-start">
                       <thead>
                         <tr className={`border-b text-xs font-bold uppercase text-slate-400 text-start ${
@@ -2193,6 +2254,7 @@ isLoggedIn={isLoggedIn}
                         ))}
                       </tbody>
                     </table>
+                    )}
                   </div>
                 </div>
               </section>
@@ -2213,6 +2275,7 @@ isLoggedIn={isLoggedIn}
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-slate-400 uppercase">{t.describeIssue}</label>
                       <textarea
+                        name="message"
                         rows={5}
                         value={supportText}
                         onChange={(e) => setSupportText(e.target.value)}
@@ -2344,6 +2407,7 @@ isLoggedIn={isLoggedIn}
                         <label className="text-xs font-semibold text-slate-400">{lang === 'fa' ? 'موضوع پیام' : 'Subject'}</label>
                         <input
                           type="text"
+                          name="subject"
                           placeholder={lang === 'fa' ? 'مثال: سوال در مورد واریز تتر' : 'e.g. Deposit validation question'}
                           className={`w-full p-3 rounded-xl border focus:outline-none focus:border-blue-500 text-xs ${
                             theme === 'dark' ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-200'
@@ -2354,6 +2418,7 @@ isLoggedIn={isLoggedIn}
                       <div className="space-y-1">
                         <label className="text-xs font-semibold text-slate-400">{t.describeIssue}</label>
                         <textarea
+                          name="message"
                           rows={4}
                           value={supportText}
                           onChange={(e) => setSupportText(e.target.value)}

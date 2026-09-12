@@ -1,20 +1,35 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# RWA
 
-# Run and deploy your AI Studio app
+RWA is a web app for selected Iranian stocks priced in USDT. Users can browse five funded symbols, sign in, and place buy/sell orders against live USDT conversion. The production site runs on a VPS with Express, Prisma, and SQLite.
 
-This contains everything you need to run your app locally.
+Live site: https://rwastocks.online
 
-View your app in AI Studio: https://ai.studio/apps/5c8e1352-746e-4a5d-9588-b6873a9a344e
+## Stack
 
-## Run Locally
+- React 19 + Vite + Tailwind
+- Express (`server.ts`)
+- Prisma + SQLite
+- Live USDT/IRR from Nobitex
+- Optional TSETMC last-price sync
 
-**Prerequisites:**  Node.js
+## Run locally
 
+Prerequisites: Node.js 20+
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+```bash
+npm install
+cp .env.example .env
+npx prisma generate
+npx prisma migrate deploy
+npm run db:seed
+npm run dev
+```
+
+The app listens on the `PORT` from `.env` (defaults to 3000).
+
+## Production notes
+
+- Trading requires a fresh backend price (`marketUpdatedAt` within 5 minutes).
+- Set `TSETMC_SYNC_ENABLED=true` on the server if it can reach `cdn.tsetmc.com`.
+- Even without TSETMC, USDT prices refresh from stored rial last prices plus the live Nobitex rate.
+- Deposit/withdraw APIs are not enabled in this version.

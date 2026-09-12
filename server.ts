@@ -251,9 +251,12 @@ function serializeAsset(asset: {
 }
 
 
-const TSETMC_SYNC_TTL_MS = 60_000;
+const TSETMC_SYNC_TTL_MS = 30_000;
+const USDT_PRICE_REFRESH_TTL_MS = 30_000;
 let lastTsetmcSyncAttemptAt = 0;
 let tsetmcSyncInFlight: Promise<void> | null = null;
+let lastUsdtPriceRefreshAt = 0;
+let usdtPriceRefreshInFlight: Promise<void> | null = null;
 
 async function syncTsetmcMarketData(): Promise<void> {
   if (env.TSETMC_SYNC_ENABLED !== "true") return;
@@ -376,6 +379,63 @@ async function syncTsetmcMarketData(): Promise<void> {
 
   return tsetmcSyncInFlight;
 }
+
+async function refreshUsdtFromStoredRial(force = false): Promise<void> {
+  const now = Date.now();
+
+  if (!force && now - lastUsdtPriceRefreshAt < USDT_PRICE_REFRESH_TTL_MS) {
+    return usdtPriceRefreshInFlight ?? Promise.resolve();
+  }
+
+  if (usdtPriceRefreshInFlight) {
+    return usdtPriceRefreshInFlight;
+  }
+
+  lastUsdtPriceRefreshAt = now;
+
+  usdtPriceRefreshInFlight = (async () => {
+    const usdtRate = await getUsdtRialRate(env.IRR_PER_USDT);
+    const assets = await prisma.asset.findMany({
+      select: {
+        id: true,
+        lastPriceRial: true
+      }
+    });
+
+    await Promise.all(
+      assets.map(async (asset) => {
+        if (!asset.lastPriceRial || asset.lastPriceRial <= 0n) {
+          return;
+        }
+
+        await prisma.asset.update({
+          where: {
+            id: asset.id
+          },
+          data: {
+            priceMicros:
+              (asset.lastPriceRial * MICROS_PER_USDT) / BigInt(usdtRate.rateRial),
+            marketUpdatedAt: new Date()
+          }
+        });
+      })
+    );
+  })().finally(() => {
+    usdtPriceRefreshInFlight = null;
+  });
+
+  return usdtPriceRefreshInFlight;
+}
+
+async function ensureFreshMarketPrices(forceUsdtRefresh = false): Promise<void> {
+  await syncTsetmcMarketData().catch((error) => {
+    console.warn("TSETMC sync failed; serving stored market data.", error);
+  });
+  await refreshUsdtFromStoredRial(forceUsdtRefresh).catch((error) => {
+    console.warn("USDT price refresh failed; serving stored conversion.", error);
+  });
+}
+
 async function getProfile(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -555,9 +615,7 @@ if (isProduction) app.set("trust proxy", 1);
   app.get(
     "/api/assets",
     asyncRoute(async (req, res) => {
-      await syncTsetmcMarketData().catch((error) => {
-        console.warn("TSETMC sync failed; serving stored market data.", error);
-      });
+      await ensureFreshMarketPrices();
 
       const category =
         typeof req.query.category === "string" ? req.query.category : undefined;
@@ -582,9 +640,7 @@ if (isProduction) app.set("trust proxy", 1);
   app.get(
     "/api/assets/:id",
     asyncRoute(async (req, res) => {
-      await syncTsetmcMarketData().catch((error) => {
-        console.warn("TSETMC sync failed; serving stored market data.", error);
-      });
+      await ensureFreshMarketPrices();
 
       const asset = await prisma.asset.findUnique({
         where: { id: String(req.params.id).toUpperCase() }
@@ -721,6 +777,7 @@ if (isProduction) app.set("trust proxy", 1);
     asyncRoute(async (req, res) => {
       const input = tradeSchema.parse(req.body);
       const userId = req.auth!.userId;
+      await ensureFreshMarketPrices(true);
 
       await prisma.$transaction(
         async (tx) => {
@@ -869,6 +926,7 @@ if (isProduction) app.set("trust proxy", 1);
     asyncRoute(async (req, res) => {
       const input = tradeSchema.parse(req.body);
       const userId = req.auth!.userId;
+      await ensureFreshMarketPrices(true);
 
       await prisma.$transaction(
         async (tx) => {

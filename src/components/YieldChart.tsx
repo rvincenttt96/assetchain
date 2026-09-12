@@ -67,7 +67,9 @@ export default function YieldChart({
         </div>
       ) : visibleAssets.length === 0 ? (
         <div className="p-8 text-center text-sm text-slate-400">
-          {isPortfolioMode ? (isRtl ? 'هنوز سهمی در سبد شما وجود ندارد.' : 'Your portfolio has no shares yet.') : (isRtl ? 'داده بازار در حال بارگذاری است.' : 'Market data is loading.')}
+          {isPortfolioMode
+            ? (isRtl ? 'هنوز سهمی در سبد شما وجود ندارد.' : 'Your portfolio has no shares yet.')
+            : (isRtl ? 'هیچ نمادی با این جستجو یا فیلتر پیدا نشد.' : 'No symbols match this search or filter.')}
         </div>
       ) : (
         <div className="divide-y divide-slate-800/20">
