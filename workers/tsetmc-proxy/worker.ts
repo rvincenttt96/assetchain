@@ -72,6 +72,7 @@ export default {
     try {
       const upstreamResponse = await fetch(`${TSETMC_ORIGIN}${url.pathname}`, {
         method: "GET",
+        signal: AbortSignal.timeout(8_000),
         headers: {
           accept: "application/json",
           origin: "https://www.tsetmc.com",

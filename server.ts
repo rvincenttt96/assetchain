@@ -254,8 +254,10 @@ function serializeAsset(asset: {
 
 
 const TSETMC_SYNC_TTL_MS = 30_000;
+const TSETMC_RETRY_AFTER_FAILURE_MS = 15 * 60 * 1000;
 const USDT_PRICE_REFRESH_TTL_MS = 30_000;
 const TSETMC_FETCH_TIMEOUT_MS = 8_000;
+let lastTsetmcSyncFailedAt = 0;
 
 function tsetmcClosingPriceUrl(insCode: string): string {
   const directBase = env.TSETMC_CLOSING_PRICE_BASE_URL.replace(/\/$/, "");
@@ -288,6 +290,13 @@ let usdtPriceRefreshInFlight: Promise<void> | null = null;
 async function syncTsetmcMarketData(): Promise<void> {
   if (env.TSETMC_SYNC_ENABLED !== "true") return;
   const now = Date.now();
+
+  if (
+    lastTsetmcSyncFailedAt > 0 &&
+    now - lastTsetmcSyncFailedAt < TSETMC_RETRY_AFTER_FAILURE_MS
+  ) {
+    return;
+  }
 
   if (now - lastTsetmcSyncAttemptAt < TSETMC_SYNC_TTL_MS) {
     return;
@@ -389,11 +398,21 @@ async function syncTsetmcMarketData(): Promise<void> {
     const failed = results.filter(
       (result) => result.status === "rejected"
     );
+    const succeeded = results.filter(
+      (result) => result.status === "fulfilled"
+    );
+
+    if (succeeded.length > 0) {
+      lastTsetmcSyncFailedAt = 0;
+    }
 
     if (failed.length > 0) {
       console.warn(
         `TSETMC sync completed with ${failed.length} failed instrument(s).`
       );
+      if (succeeded.length === 0) {
+        lastTsetmcSyncFailedAt = Date.now();
+      }
     }
   })().finally(() => {
     tsetmcSyncInFlight = null;
