@@ -181,11 +181,6 @@ export default function LandingPage({
     });
 
   const handleQuickBuy = (asset: Asset) => {
-    if (!isLoggedIn) {
-      onLoginClick();
-      return;
-    }
-
     onQuickBuy(asset);
   };
 

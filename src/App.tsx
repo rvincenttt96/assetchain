@@ -57,6 +57,37 @@ const DEPOSIT_ADDRESSES = {
   bep20: '0x85c1B3748204Ee174e4883A78190F75419551697'
 } as const;
 
+const AUTH_EVENT_KEY = 'rwa:auth-event';
+const AUTH_FLASH_KEY = 'rwa:auth-flash';
+
+type AppTab = 'home' | 'market' | 'portfolio' | 'wallet' | 'history' | 'support' | 'about' | 'contact' | 'admin';
+
+type AfterAuthIntent = {
+  tab?: AppTab;
+  openBuyAssetId?: string;
+};
+
+const isProtectedTab = (tab: AppTab) =>
+  tab === 'portfolio' || tab === 'wallet' || tab === 'history' || tab === 'admin';
+
+function broadcastAuthEvent() {
+  try {
+    localStorage.setItem(AUTH_EVENT_KEY, String(Date.now()));
+  } catch {
+    // Ignore private-mode storage failures.
+  }
+}
+
+function restartAsGuest(flash: 'logged-out' | 'session-expired') {
+  try {
+    sessionStorage.setItem(AUTH_FLASH_KEY, flash);
+  } catch {
+    // Ignore private-mode storage failures.
+  }
+  broadcastAuthEvent();
+  window.location.assign('/');
+}
+
 export default function App() {
   // Theme & Language State
   const [theme, setTheme] = useState<Theme>('dark');
@@ -73,11 +104,12 @@ export default function App() {
   });
 
   // Navigation State
-  const [currentTab, setCurrentTab] = useState<'home' | 'market' | 'portfolio' | 'wallet' | 'history' | 'support' | 'about' | 'contact' | 'admin'>('home');
+  const [currentTab, setCurrentTab] = useState<AppTab>('home');
   const [marketFilter, setMarketFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const pendingSearchFocus = useRef(false);
+  const pendingAfterAuth = useRef<AfterAuthIntent | null>(null);
 
   // Modals & Panels State
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
@@ -219,6 +251,38 @@ const platformFundedUsdt = platformFundedAssets.reduce(
     }
   }, [theme]);
 
+  useEffect(() => {
+    try {
+      const flash = sessionStorage.getItem(AUTH_FLASH_KEY);
+      if (!flash) return;
+      sessionStorage.removeItem(AUTH_FLASH_KEY);
+      if (flash === 'logged-out') {
+        setAlertMessage({ type: 'success', text: 'Logged out successfully.' });
+      } else if (flash === 'session-expired') {
+        setAlertMessage({ type: 'error', text: 'Your session expired. Please sign in again.' });
+      }
+    } catch {
+      // Ignore private-mode storage failures.
+    }
+  }, []);
+
+  useEffect(() => {
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== AUTH_EVENT_KEY || !event.newValue) return;
+      try {
+        if (!sessionStorage.getItem(AUTH_FLASH_KEY)) {
+          sessionStorage.setItem(AUTH_FLASH_KEY, 'logged-out');
+        }
+      } catch {
+        // Ignore private-mode storage failures.
+      }
+      window.location.reload();
+    };
+
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
   // Load assets and restore the authenticated session
   useEffect(() => {
     let cancelled = false;
@@ -255,6 +319,37 @@ const platformFundedUsdt = platformFundedAssets.reduce(
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    const verifySession = async () => {
+      try {
+        const profile = await getUserProfile();
+        applyBackendProfile(profile);
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 401) {
+          restartAsGuest('session-expired');
+        }
+      }
+    };
+
+    const interval = window.setInterval(() => {
+      void verifySession();
+    }, 30_000);
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        void verifySession();
+      }
+    };
+
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [isLoggedIn]);
 
   useEffect(() => {
     const refreshAssets = async () => {
@@ -344,8 +439,24 @@ const platformFundedUsdt = platformFundedAssets.reduce(
         : await registerUser(authName.trim(), email, authPassword);
 
     applyBackendProfile(profile);
-    setCurrentTab("portfolio");
+    const intent = pendingAfterAuth.current;
+    pendingAfterAuth.current = null;
+    const nextTab = intent?.tab ?? currentTab;
+    setCurrentTab(nextTab);
     setIsAuthModalOpen(false);
+    setAuthUsername('');
+    setAuthName('');
+    setAuthPassword('');
+    setAuthError('');
+    if (intent?.openBuyAssetId) {
+      const asset = assets.find(item => item.id === intent.openBuyAssetId);
+      if (asset) {
+        setSelectedAsset(asset);
+        setBuyAmount('');
+        setIsBuyModalOpen(true);
+      }
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     triggerAlert("success", `Welcome, ${profile.name}`);
   } catch (error) {
     setAuthError(
@@ -359,19 +470,22 @@ const platformFundedUsdt = platformFundedAssets.reduce(
 };
 
 
+  const openAuth = (mode: 'signIn' | 'signUp', intent?: AfterAuthIntent) => {
+    pendingAfterAuth.current = intent ?? { tab: currentTab };
+    setAuthMode(mode);
+    setAuthError('');
+    setIsAuthModalOpen(true);
+  };
+
   const handleLogout = async () => {
   try {
     await logoutUser();
-    setIsLoggedIn(false);
-    setCurrentUser({ username: '', email: '', usdtBalance: 0, role: 'USER', isActive: true });
-    setMyPortfolio([]);
-    setPurchaseLots([]);
-    setTransactions([]);
-    setActivities([]);
-    setIsDropdownOpen(false);
-    setCurrentTab('market');
-    triggerAlert('success', lang === 'fa' ? 'با موفقیت از حساب خارج شدید.' : 'Logged out successfully.');
+    restartAsGuest('logged-out');
   } catch (error) {
+    if (error instanceof ApiError && error.status === 401) {
+      restartAsGuest('logged-out');
+      return;
+    }
     triggerAlert(
       'error',
       error instanceof ApiError ? error.message : 'Could not log out.'
@@ -902,7 +1016,7 @@ const handleWithdrawSubmit = (e: React.FormEvent) => {
           ) : (
             <div className="hidden sm:flex items-center gap-2">
               <button
-                onClick={() => { setAuthMode('signIn'); setIsAuthModalOpen(true); }}
+                onClick={() => openAuth('signIn')}
                 className={`h-10 px-5 rounded-xl text-xs font-black transition-all border flex items-center justify-center cursor-pointer ${
                   theme === 'dark'
                     ? 'border-slate-800 bg-slate-900/60 text-slate-300 hover:bg-slate-800'
@@ -912,7 +1026,7 @@ const handleWithdrawSubmit = (e: React.FormEvent) => {
                 {t.signIn}
               </button>
               <button
-                onClick={() => { setAuthMode('signUp'); setIsAuthModalOpen(true); }}
+                onClick={() => openAuth('signUp')}
                 className="h-10 px-5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black transition-all shadow-lg shadow-blue-500/10 flex items-center justify-center cursor-pointer"
               >
                 {t.signUp}
@@ -1011,7 +1125,7 @@ const handleWithdrawSubmit = (e: React.FormEvent) => {
                       </p>
                       <div className="grid grid-cols-2 gap-2">
                         <button
-                          onClick={() => { setAuthMode('signIn'); setIsAuthModalOpen(true); setIsMobileMenuOpen(false); }}
+                          onClick={() => { openAuth('signIn'); setIsMobileMenuOpen(false); }}
                           className={`py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                             theme === 'dark'
                               ? 'border-slate-800 bg-slate-900 text-slate-200'
@@ -1021,7 +1135,7 @@ const handleWithdrawSubmit = (e: React.FormEvent) => {
                           {t.signIn}
                         </button>
                         <button
-                          onClick={() => { setAuthMode('signUp'); setIsAuthModalOpen(true); setIsMobileMenuOpen(false); }}
+                          onClick={() => { openAuth('signUp'); setIsMobileMenuOpen(false); }}
                           className="py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/10 cursor-pointer"
                         >
                           {t.signUp}
@@ -1283,11 +1397,12 @@ const handleWithdrawSubmit = (e: React.FormEvent) => {
             lang={lang}
             t={t}
 isLoggedIn={isLoggedIn}
-            onLoginClick={() => {
-              setAuthMode('signIn');
-              setIsAuthModalOpen(true);
-            }}
+            onLoginClick={() => openAuth('signIn', { tab: 'home' })}
             onQuickBuy={(asset) => {
+              if (!isLoggedIn) {
+                openAuth('signIn', { tab: 'home', openBuyAssetId: asset.id });
+                return;
+              }
               setSelectedAsset(asset);
               setBuyAmount('');
               setIsBuyModalOpen(true);
@@ -1302,12 +1417,34 @@ isLoggedIn={isLoggedIn}
             }}
             onSupport={() => {
               if (!isLoggedIn) {
-                setIsAuthModalOpen(true);
+                openAuth('signIn', { tab: 'support' });
               } else {
                 setCurrentTab('support');
               }
             }}
           />
+        ) : isProtectedTab(currentTab) && !isLoggedIn ? (
+          <section className={`rounded-3xl border p-8 md:p-12 text-center max-w-xl mx-auto space-y-4 ${
+            theme === 'dark' ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200'
+          }`}>
+            <div className="w-12 h-12 mx-auto rounded-2xl bg-blue-600/10 text-blue-500 flex items-center justify-center">
+              <LogIn size={22} />
+            </div>
+            <h1 className={`text-2xl font-extrabold tracking-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+              Sign in required
+            </h1>
+            <p className="text-sm text-slate-400">
+              Sign in to view your {currentTab === 'admin' ? 'admin tools' : currentTab}.
+            </p>
+            <button
+              type="button"
+              onClick={() => openAuth('signIn', { tab: currentTab })}
+              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-extrabold cursor-pointer"
+            >
+              <LogIn size={16} />
+              {t.signIn}
+            </button>
+          </section>
         ) : (
           <div className="space-y-8">
             {/* YieldChart has been hoisted above the stats banner, so we don't render it here anymore */}
@@ -1448,7 +1585,7 @@ isLoggedIn={isLoggedIn}
                             <button
                               onClick={() => {
                                 if (!isLoggedIn) {
-                                  setIsAuthModalOpen(true);
+                                  openAuth('signIn', { tab: 'market', openBuyAssetId: asset.id });
                                 } else {
                                   setSelectedAsset(asset);
                                   setBuyAmount('');
@@ -1595,7 +1732,7 @@ isLoggedIn={isLoggedIn}
                         lang={lang}
                         isPortfolioMode={true}
                         isLoggedIn={isLoggedIn}
-                        onLoginClick={() => { setAuthMode('signIn'); setIsAuthModalOpen(true); }}
+                        onLoginClick={() => openAuth('signIn', { tab: 'portfolio' })}
                         myPortfolio={myPortfolio}
                       />
                     </motion.div>
@@ -2304,6 +2441,14 @@ isLoggedIn={isLoggedIn}
             {currentTab === 'admin' && isLoggedIn && isAdmin && (
               <AdminPanel theme={theme} currentRole={currentUser.role} />
             )}
+            {currentTab === 'admin' && isLoggedIn && !isAdmin && (
+              <section className={`rounded-3xl border p-8 text-center space-y-2 ${
+                theme === 'dark' ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200'
+              }`}>
+                <h1 className="text-xl font-extrabold">Admin access required</h1>
+                <p className="text-sm text-slate-400">This account does not have admin tools.</p>
+              </section>
+            )}
 
             {/* View 6: About Us */}
             {currentTab === 'about' && (
@@ -2985,7 +3130,7 @@ isLoggedIn={isLoggedIn}
                 onClick={() => {
                   setIsInfoModalOpen(false);
                   if (!isLoggedIn) {
-                    setIsAuthModalOpen(true);
+                    openAuth('signIn', { tab: currentTab, openBuyAssetId: infoAsset.id });
                   } else {
                     setSelectedAsset(infoAsset);
                     setBuyAmount('');
