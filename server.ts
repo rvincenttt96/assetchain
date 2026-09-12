@@ -23,7 +23,9 @@ const envSchema = z.object({
   DEMO_MODE: z.enum(["true", "false"]).default("true"),
   IRR_PER_USDT: z.coerce.number().int().nonnegative().default(0),
   TSETMC_SYNC_ENABLED: z.enum(["true", "false"]).default("false"),
-  TSETMC_CLOSING_PRICE_BASE_URL: z.string().url().default("https://cdn.tsetmc.com/api/ClosingPrice/GetClosingPriceInfo")
+  TSETMC_CLOSING_PRICE_BASE_URL: z.string().url().default("https://cdn.tsetmc.com/api/ClosingPrice/GetClosingPriceInfo"),
+  TSETMC_PROXY_BASE_URL: z.string().default(""),
+  TSETMC_PROXY_SECRET: z.string().default("")
 });
 
 const env = envSchema.parse(process.env);
@@ -253,6 +255,31 @@ function serializeAsset(asset: {
 
 const TSETMC_SYNC_TTL_MS = 30_000;
 const USDT_PRICE_REFRESH_TTL_MS = 30_000;
+const TSETMC_FETCH_TIMEOUT_MS = 8_000;
+
+function tsetmcClosingPriceUrl(insCode: string): string {
+  const directBase = env.TSETMC_CLOSING_PRICE_BASE_URL.replace(/\/$/, "");
+  const proxyBase = env.TSETMC_PROXY_BASE_URL.trim().replace(/\/$/, "");
+
+  if (!proxyBase) {
+    return `${directBase}/${insCode}`;
+  }
+
+  const path = new URL(directBase).pathname.replace(/\/$/, "");
+  return `${proxyBase}${path}/${insCode}`;
+}
+
+function tsetmcFetchHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {
+    accept: "application/json"
+  };
+
+  if (env.TSETMC_PROXY_SECRET) {
+    headers.Authorization = `Bearer ${env.TSETMC_PROXY_SECRET}`;
+  }
+
+  return headers;
+}
 let lastTsetmcSyncAttemptAt = 0;
 let tsetmcSyncInFlight: Promise<void> | null = null;
 let lastUsdtPriceRefreshAt = 0;
@@ -291,15 +318,10 @@ async function syncTsetmcMarketData(): Promise<void> {
       assets.map(async (asset) => {
         if (!asset.tsetmcInsCode) return;
 
-        const response = await fetch(
-          `${env.TSETMC_CLOSING_PRICE_BASE_URL.replace(/\/$/, "")}/${asset.tsetmcInsCode}`,
-          {
-            signal: AbortSignal.timeout(8_000),
-            headers: {
-              accept: "application/json"
-            }
-          }
-        );
+        const response = await fetch(tsetmcClosingPriceUrl(asset.tsetmcInsCode), {
+          signal: AbortSignal.timeout(TSETMC_FETCH_TIMEOUT_MS),
+          headers: tsetmcFetchHeaders()
+        });
 
         if (!response.ok) {
           throw new Error(
@@ -428,7 +450,9 @@ async function refreshUsdtFromStoredRial(force = false): Promise<void> {
 }
 
 async function ensureFreshMarketPrices(forceUsdtRefresh = false): Promise<void> {
-  await syncTsetmcMarketData().catch((error) => {
+  // Never block page/API load on TSETMC. The Cloudflare proxy hop is only
+  // for background rial quotes; USDT conversion stays on the request path.
+  void syncTsetmcMarketData().catch((error) => {
     console.warn("TSETMC sync failed; serving stored market data.", error);
   });
   await refreshUsdtFromStoredRial(forceUsdtRefresh).catch((error) => {

@@ -30,6 +30,7 @@ The app listens on the `PORT` from `.env` (defaults to 3000).
 ## Production notes
 
 - Trading requires a fresh backend price (`marketUpdatedAt` within 5 minutes).
-- Set `TSETMC_SYNC_ENABLED=true` on the server if it can reach `cdn.tsetmc.com`.
+- TSETMC last-price sync is optional and never blocks page load. The VPS talks to `cdn.tsetmc.com` only through the Cloudflare Worker in `workers/tsetmc-proxy` (andro-cfw-style reverse proxy).
+- Set `TSETMC_PROXY_BASE_URL` and `TSETMC_PROXY_SECRET` on the server, then `TSETMC_SYNC_ENABLED=true`.
 - Even without TSETMC, USDT prices refresh from stored rial last prices plus the live Nobitex rate.
 - Deposit/withdraw APIs are not enabled in this version.
