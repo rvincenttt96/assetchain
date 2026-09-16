@@ -192,8 +192,11 @@ export default function LandingPage({
       }`}
       dir={isRtl ? 'rtl' : 'ltr'}
     >
+      <section className="max-w-7xl mx-auto px-4 md:px-8 pt-6 md:pt-10">
+        <BrandMark size="hero" variant="lockup" />
+      </section>
 
-      <section className="max-w-7xl mx-auto px-4 md:px-8 -mt-1 pt-8 md:pt-12">
+      <section className="max-w-7xl mx-auto px-4 md:px-8 -mt-1 pt-6 md:pt-8">
         <div className="relative rounded-[30px] p-[1px] overflow-hidden bg-gradient-to-r from-blue-500/40 via-indigo-500/15 to-blue-500/40 shadow-xl shadow-blue-950/10">
           <div className="absolute -top-24 right-1/4 w-64 h-64 rounded-full bg-blue-500/15 blur-[90px] pointer-events-none" />
           <div
@@ -399,7 +402,6 @@ export default function LandingPage({
         <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 pt-14 md:pt-24 pb-12 md:pb-20">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
             <div className="lg:col-span-6 text-start space-y-7">
-              <BrandMark size="hero" variant="lockup" />
               <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1.5 text-[10px] md:text-xs font-black text-blue-400 uppercase tracking-[0.18em] shadow-lg shadow-blue-500/5">
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-60 animate-ping" />
