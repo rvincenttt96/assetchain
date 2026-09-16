@@ -399,10 +399,7 @@ export default function LandingPage({
         <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 pt-14 md:pt-24 pb-12 md:pb-20">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
             <div className="lg:col-span-6 text-start space-y-7">
-              <BrandMark
-                size="lg"
-                showWordmark={false}
-              />
+              <BrandMark size="hero" variant="lockup" />
               <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1.5 text-[10px] md:text-xs font-black text-blue-400 uppercase tracking-[0.18em] shadow-lg shadow-blue-500/5">
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-60 animate-ping" />
@@ -783,7 +780,7 @@ export default function LandingPage({
           />
           <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-8 text-start">
-              <BrandMark size="md" showWordmark={false} />
+              <BrandMark size="lg" variant="lockup" />
               <h2 className="mt-4 text-2xl md:text-4xl font-black tracking-tight">
                 {isRtl ? 'پنج سهم را بررسی کن. با USDT تصمیم بگیر.' : 'Explore five stocks. Make the decision in USDT.'}
               </h2>

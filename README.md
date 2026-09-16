@@ -1,4 +1,4 @@
-# RWA
+# RwaStocks
 
 RWA is a web app for selected Iranian stocks priced in USDT. Users can browse five funded symbols, sign in, and place buy/sell orders against live USDT conversion. The production site runs on a VPS with Express, Prisma, and SQLite.
 

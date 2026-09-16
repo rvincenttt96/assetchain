@@ -2586,7 +2586,7 @@ isLoggedIn={isLoggedIn}
                       theme === 'dark' ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200'
                     }`}>
                       <div className="flex items-center gap-3">
-                        <img src="/logo.png" alt="RwaStocks" className="h-12 w-12 rounded-xl object-cover shadow-lg shadow-blue-500/20" />
+                        <BrandMark size="md" showWordmark={false} />
                         <div>
                           <h3 className={`text-base font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>RwaStocks Support</h3>
                           <p className="text-xs text-slate-400 mt-0.5">Official email support for account and platform requests.</p>
