@@ -85,7 +85,7 @@ export const INITIAL_ASSETS: Asset[] = [
 
 export const TRANSLATIONS = {
   en: {
-    appName: 'RWA',
+    appName: 'RwaStocks',
     tagline: 'Iran Stock Market Platform',
     statusConnected: 'Mainnet Connected',
     connectWallet: 'Connect Wallet',
@@ -221,7 +221,7 @@ export const TRANSLATIONS = {
     tsetmcDesc: 'External reference page for the underlying listed share.'
   },
   fa: {
-    appName: 'RWA',
+    appName: 'RwaStocks',
     tagline: '\u067e\u0644\u062a\u0641\u0631\u0645 \u0628\u0627\u0632\u0627\u0631 \u0633\u0647\u0627\u0645 \u0627\u06cc\u0631\u0627\u0646',
     statusConnected: 'شبکه اصلی متصل است',
     connectWallet: 'اتصال کیف پول',

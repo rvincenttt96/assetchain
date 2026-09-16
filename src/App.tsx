@@ -35,6 +35,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Asset, PortfolioItem, PurchaseLot, Transaction, Theme, Language, UserActivity } from './types';
 import { TRANSLATIONS } from './data';
 import LandingPage from './components/LandingPage';
+import BrandMark from './components/BrandMark';
 import AdminPanel from './components/AdminPanel';
 import YieldChart from './components/YieldChart';
 import {
@@ -823,13 +824,11 @@ const handleWithdrawSubmit = (e: React.FormEvent) => {
           </button>
 
           {/* Logo */}
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setCurrentTab(isLoggedIn ? 'portfolio' : 'home')}>
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/30">
-              <Coins size={18} />
-            </div>
-            <span className={`text-xl font-extrabold tracking-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-              {t.appName}
-            </span>
+          <div className="flex items-center cursor-pointer" onClick={() => setCurrentTab(isLoggedIn ? 'portfolio' : 'home')}>
+            <BrandMark
+              size="md"
+              wordmarkClassName={`text-lg md:text-xl ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}
+            />
           </div>
 
           {/* Desktop Nav Tabs */}
@@ -1069,11 +1068,8 @@ const handleWithdrawSubmit = (e: React.FormEvent) => {
                 <div className={`p-5 flex items-center justify-between border-b ${
                   theme === 'dark' ? 'border-slate-900/60' : 'border-slate-100'
                 }`}>
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg">
-                      <Coins size={16} />
-                    </div>
-                    <span className="font-extrabold text-base tracking-tight">{t.appName}</span>
+                  <div className="flex items-center">
+                    <BrandMark size="sm" wordmarkClassName="text-base" />
                   </div>
                   <button
                     onClick={() => setIsMobileMenuOpen(false)}
@@ -2590,9 +2586,9 @@ isLoggedIn={isLoggedIn}
                       theme === 'dark' ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200'
                     }`}>
                       <div className="flex items-center gap-3">
-                        <span className="text-3xl" role="img" aria-label="Iran">🇮🇷</span>
+                        <img src="/logo.png" alt="RwaStocks" className="h-12 w-12 rounded-xl object-cover shadow-lg shadow-blue-500/20" />
                         <div>
-                          <h3 className={`text-base font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>RWA Support</h3>
+                          <h3 className={`text-base font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>RwaStocks Support</h3>
                           <p className="text-xs text-slate-400 mt-0.5">Official email support for account and platform requests.</p>
                         </div>
                       </div>
@@ -2608,7 +2604,7 @@ isLoggedIn={isLoggedIn}
                       <div className="grid grid-cols-2 gap-3 text-xs">
                         <div className={`rounded-2xl border p-4 ${theme === 'dark' ? 'border-slate-800 bg-slate-950/40' : 'border-slate-200 bg-slate-50'}`}>
                           <p className="text-slate-500">Platform</p>
-                          <p className="font-black mt-1">RWA</p>
+                          <p className="font-black mt-1">RwaStocks</p>
                         </div>
                         <div className={`rounded-2xl border p-4 ${theme === 'dark' ? 'border-slate-800 bg-slate-950/40' : 'border-slate-200 bg-slate-50'}`}>
                           <p className="text-slate-500">Primary Market</p>
@@ -2641,7 +2637,8 @@ isLoggedIn={isLoggedIn}
             </button>
 
             <div>
-              <h2 className="text-xl font-bold tracking-tight">
+              <BrandMark size="sm" wordmarkClassName={theme === 'dark' ? 'text-white' : 'text-slate-900'} />
+              <h2 className="text-xl font-bold tracking-tight mt-4">
                 {authMode === 'signIn' ? t.signIn : t.signUp}
               </h2>
               <p className="text-xs text-slate-400 mt-1">
@@ -3158,13 +3155,11 @@ isLoggedIn={isLoggedIn}
 
             {/* Column 1: Brand & Identity */}
             <div className="space-y-3.5 text-start">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 md:w-8 md:h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/25">
-                  <Coins size={14} />
-                </div>
-                <span className={`text-base md:text-lg font-extrabold tracking-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                  {t.appName}
-                </span>
+              <div className="flex items-center">
+                <BrandMark
+                  size="sm"
+                  wordmarkClassName={`text-base md:text-lg ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}
+                />
               </div>
               <p className="text-[11px] md:text-xs leading-relaxed opacity-85">
                 {lang === 'fa' ? '\u0627\u0637\u0644\u0627\u0639\u0627\u062a \u067e\u0646\u062c \u0633\u0647\u0645 \u0645\u0646\u062a\u062e\u0628 \u0628\u0627 \u062f\u0627\u062f\u0647\u200c\u0647\u0627\u06cc \u0628\u0627\u0632\u0627\u0631 TSETMC \u0646\u0645\u0627\u06cc\u0634 \u062f\u0627\u062f\u0647 \u0645\u06cc\u200c\u0634\u0648\u062f.' : 'RWA presents five selected Iranian shares with market information sourced from TSETMC.'}
