@@ -28,14 +28,13 @@ export default function BrandMark({
   const includeWordmark = showWordmark ?? variant === 'mark';
   const src = variant === 'lockup' ? '/logo.png' : '/logo-mark.png';
   const box = variant === 'lockup' ? lockupSizes[size] : markSizes[size];
-  const radius = variant === 'lockup' ? 'rounded-2xl md:rounded-3xl' : 'rounded-xl';
 
   return (
     <span className="inline-flex items-center gap-2.5">
       <img
         src={src}
         alt="RwaStocks"
-        className={`${box} ${radius} object-cover shadow-lg shadow-blue-500/20`}
+        className={`${box} rounded-full object-cover shadow-lg shadow-blue-500/25 ring-1 ring-blue-400/20`}
       />
       {includeWordmark && (
         <span className={`font-extrabold tracking-tight ${wordmarkClassName}`}>
