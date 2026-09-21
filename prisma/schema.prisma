@@ -19,8 +19,9 @@ model User {
   account      Account?
   holdings     Holding[]
   purchaseLots PurchaseLot[]
-  trades       Trade[]
-  activities   Activity[]
+  trades           Trade[]
+  activities       Activity[]
+  depositRequests  DepositRequest[]
 }
 
 model Account {
@@ -127,6 +128,25 @@ model Activity {
   @@index([userId, createdAt])
 }
 
+
+model DepositRequest {
+  id             String    @id @default(cuid())
+  userId         String
+  network        String
+  txid           String
+  amountMicros   BigInt
+  status         String    @default("PENDING")
+  reviewNote     String?
+  reviewedAt     DateTime?
+  reviewedById   String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([network, txid])
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+}
 
 model AdminAuditLog {
   id           String   @id @default(cuid())

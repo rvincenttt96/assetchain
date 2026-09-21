@@ -38,6 +38,11 @@ const SESSION_COOKIE = isProduction
 const MICROS_PER_USDT = 1_000_000n;
 const SESSION_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const MARKET_PRICE_MAX_AGE_MS = 5 * 60 * 1000;
+const STORED_USDT_RIAL_FALLBACK = 1_864_140;
+
+function usdtRateFallbackRial(): number {
+  return env.IRR_PER_USDT > 0 ? env.IRR_PER_USDT : STORED_USDT_RIAL_FALLBACK;
+}
 
 function hasFreshTradingPrice(asset: { priceMicros: bigint; marketUpdatedAt: Date | null }): boolean {
   return (
@@ -45,6 +50,32 @@ function hasFreshTradingPrice(asset: { priceMicros: bigint; marketUpdatedAt: Dat
     asset.marketUpdatedAt !== null &&
     Date.now() - asset.marketUpdatedAt.getTime() <= MARKET_PRICE_MAX_AGE_MS
   );
+}
+
+function hasTradablePrice(asset: {
+  priceMicros: bigint;
+  lastPriceRial: bigint | null;
+}): boolean {
+  return asset.priceMicros > 0n && asset.lastPriceRial !== null && asset.lastPriceRial > 0n;
+}
+
+function toMicros(value: number): bigint {
+  return BigInt(Math.round(value * Number(MICROS_PER_USDT)));
+}
+
+function normalizeTxid(network: string, txid: string): string {
+  const trimmed = txid.trim().toLowerCase();
+  if (network === "trc20") {
+    return trimmed.replace(/^0x/, "");
+  }
+  return trimmed.startsWith("0x") ? trimmed : `0x${trimmed}`;
+}
+
+function isValidTxid(network: string, txid: string): boolean {
+  if (network === "trc20") {
+    return /^(0x)?[0-9a-f]{64}$/.test(txid);
+  }
+  return /^0x[0-9a-f]{64}$/.test(txid);
 }
 
 type AuthRequest = Request & {
@@ -320,7 +351,7 @@ async function syncTsetmcMarketData(): Promise<void> {
       }
     });
 
-    const usdtRate = await getUsdtRialRate(env.IRR_PER_USDT).catch(() => null);
+    const usdtRate = await getUsdtRialRate(usdtRateFallbackRial()).catch(() => null);
 
   const results = await Promise.allSettled(
       assets.map(async (asset) => {
@@ -438,7 +469,7 @@ async function refreshUsdtFromStoredRial(force = false): Promise<void> {
   lastUsdtPriceRefreshAt = now;
 
   usdtPriceRefreshInFlight = (async () => {
-    const usdtRate = await getUsdtRialRate(env.IRR_PER_USDT);
+    const usdtRate = await getUsdtRialRate(usdtRateFallbackRial());
     const assets = await prisma.asset.findMany({
       select: {
         id: true,
@@ -498,6 +529,10 @@ async function getProfile(userId: string) {
         orderBy: { createdAt: "desc" },
         take: 100
       },
+      depositRequests: {
+        orderBy: { createdAt: "desc" },
+        take: 100
+      },
       activities: {
         orderBy: { createdAt: "desc" },
         take: 100
@@ -529,19 +564,41 @@ async function getProfile(userId: string) {
       price: fromMicros(lot.buyPriceMicros),
       date: formatDate(lot.createdAt)
     })),
-    transactions: user.trades.map((trade) => ({
-      id: trade.id,
-      type: trade.type === "BUY" ? "buy" : "sell",
-      asset: trade.assetId,
-      amount: `${trade.type === "BUY" ? "-" : "+"}${fromMicros(
-        trade.netMicros
-      ).toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 6
-      })} USDT`,
-      date: formatDate(trade.createdAt),
-      status: "completed"
-    })),
+    transactions: [
+      ...user.trades.map((trade) => ({
+        id: trade.id,
+        type: trade.type === "BUY" ? "buy" : "sell",
+        asset: trade.assetId,
+        amount: `${trade.type === "BUY" ? "-" : "+"}${fromMicros(
+          trade.netMicros
+        ).toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 6
+        })} USDT`,
+        date: formatDate(trade.createdAt),
+        status: "completed" as const,
+        sortAt: trade.createdAt.getTime()
+      })),
+      ...user.depositRequests.map((deposit) => ({
+        id: deposit.id,
+        type: "deposit" as const,
+        asset: deposit.network.toUpperCase(),
+        amount: `+${fromMicros(deposit.amountMicros).toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 6
+        })} USDT`,
+        date: formatDate(deposit.createdAt),
+        status:
+          deposit.status === "APPROVED"
+            ? ("completed" as const)
+            : deposit.status === "REJECTED"
+              ? ("rejected" as const)
+              : ("pending" as const),
+        sortAt: deposit.createdAt.getTime()
+      }))
+    ]
+      .sort((left, right) => right.sortAt - left.sortAt)
+      .map(({ sortAt: _sortAt, ...transaction }) => transaction),
     activities: user.activities.map((activity) => ({
       id: activity.id,
       type: activity.type,
@@ -575,6 +632,32 @@ const adminStatusSchema = z.object({
 const adminRoleSchema = z.object({
   role: z.enum(["USER", "SUPER_ADMIN", "FINANCE_ADMIN", "ASSET_ADMIN", "SUPPORT_ADMIN"])
 });
+
+const depositRequestSchema = z.object({
+  network: z.enum(["trc20", "erc20", "bep20"]),
+  txid: z.string().trim().min(16).max(80),
+  amountUsdt: z.coerce.number().positive().min(10).max(1_000_000)
+});
+
+const depositReviewSchema = z.object({
+  status: z.enum(["APPROVED", "REJECTED"]),
+  reviewNote: z.string().trim().max(240).optional()
+});
+
+async function requireFinanceAdminUser(userId: string): Promise<void> {
+  const admin = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true, isActive: true }
+  });
+
+  if (
+    !admin ||
+    !admin.isActive ||
+    (admin.role !== "SUPER_ADMIN" && admin.role !== "FINANCE_ADMIN")
+  ) {
+    throw new HttpError(403, "FINANCE_ADMIN_REQUIRED", "Finance admin access required.");
+  }
+}
 
 async function requireSuperAdminUser(userId: string): Promise<void> {
   const admin = await prisma.user.findUnique({
@@ -653,7 +736,7 @@ if (isProduction) app.set("trust proxy", 1);
   app.get(
     "/api/market/usdt-rate",
     asyncRoute(async (_req, res) => {
-      const rate = await getUsdtRialRate(env.IRR_PER_USDT);
+      const rate = await getUsdtRialRate(usdtRateFallbackRial());
       res.json({ success: true, ...rate });
     })
   );
@@ -854,7 +937,7 @@ if (isProduction) app.set("trust proxy", 1);
             );
           }
 
-          if (!hasFreshTradingPrice(asset)) {
+          if (!hasTradablePrice(asset)) {
             throw new HttpError(
               503,
               "TRADING_PRICE_UNAVAILABLE",
@@ -1003,7 +1086,7 @@ if (isProduction) app.set("trust proxy", 1);
             );
           }
 
-          if (!hasFreshTradingPrice(asset)) {
+          if (!hasTradablePrice(asset)) {
             throw new HttpError(
               503,
               "TRADING_PRICE_UNAVAILABLE",
@@ -1329,15 +1412,188 @@ if (isProduction) app.set("trust proxy", 1);
     })
   );
 
-  app.post("/api/user/deposit", requireAuth, (_req, _res, next) => {
-    next(
-      new HttpError(
-        501,
-        "DEPOSIT_DISABLED",
-        "Deposits are disabled until blockchain confirmation is implemented."
-      )
-    );
-  });
+  app.get(
+    "/api/user/deposits",
+    requireAuth,
+    asyncRoute(async (req, res) => {
+      const deposits = await prisma.depositRequest.findMany({
+        where: { userId: req.auth!.userId },
+        orderBy: { createdAt: "desc" },
+        take: 50
+      });
+
+      res.json({
+        success: true,
+        deposits: deposits.map((deposit) => ({
+          id: deposit.id,
+          network: deposit.network,
+          txid: deposit.txid,
+          amountUsdt: fromMicros(deposit.amountMicros),
+          status: deposit.status,
+          createdAt: deposit.createdAt.toISOString()
+        }))
+      });
+    })
+  );
+
+  app.post(
+    "/api/user/deposit",
+    requireAuth,
+    asyncRoute(async (req, res) => {
+      const input = depositRequestSchema.parse(req.body);
+      const txid = normalizeTxid(input.network, input.txid);
+
+      if (!isValidTxid(input.network, txid)) {
+        throw new HttpError(400, "INVALID_TXID", "Transaction hash format is invalid for this network.");
+      }
+
+      const amountMicros = toMicros(input.amountUsdt);
+      const existing = await prisma.depositRequest.findUnique({
+        where: {
+          network_txid: {
+            network: input.network,
+            txid
+          }
+        }
+      });
+
+      if (existing) {
+        throw new HttpError(409, "TXID_ALREADY_SUBMITTED", "This transaction hash was already submitted.");
+      }
+
+      const deposit = await prisma.depositRequest.create({
+        data: {
+          userId: req.auth!.userId,
+          network: input.network,
+          txid,
+          amountMicros
+        }
+      });
+
+      await prisma.activity.create({
+        data: {
+          userId: req.auth!.userId,
+          type: "deposit",
+          descriptionEn: `Deposit request ${fromMicros(amountMicros)} USDT on ${input.network.toUpperCase()} is waiting for admin review.`,
+          descriptionFa: `درخواست واریز ${fromMicros(amountMicros)} تتر روی ${input.network.toUpperCase()} ثبت شد و منتظر تأیید ادمین است.`
+        }
+      });
+
+      res.status(201).json({
+        success: true,
+        deposit: {
+          id: deposit.id,
+          network: deposit.network,
+          txid: deposit.txid,
+          amountUsdt: fromMicros(deposit.amountMicros),
+          status: deposit.status
+        },
+        profile: await getProfile(req.auth!.userId)
+      });
+    })
+  );
+
+  app.get(
+    "/api/admin/deposits",
+    requireAuth,
+    requireAdmin,
+    asyncRoute(async (_req, res) => {
+      const deposits = await prisma.depositRequest.findMany({
+        include: { user: { select: { name: true, email: true } } },
+        orderBy: [{ status: "asc" }, { createdAt: "desc" }],
+        take: 250
+      });
+
+      res.json({
+        success: true,
+        deposits: deposits.map((deposit) => ({
+          id: deposit.id,
+          userName: deposit.user.name,
+          userEmail: deposit.user.email,
+          userId: deposit.userId,
+          network: deposit.network,
+          txid: deposit.txid,
+          amountUsdt: fromMicros(deposit.amountMicros),
+          status: deposit.status,
+          reviewNote: deposit.reviewNote,
+          createdAt: deposit.createdAt.toISOString(),
+          reviewedAt: deposit.reviewedAt?.toISOString()
+        }))
+      });
+    })
+  );
+
+  app.post(
+    "/api/admin/deposits/:id/review",
+    requireAuth,
+    requireAdmin,
+    asyncRoute(async (req, res) => {
+      await requireFinanceAdminUser(req.auth!.userId);
+      const input = depositReviewSchema.parse(req.body);
+      const depositId = String(req.params.id);
+
+      await prisma.$transaction(async (tx) => {
+        const deposit = await tx.depositRequest.findUnique({
+          where: { id: depositId }
+        });
+
+        if (!deposit) {
+          throw new HttpError(404, "DEPOSIT_NOT_FOUND", "Deposit request not found.");
+        }
+
+        if (deposit.status !== "PENDING") {
+          throw new HttpError(409, "DEPOSIT_ALREADY_REVIEWED", "This deposit was already reviewed.");
+        }
+
+        await tx.depositRequest.update({
+          where: { id: deposit.id },
+          data: {
+            status: input.status,
+            reviewNote: input.reviewNote,
+            reviewedAt: new Date(),
+            reviewedById: req.auth!.userId
+          }
+        });
+
+        if (input.status === "APPROVED") {
+          await tx.account.update({
+            where: { userId: deposit.userId },
+            data: {
+              usdtBalanceMicros: {
+                increment: deposit.amountMicros
+              }
+            }
+          });
+        }
+
+        await tx.activity.create({
+          data: {
+            userId: deposit.userId,
+            type: "deposit",
+            descriptionEn:
+              input.status === "APPROVED"
+                ? `Deposit of ${fromMicros(deposit.amountMicros)} USDT was approved.`
+                : `Deposit of ${fromMicros(deposit.amountMicros)} USDT was rejected.`,
+            descriptionFa:
+              input.status === "APPROVED"
+                ? `واریز ${fromMicros(deposit.amountMicros)} تتر تأیید شد.`
+                : `واریز ${fromMicros(deposit.amountMicros)} تتر رد شد.`
+          }
+        });
+      });
+
+      await writeAdminAudit({
+        req,
+        action: input.status === "APPROVED" ? "DEPOSIT_APPROVED" : "DEPOSIT_REJECTED",
+        entityType: "DepositRequest",
+        entityId: depositId,
+        description: `${input.status} deposit ${depositId}.`,
+        afterJson: JSON.stringify({ status: input.status, reviewNote: input.reviewNote })
+      });
+
+      res.json({ success: true });
+    })
+  );
 
   app.post("/api/user/withdraw", requireAuth, (_req, _res, next) => {
     next(

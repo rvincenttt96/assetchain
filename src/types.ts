@@ -51,7 +51,7 @@ export interface Transaction {
   asset: string;
   amount: string;
   date: string;
-  status: 'completed' | 'pending';
+  status: 'completed' | 'pending' | 'rejected';
 }
 
 export type Theme = 'dark' | 'light';

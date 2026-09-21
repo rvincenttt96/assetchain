@@ -146,6 +146,51 @@ export async function executeBuyOrder(
   return result.profile;
 }
 
+export async function submitDepositRequest(
+  network: "trc20" | "erc20" | "bep20",
+  txid: string,
+  amountUsdt: number
+): Promise<BackendProfile> {
+  const result = await request<{ profile: BackendProfile }>("/user/deposit", {
+    method: "POST",
+    body: JSON.stringify({ network, txid, amountUsdt })
+  });
+
+  return result.profile;
+}
+
+export interface AdminDepositRow {
+  id: string;
+  userName: string;
+  userEmail: string;
+  userId: string;
+  network: string;
+  txid: string;
+  amountUsdt: number;
+  status: string;
+  reviewNote?: string | null;
+  createdAt: string;
+  reviewedAt?: string;
+}
+
+export async function fetchAdminDeposits(): Promise<AdminDepositRow[]> {
+  const result = await request<{ deposits: AdminDepositRow[] }>("/admin/deposits", {
+    method: "GET"
+  });
+  return result.deposits;
+}
+
+export async function reviewAdminDeposit(
+  depositId: string,
+  status: "APPROVED" | "REJECTED",
+  reviewNote?: string
+): Promise<void> {
+  await request<Record<string, never>>(`/admin/deposits/${encodeURIComponent(depositId)}/review`, {
+    method: "POST",
+    body: JSON.stringify({ status, reviewNote })
+  });
+}
+
 export async function executeSellOrder(
   assetId: string,
   shares: number

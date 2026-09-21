@@ -4,13 +4,16 @@ import {
   ApiError,
   fetchAdminAssets,
   fetchAdminAudit,
+  fetchAdminDeposits,
   fetchAdminOverview,
   fetchAdminTrades,
   fetchAdminUsers,
+  reviewAdminDeposit,
   setAdminUserRole,
   setAdminUserStatus,
   type AdminAssetRow,
   type AdminAuditRow,
+  type AdminDepositRow,
   type AdminOverview,
   type AdminTradeRow,
   type AdminUserRow
@@ -21,7 +24,7 @@ interface AdminPanelProps {
   currentRole: string;
 }
 
-type AdminTab = 'overview' | 'users' | 'trades' | 'assets' | 'audit';
+type AdminTab = 'overview' | 'users' | 'deposits' | 'trades' | 'assets' | 'audit';
 
 const ADMIN_ROLES = ['USER', 'SUPER_ADMIN', 'FINANCE_ADMIN', 'ASSET_ADMIN', 'SUPPORT_ADMIN'];
 
@@ -32,12 +35,14 @@ export default function AdminPanel({ theme, currentRole }: AdminPanelProps) {
   const [trades, setTrades] = useState<AdminTradeRow[]>([]);
   const [assets, setAssets] = useState<AdminAssetRow[]>([]);
   const [audit, setAudit] = useState<AdminAuditRow[]>([]);
+  const [deposits, setDeposits] = useState<AdminDepositRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState('');
 
   const isDark = theme === 'dark';
   const canManageUsers = currentRole === 'SUPER_ADMIN';
+  const canReviewDeposits = currentRole === 'SUPER_ADMIN' || currentRole === 'FINANCE_ADMIN';
 
   const cardClass = useMemo(
     () => isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200',
@@ -48,18 +53,20 @@ export default function AdminPanel({ theme, currentRole }: AdminPanelProps) {
     setLoading(true);
     setError('');
     try {
-      const [nextOverview, nextUsers, nextTrades, nextAssets, nextAudit] = await Promise.all([
+      const [nextOverview, nextUsers, nextTrades, nextAssets, nextAudit, nextDeposits] = await Promise.all([
         fetchAdminOverview(),
         fetchAdminUsers(),
         fetchAdminTrades(),
         fetchAdminAssets(),
-        fetchAdminAudit()
+        fetchAdminAudit(),
+        fetchAdminDeposits()
       ]);
       setOverview(nextOverview);
       setUsers(nextUsers);
       setTrades(nextTrades);
       setAssets(nextAssets);
       setAudit(nextAudit);
+      setDeposits(nextDeposits);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not load admin data.');
     } finally {
@@ -85,6 +92,20 @@ export default function AdminPanel({ theme, currentRole }: AdminPanelProps) {
     }
   };
 
+  const reviewDeposit = async (deposit: AdminDepositRow, status: 'APPROVED' | 'REJECTED') => {
+    if (!canReviewDeposits || deposit.status !== 'PENDING') return;
+    setBusyId(deposit.id);
+    setError('');
+    try {
+      await reviewAdminDeposit(deposit.id, status);
+      await load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not review deposit.');
+    } finally {
+      setBusyId('');
+    }
+  };
+
   const updateRole = async (user: AdminUserRow, role: string) => {
     if (!canManageUsers || role === user.role) return;
     setBusyId(user.id);
@@ -102,6 +123,7 @@ export default function AdminPanel({ theme, currentRole }: AdminPanelProps) {
   const nav: { id: AdminTab; label: string }[] = [
     { id: 'overview', label: 'Overview' },
     { id: 'users', label: 'Users' },
+    { id: 'deposits', label: 'Deposits' },
     { id: 'trades', label: 'Trades' },
     { id: 'assets', label: 'Assets' },
     { id: 'audit', label: 'Audit Log' }
@@ -116,7 +138,7 @@ export default function AdminPanel({ theme, currentRole }: AdminPanelProps) {
             RWA Administration
           </div>
           <h1 className="text-2xl md:text-3xl font-black mt-2">Operations Dashboard</h1>
-          <p className="text-slate-400 text-xs mt-1">Live users, trades, assets, permissions and audited admin actions.</p>
+          <p className="text-slate-400 text-xs mt-1">Users, pending deposits, trades, assets and audited admin actions.</p>
         </div>
         <button
           type="button"
@@ -209,6 +231,58 @@ export default function AdminPanel({ theme, currentRole }: AdminPanelProps) {
             </table>
           </div>
           {!canManageUsers && <p className="p-4 text-[10px] text-slate-500 border-t border-slate-800/40">Only SUPER_ADMIN can change roles or account status.</p>}
+        </div>
+      )}
+
+      {tab === 'deposits' && (
+        <div className={`rounded-3xl border overflow-hidden ${cardClass}`}>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead className="text-slate-400 border-b border-slate-800/60">
+                <tr>
+                  <th className="p-4 text-start">User</th>
+                  <th className="p-4 text-start">Network / TxID</th>
+                  <th className="p-4 text-end">Amount</th>
+                  <th className="p-4 text-center">Status</th>
+                  <th className="p-4 text-end">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/40">
+                {deposits.length === 0 ? (
+                  <tr><td colSpan={5} className="p-8 text-center text-slate-500">No deposit requests yet.</td></tr>
+                ) : deposits.map(deposit => (
+                  <tr key={deposit.id}>
+                    <td className="p-4"><p className="font-bold">{deposit.userName}</p><p className="text-[10px] text-slate-500 mt-1">{deposit.userEmail}</p></td>
+                    <td className="p-4">
+                      <p className="font-black text-blue-400">{deposit.network.toUpperCase()}</p>
+                      <p className="text-[10px] font-mono text-slate-500 mt-1 break-all">{deposit.txid}</p>
+                    </td>
+                    <td className="p-4 text-end font-mono font-bold">{deposit.amountUsdt.toFixed(2)} USDT</td>
+                    <td className="p-4 text-center">
+                      <span className={`rounded-full px-3 py-1 text-[10px] font-black ${
+                        deposit.status === 'APPROVED'
+                          ? 'bg-emerald-500/10 text-emerald-400'
+                          : deposit.status === 'REJECTED'
+                            ? 'bg-rose-500/10 text-rose-400'
+                            : 'bg-amber-500/10 text-amber-400'
+                      }`}>{deposit.status}</span>
+                    </td>
+                    <td className="p-4 text-end">
+                      {deposit.status === 'PENDING' && canReviewDeposits ? (
+                        <div className="inline-flex gap-2">
+                          <button type="button" disabled={busyId === deposit.id} onClick={() => void reviewDeposit(deposit, 'APPROVED')} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-[10px] font-black text-white">Approve</button>
+                          <button type="button" disabled={busyId === deposit.id} onClick={() => void reviewDeposit(deposit, 'REJECTED')} className="rounded-lg bg-rose-600 px-3 py-1.5 text-[10px] font-black text-white">Reject</button>
+                        </div>
+                      ) : (
+                        <span className="text-[10px] text-slate-500">{deposit.reviewedAt ? new Date(deposit.reviewedAt).toLocaleString() : '—'}</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {!canReviewDeposits && <p className="p-4 text-[10px] text-slate-500 border-t border-slate-800/40">Only SUPER_ADMIN or FINANCE_ADMIN can approve deposits.</p>}
         </div>
       )}
 

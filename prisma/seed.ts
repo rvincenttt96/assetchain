@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { hash } from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -192,6 +193,27 @@ async function main() {
     if (holdings + lots + trades === 0) {
       await prisma.asset.delete({ where: { id: old.id } });
     }
+  }
+
+  const existingAdmin = await prisma.user.findFirst({
+    where: { role: "SUPER_ADMIN" },
+    select: { id: true }
+  });
+
+  if (!existingAdmin) {
+    await prisma.user.create({
+      data: {
+        email: "admin@rwastocks.online",
+        name: "RwaStocks Admin",
+        passwordHash: await hash("RwaAdmin!2026", 12),
+        role: "SUPER_ADMIN",
+        account: {
+          create: {
+            usdtBalanceMicros: 0n
+          }
+        }
+      }
+    });
   }
 
   console.log(

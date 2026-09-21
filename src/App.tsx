@@ -42,6 +42,7 @@ import {
   ApiError,
   executeBuyOrder,
   executeSellOrder,
+  submitDepositRequest,
   fetchAssetsFromBackend,
   getUserProfile,
   loginUser,
@@ -145,6 +146,7 @@ export default function App() {
   const [walletTab, setWalletTab] = useState<'deposit' | 'withdraw'>('deposit');
   const [depositNetwork, setDepositNetwork] = useState<'trc20' | 'erc20' | 'bep20'>('trc20');
   const [depositTxid, setDepositTxid] = useState<string>('');
+  const [depositAmount, setDepositAmount] = useState<string>('');
   const [withdrawAddress, setWithdrawAddress] = useState<string>('');
   const [withdrawAmount, setWithdrawAmount] = useState<string>('');
   const [txidError, setTxidError] = useState<string>('');
@@ -697,15 +699,39 @@ const platformFundedUsdt = platformFundedAssets.reduce(
   };
 
   // Submit Deposit Hash
-  const handleDepositSubmit = (e: React.FormEvent) => {
+  const handleDepositSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   setTxidError('');
-  triggerAlert(
-    'error',
-    lang === 'fa'
-      ? 'واریز رمزارز در نسخه فعلی غیرفعال است.'
-      : 'Crypto deposits are disabled in this version.'
-  );
+
+  if (!isLoggedIn) {
+    triggerAlert('error', lang === 'fa' ? 'ابتدا وارد حساب شوید.' : 'Please sign in first!');
+    return;
+  }
+
+  const txCheck = validateTxid(depositTxid, depositNetwork);
+  if (!txCheck.valid) {
+    setTxidError(txCheck.msg);
+    return;
+  }
+
+  const amountUsdt = Number.parseFloat(depositAmount);
+  if (!Number.isFinite(amountUsdt) || amountUsdt < 10) {
+    triggerAlert('error', lang === 'fa' ? 'حداقل واریز ۱۰ تتر است.' : 'Minimum deposit is 10 USDT.');
+    return;
+  }
+
+  try {
+    const profile = await submitDepositRequest(depositNetwork, depositTxid.trim(), amountUsdt);
+    applyBackendProfile(profile);
+    setDepositTxid('');
+    setDepositAmount('');
+    triggerAlert('success', t.depositSuccess);
+  } catch (error) {
+    triggerAlert(
+      'error',
+      error instanceof ApiError ? error.message : (lang === 'fa' ? 'ثبت واریز انجام نشد.' : 'Could not submit the deposit.')
+    );
+  }
 };
 
 const handleWithdrawSubmit = (e: React.FormEvent) => {
@@ -2088,7 +2114,7 @@ isLoggedIn={isLoggedIn}
                     theme === 'dark' ? 'bg-amber-950/20 border-amber-500/30 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-800'
                   }`}>
                     <Info size={16} className="shrink-0 text-amber-500" />
-                    <span>{t.transactionWarning}</span>
+                    <span>{t.depositPendingHint}</span>
                   </div>
 
                   {/* Network Selector */}
@@ -2122,6 +2148,21 @@ isLoggedIn={isLoggedIn}
                   {/* Deposit View */}
                   {walletTab === 'deposit' && (
                     <form onSubmit={handleDepositSubmit} className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-400 uppercase">{t.depositAmount}</label>
+                        <input
+                          type="number"
+                          min="10"
+                          step="0.01"
+                          value={depositAmount}
+                          onChange={(e) => setDepositAmount(e.target.value)}
+                          placeholder={t.minAmount}
+                          className={`w-full p-3 font-mono text-sm rounded-xl border focus:outline-none focus:border-blue-500 ${
+                            theme === 'dark' ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-200'
+                          }`}
+                        />
+                      </div>
+
                       {/* Live Deposit Address Box */}
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-slate-400 uppercase">{t.depositAddress}</label>
@@ -2370,7 +2411,9 @@ isLoggedIn={isLoggedIn}
                               <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold ${
                                 tx.status === 'completed'
                                   ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                  : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                                  : tx.status === 'rejected'
+                                    ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                                    : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                               }`}>
                                 {lang === 'fa' ? (t as Record<string, string>)['stat_' + tx.status] ?? tx.status : tx.status}
                               </span>
