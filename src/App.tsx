@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Asset, PortfolioItem, PurchaseLot, Transaction, Theme, Language, UserActivity } from './types';
-import { TRANSLATIONS } from './data';
+import { FUNDED_SHARES_BY_ASSET_ID, TRANSLATIONS } from './data';
 import LandingPage from './components/LandingPage';
 import BrandMark from './components/BrandMark';
 import AdminPanel from './components/AdminPanel';
@@ -167,20 +167,12 @@ export default function App() {
   // Live Assets Pricing state
   const [assets, setAssets] = useState<Asset[]>([]);
 
-const platformFundedSharesByAssetId: Record<string, number> = {
-  KGOL: 33780,
-  KAVEH: 15750,
-  SHTRAN: 19450,
-  SHASTA: 35300,
-  DTMAD: 1781
-};
-
-const platformFundedAssets = assets
-  .map(asset => ({
-    asset,
-    shares: platformFundedSharesByAssetId[asset.id] ?? 0
-  }))
-  .filter(item => item.shares > 0);
+const platformFundedAssets = Object.entries(FUNDED_SHARES_BY_ASSET_ID)
+  .map(([id, shares]) => {
+    const asset = assets.find(item => item.id === id);
+    return asset ? { asset, shares } : null;
+  })
+  .filter((item): item is { asset: Asset; shares: number } => item !== null);
 
 const platformFundedShares = platformFundedAssets.reduce(
   (sum, item) => sum + item.shares,
@@ -1546,7 +1538,7 @@ isLoggedIn={isLoggedIn}
 
                           <div className="flex items-center justify-between rounded-xl border border-slate-800/40 px-3 py-2 text-xs">
                             <span className="text-slate-400">Supply</span>
-                            <span className="font-black text-blue-500">{(platformFundedSharesByAssetId[asset.id] ?? 0).toLocaleString()} shares</span>
+                            <span className="font-black text-blue-500">{(FUNDED_SHARES_BY_ASSET_ID[asset.id] ?? 0).toLocaleString()} shares</span>
                           </div>
 
                           {/* TSETMC Bourse Badge/Link if applicable */}
@@ -3107,7 +3099,7 @@ isLoggedIn={isLoggedIn}
 
                 <div className="flex items-center justify-between rounded-xl border border-slate-800/40 px-3 py-2 text-xs">
                   <span className="text-slate-400">Supply</span>
-                  <span className="font-black text-blue-400">{(platformFundedSharesByAssetId[infoAsset.id] ?? 0).toLocaleString()} shares</span>
+                  <span className="font-black text-blue-400">{(FUNDED_SHARES_BY_ASSET_ID[infoAsset.id] ?? 0).toLocaleString()} shares</span>
                 </div>
               </div>
             </div>

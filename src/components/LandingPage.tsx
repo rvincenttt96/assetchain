@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { INITIAL_ASSETS } from '../data';
+import { FUNDED_SHARES_BY_ASSET_ID, INITIAL_ASSETS } from '../data';
 import { Asset } from '../types';
 import BrandMark from './BrandMark';
 import {
@@ -95,22 +95,12 @@ export default function LandingPage({
   const isDark = theme === 'dark';
   const [activeStep, setActiveStep] = useState(0);
 
-  const featuredAssets = assets.slice(0, 5);
-
-  const fundedSharesByAssetId: Record<string, number> = {
-    KGOL: 33780,
-    KAVEH: 15750,
-    SHTRAN: 19450,
-    SHASTA: 35300,
-    DTMAD: 1781
-  };
-
-  const fundedAssets = featuredAssets
-    .map(asset => ({
-      asset,
-      fundedShares: fundedSharesByAssetId[asset.id] ?? 0
-    }))
-    .filter(item => item.fundedShares > 0);
+  const fundedAssets = Object.entries(FUNDED_SHARES_BY_ASSET_ID)
+    .map(([id, fundedShares]) => {
+      const asset = assets.find(item => item.id === id);
+      return asset ? { asset, fundedShares } : null;
+    })
+    .filter((item): item is { asset: Asset; fundedShares: number } => item !== null);
 
   const totalFundedShares = fundedAssets.reduce(
     (sum, item) => sum + item.fundedShares,

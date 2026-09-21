@@ -1,42 +1,50 @@
 import { Asset } from './types';
 
+export const FUNDED_SHARES_BY_ASSET_ID: Record<string, number> = {
+  FARS: 10800,
+  NARENJ: 1995,
+  SHTRAN: 19010,
+  SHASTA: 34700,
+  FMELI: 5350
+};
+
 export const INITIAL_ASSETS: Asset[] = [
   {
-    id: 'KGOL',
-    enName: 'Gol Gohar Mining & Industrial Co.',
-    faName: 'Gol Gohar Mining & Industrial Co.',
-    category: 'metals',
+    id: 'FARS',
+    enName: 'Persian Gulf Petrochemical Industries Co.',
+    faName: 'صنایع پتروشیمی خلیج فارس',
+    category: 'petro',
     price: 0,
     change: 0,
     flag: 'ir',
     locationEn: 'Iran',
     locationFa: 'Iran',
     progress: 100,
-    descriptionEn: 'An Iranian mining and industrial company focused on iron ore extraction, processing, and supplying iron ore products to the steel value chain.',
-    descriptionFa: 'یک شرکت معدنی و صنعتی ایرانی با تمرکز بر استخراج و فرآوری سنگ‌آهن و تأمین محصولات زنجیره فولاد.',
-    bourseSymbol: 'KGOL',
-    tsetmcUrl: 'https://main.tsetmc.com/InstInfo/35700344742885862'
+    descriptionEn: 'Iran’s largest petrochemical holding, with stakes across the Persian Gulf petrochemical value chain.',
+    descriptionFa: 'بزرگ‌ترین هلدینگ پتروشیمی ایران با سبدی از شرکت‌های زنجیره ارزش خلیج فارس.',
+    bourseSymbol: 'FARS',
+    tsetmcUrl: 'https://main.tsetmc.com/InstInfo/25244329144808274'
   },
   {
-    id: 'DTMAD',
-    enName: 'Darou Pakhsh Raw Materials Manufacturing',
-    faName: 'Darou Pakhsh Raw Materials Manufacturing',
-    category: 'pharma',
+    id: 'NARENJ',
+    enName: 'Naranj Leveraged Equity Fund',
+    faName: 'نارنج اهرم',
+    category: 'investment',
     price: 0,
     change: 0,
     flag: 'ir',
     locationEn: 'Iran',
     locationFa: 'Iran',
     progress: 100,
-    descriptionEn: 'An Iranian pharmaceutical manufacturer focused on active pharmaceutical ingredients and raw materials used by the pharmaceutical industry.',
-    descriptionFa: 'یک تولیدکننده ایرانی مواد اولیه دارویی و مواد مؤثره مورد استفاده در صنعت داروسازی.',
-    bourseSymbol: 'DTMAD',
-    tsetmcUrl: 'https://main.tsetmc.com/InstInfo/34641719089573667'
+    descriptionEn: 'A leveraged equity ETF managed by Toranj that tracks the broader Iranian stock market with amplified exposure.',
+    descriptionFa: 'صندوق سهامی اهرمی نارنج تحت مدیریت ترنج، با نوسان بیشتر نسبت به بازار سهام ایران.',
+    bourseSymbol: 'NARENJ',
+    tsetmcUrl: 'https://main.tsetmc.com/InstInfo/35831329532779850'
   },
   {
     id: 'SHTRAN',
     enName: 'Tehran Oil Refining Co.',
-    faName: 'Tehran Oil Refining Co.',
+    faName: 'پالایش نفت تهران',
     category: 'petro',
     price: 0,
     change: 0,
@@ -52,7 +60,7 @@ export const INITIAL_ASSETS: Asset[] = [
   {
     id: 'SHASTA',
     enName: 'Social Security Investment Co.',
-    faName: 'Social Security Investment Co.',
+    faName: 'سرمایه‌گذاری تأمین اجتماعی',
     category: 'investment',
     price: 0,
     change: 0,
@@ -66,9 +74,9 @@ export const INITIAL_ASSETS: Asset[] = [
     tsetmcUrl: 'https://main.tsetmc.com/InstInfo/2400322364771558'
   },
   {
-    id: 'KAVEH',
-    enName: 'Kaveh South Kish Steel Co.',
-    faName: 'Kaveh South Kish Steel Co.',
+    id: 'FMELI',
+    enName: 'National Iranian Copper Industries Co.',
+    faName: 'ملی صنایع مس ایران',
     category: 'metals',
     price: 0,
     change: 0,
@@ -76,10 +84,10 @@ export const INITIAL_ASSETS: Asset[] = [
     locationEn: 'Iran',
     locationFa: 'Iran',
     progress: 100,
-    descriptionEn: 'An Iranian steel producer focused on upstream steelmaking operations including sponge iron and steel billet production.',
-    descriptionFa: 'یک تولیدکننده فولاد ایرانی با تمرکز بر زنجیره بالادستی فولاد از جمله آهن اسفنجی و شمش فولادی.',
-    bourseSymbol: 'KAVEH',
-    tsetmcUrl: 'https://main.tsetmc.com/InstInfo/60350996279289099'
+    descriptionEn: 'Iran’s primary copper miner and producer, covering extraction, smelting, and copper products.',
+    descriptionFa: 'شرکت اصلی استخراج و تولید مس ایران، فعال در معدن، ذوب و محصولات مسی.',
+    bourseSymbol: 'FMELI',
+    tsetmcUrl: 'https://main.tsetmc.com/InstInfo/35425587644337450'
   }
 ];
 
@@ -203,7 +211,7 @@ export const TRANSLATIONS = {
     homeHowStep1: '1. Load Market Data',
     homeHowStep1Desc: 'Load the latest stored TSETMC market information from the RWA backend.',
     homeHowStep2: '2. Choose a Share',
-    homeHowStep2Desc: 'Explore selected Iranian shares across metals, pharmaceutical, refining, and investment sectors.',
+    homeHowStep2Desc: 'Explore selected Iranian shares across petrochemicals, refining, metals, and investment funds.',
     homeHowStep3: '3. Verify Market Data',
     homeHowStep3Desc: "Follow market prices and daily changes using TSETMC data and each share's official instrument page.",
     assetInfoTitle: 'Company & Share Information',

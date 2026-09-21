@@ -3,90 +3,90 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-const FALLBACK_IRR_PER_USDT = 1_872_520n;
+const FALLBACK_IRR_PER_USDT = 1_864_140n;
 const MICROS_PER_USDT = 1_000_000n;
-const SNAPSHOT_DATE = new Date("2026-08-11T00:00:00.000Z");
+const SNAPSHOT_DATE = new Date("2026-09-21T00:00:00.000Z");
 
 const assets = [
   {
-    id: "KGOL",
-    enName: "Gol Gohar Mining and Industrial",
-    faName: "Gol Gohar Mining and Industrial",
-    category: "metals",
-    descriptionEn: "An Iranian mining and industrial company focused on iron ore extraction, processing, and supplying iron ore products to the steel value chain.",
-    descriptionFa: "یک شرکت معدنی و صنعتی ایرانی با تمرکز بر استخراج و فرآوری سنگ‌آهن و تأمین محصولات زنجیره فولاد.",
-    bourseSymbol: "KGOL",
-    tsetmcInsCode: "35700344742885862",
-    lastPriceRial: 2908n,
-    closingPriceRial: 2909n,
-    yesterdayPriceRial: 2833n,
-    dayLowRial: 2850n,
-    dayHighRial: 2917n,
-    tradeVolume: 1892402175n
+    id: "FARS",
+    enName: "Persian Gulf Petrochemical Industries",
+    faName: "صنایع پتروشیمی خلیج فارس",
+    category: "petro",
+    descriptionEn: "Iran’s largest petrochemical holding, with stakes across the Persian Gulf petrochemical value chain.",
+    descriptionFa: "بزرگ‌ترین هلدینگ پتروشیمی ایران با سبدی از شرکت‌های زنجیره ارزش خلیج فارس.",
+    bourseSymbol: "FARS",
+    tsetmcInsCode: "25244329144808274",
+    lastPriceRial: 9342n,
+    closingPriceRial: 9342n,
+    yesterdayPriceRial: 9342n,
+    dayLowRial: 9342n,
+    dayHighRial: 9342n,
+    tradeVolume: 0n
   },
   {
-    id: "DTMAD",
-    enName: "Darou Pakhsh Raw Materials",
-    faName: "Darou Pakhsh Raw Materials",
-    category: "pharma",
-    descriptionEn: "An Iranian pharmaceutical manufacturer focused on active pharmaceutical ingredients and raw materials used by the pharmaceutical industry.",
-    descriptionFa: "یک تولیدکننده ایرانی مواد اولیه دارویی و مواد مؤثره مورد استفاده در صنعت داروسازی.",
-    bourseSymbol: "DTMAD",
-    tsetmcInsCode: "34641719089573667",
-    lastPriceRial: 42920n,
-    closingPriceRial: 42360n,
-    yesterdayPriceRial: 43570n,
-    dayLowRial: 42270n,
-    dayHighRial: 44600n,
-    tradeVolume: 10775094n
+    id: "NARENJ",
+    enName: "Naranj Leveraged Equity Fund",
+    faName: "نارنج اهرم",
+    category: "investment",
+    descriptionEn: "A leveraged equity ETF managed by Toranj that tracks the broader Iranian stock market with amplified exposure.",
+    descriptionFa: "صندوق سهامی اهرمی نارنج تحت مدیریت ترنج، با نوسان بیشتر نسبت به بازار سهام ایران.",
+    bourseSymbol: "NARENJ",
+    tsetmcInsCode: "35831329532779850",
+    lastPriceRial: 52455n,
+    closingPriceRial: 52455n,
+    yesterdayPriceRial: 52455n,
+    dayLowRial: 52455n,
+    dayHighRial: 52455n,
+    tradeVolume: 0n
   },
   {
     id: "SHTRAN",
     enName: "Tehran Oil Refining",
-    faName: "Tehran Oil Refining",
+    faName: "پالایش نفت تهران",
     category: "petro",
     descriptionEn: "An Iranian oil refining company that operates in petroleum refining and supplies refined petroleum products to the domestic energy market.",
     descriptionFa: "یک شرکت پالایشی ایرانی فعال در پالایش نفت و تأمین فرآورده‌های نفتی برای بازار انرژی داخلی.",
     bourseSymbol: "SHTRAN",
     tsetmcInsCode: "51617145873056483",
-    lastPriceRial: 5030n,
-    closingPriceRial: 5030n,
-    yesterdayPriceRial: 4890n,
-    dayLowRial: 5030n,
-    dayHighRial: 5030n,
-    tradeVolume: 473740863n
+    lastPriceRial: 5256n,
+    closingPriceRial: 5256n,
+    yesterdayPriceRial: 5256n,
+    dayLowRial: 5256n,
+    dayHighRial: 5256n,
+    tradeVolume: 0n
   },
   {
     id: "SHASTA",
     enName: "Social Security Investment",
-    faName: "Social Security Investment",
+    faName: "سرمایه‌گذاری تأمین اجتماعی",
     category: "investment",
     descriptionEn: "A diversified Iranian investment holding company with interests across multiple industrial, energy, pharmaceutical, mining, and financial sectors.",
     descriptionFa: "یک هلدینگ سرمایه‌گذاری متنوع ایرانی با فعالیت در چندین صنعت از جمله انرژی، دارو، معدن و خدمات مالی.",
     bourseSymbol: "SHASTA",
     tsetmcInsCode: "2400322364771558",
-    lastPriceRial: 2778n,
-    closingPriceRial: 2778n,
-    yesterdayPriceRial: 2698n,
-    dayLowRial: 2778n,
-    dayHighRial: 2778n,
-    tradeVolume: 1129013058n
+    lastPriceRial: 2880n,
+    closingPriceRial: 2880n,
+    yesterdayPriceRial: 2880n,
+    dayLowRial: 2880n,
+    dayHighRial: 2880n,
+    tradeVolume: 0n
   },
   {
-    id: "KAVEH",
-    enName: "South Kaveh Steel",
-    faName: "South Kaveh Steel",
+    id: "FMELI",
+    enName: "National Iranian Copper Industries",
+    faName: "ملی صنایع مس ایران",
     category: "metals",
-    descriptionEn: "An Iranian steel producer focused on upstream steelmaking operations including sponge iron and steel billet production.",
-    descriptionFa: "یک تولیدکننده فولاد ایرانی با تمرکز بر زنجیره بالادستی فولاد از جمله آهن اسفنجی و شمش فولادی.",
-    bourseSymbol: "KAVEH",
-    tsetmcInsCode: "60350996279289099",
-    lastPriceRial: 5450n,
-    closingPriceRial: 5460n,
-    yesterdayPriceRial: 5360n,
-    dayLowRial: 5380n,
-    dayHighRial: 5520n,
-    tradeVolume: 63057019n
+    descriptionEn: "Iran’s primary copper miner and producer, covering extraction, smelting, and copper products.",
+    descriptionFa: "شرکت اصلی استخراج و تولید مس ایران، فعال در معدن، ذوب و محصولات مسی.",
+    bourseSymbol: "FMELI",
+    tsetmcInsCode: "35425587644337450",
+    lastPriceRial: 18710n,
+    closingPriceRial: 18710n,
+    yesterdayPriceRial: 18710n,
+    dayLowRial: 18710n,
+    dayHighRial: 18710n,
+    tradeVolume: 0n
   }
 ];
 
@@ -176,8 +176,26 @@ async function main() {
     });
   }
 
+  const keepIds = assets.map((asset) => asset.id);
+  const obsolete = await prisma.asset.findMany({
+    where: { id: { notIn: keepIds } },
+    select: { id: true }
+  });
+
+  for (const old of obsolete) {
+    const [holdings, lots, trades] = await Promise.all([
+      prisma.holding.count({ where: { assetId: old.id } }),
+      prisma.purchaseLot.count({ where: { assetId: old.id } }),
+      prisma.trade.count({ where: { assetId: old.id } })
+    ]);
+
+    if (holdings + lots + trades === 0) {
+      await prisma.asset.delete({ where: { id: old.id } });
+    }
+  }
+
   console.log(
-    "Production fallback seed completed: 5 TSETMC snapshot assets (2026-08-11)."
+    "Production fallback seed completed: 5 funded TSETMC snapshot assets (2026-09-21)."
   );
 }
 main()
